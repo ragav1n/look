@@ -9,8 +9,15 @@ must be wired to live Shopify before launch.
 - **Home section order** follows the brief, not the Figma canvas order:
   Hero → New Arrivals → Reels from Insta → Price Drop → Why LOOK → Best Sellers
   → Reviews → FAQ → Signup.
-- **Two new sections** were added in the design's visual language (not in Figma):
-  `InstaReels` (links to @look_.in) and `HomeReviews`.
+- **New sections** added in the design's visual language (not in Figma):
+  `InstaReels` (links to @look_.in), `HomeReviews`, and `FeaturedEdit`
+  ("Shop the Edit", after New Arrivals).
+- **Two 21st.dev components integrated**, adapted to LOOK tokens + real data:
+  `stagger-testimonials` (the Reviews section, fed by real reviews) and
+  `executive-impact-carousel` ("Shop the Edit", fed by best-sellers). The
+  carousel's original GSAP scroll-**pin** was changed to a non-pinning parallax
+  so it composes cleanly inside the multi-section Home — the full-page pin
+  version can be restored if wanted as a standalone.
 - **`StyleBanner`** ("Style That Speaks Before You Do") is built but **not mounted**
   on Home — it isn't in the requested lineup. Available if wanted.
 - **Why LOOK / About / Privacy / FAQ** use the brand's real supplied copy, which
