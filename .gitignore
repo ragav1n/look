@@ -3,3 +3,8 @@ dist
 *.local
 .DS_Store
 npm-debug.log*
+
+# Local env — never commit real Shopify credentials (keep .env.example tracked)
+.env
+.env.*
+!.env.example

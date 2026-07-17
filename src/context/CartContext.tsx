@@ -1,67 +1,61 @@
-import { createContext, useContext, useMemo, type ReactNode } from "react";
-import type { CartItem } from "@/types";
-import { getProduct } from "@/data/products";
-import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import type { AddToCartInput, Cart } from "@/types";
+import { cartBackend } from "@/lib/cart";
+import { emptyCart } from "@/lib/shopify/transform";
 
-const FREE_SHIPPING_THRESHOLD = 1000;
-const SHIPPING_FLAT = 49;
-const TAX_RATE = 0.05;
-
+/**
+ * Thin React wrapper over the cart data layer (live Shopify or dev fixture).
+ * It holds the Shopify-shaped `Cart` and forwards mutations to the backend —
+ * it does NOT compute pricing, tax or shipping. Every total shown comes from
+ * the backend's returned cart; final pricing is Shopify's at checkout.
+ */
 interface CartContextValue {
-  items: CartItem[];
+  cart: Cart;
+  /** true once the persisted cart has hydrated */
+  ready: boolean;
   itemCount: number;
-  subtotal: number;
-  shipping: number;
-  taxes: number;
-  total: number;
-  add: (item: CartItem) => void;
-  remove: (productId: string, color: string, size: string) => void;
-  setQty: (productId: string, color: string, size: string, qty: number) => void;
-  clear: () => void;
+  add: (input: AddToCartInput) => Promise<void>;
+  updateQty: (lineId: string, quantity: number) => Promise<void>;
+  remove: (lineId: string) => Promise<void>;
+  clear: () => Promise<void>;
 }
 
 const CartContext = createContext<CartContextValue | null>(null);
 
-const keyOf = (i: { productId: string; color: string; size: string }) =>
-  `${i.productId}|${i.color}|${i.size}`;
-
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useLocalStorage<CartItem[]>("look.cart", []);
+  const [cart, setCart] = useState<Cart>(() => emptyCart());
+  const [ready, setReady] = useState(false);
 
-  const value = useMemo<CartContextValue>(() => {
-    const subtotal = items.reduce(
-      (sum, i) => sum + (getProduct(i.productId)?.price ?? 0) * i.qty,
-      0,
-    );
-    const shipping = subtotal === 0 || subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_FLAT;
-    const taxes = Math.round(subtotal * TAX_RATE);
-    return {
-      items,
-      itemCount: items.reduce((n, i) => n + i.qty, 0),
-      subtotal,
-      shipping,
-      taxes,
-      total: subtotal + shipping + taxes,
-      add: (item) =>
-        setItems((prev) => {
-          const existing = prev.find((i) => keyOf(i) === keyOf(item));
-          return existing
-            ? prev.map((i) => (keyOf(i) === keyOf(item) ? { ...i, qty: i.qty + item.qty } : i))
-            : [...prev, item];
-        }),
-      remove: (productId, color, size) =>
-        setItems((prev) => prev.filter((i) => keyOf(i) !== keyOf({ productId, color, size }))),
-      setQty: (productId, color, size, qty) =>
-        setItems((prev) =>
-          qty <= 0
-            ? prev.filter((i) => keyOf(i) !== keyOf({ productId, color, size }))
-            : prev.map((i) =>
-                keyOf(i) === keyOf({ productId, color, size }) ? { ...i, qty } : i,
-              ),
-        ),
-      clear: () => setItems([]),
+  useEffect(() => {
+    let active = true;
+    cartBackend
+      .hydrate()
+      .then((c) => {
+        if (active) setCart(c);
+      })
+      .catch(() => {
+        /* keep empty cart on hydrate failure */
+      })
+      .finally(() => {
+        if (active) setReady(true);
+      });
+    return () => {
+      active = false;
     };
-  }, [items, setItems]);
+  }, []);
+
+  const value = useMemo<CartContextValue>(
+    () => ({
+      cart,
+      ready,
+      itemCount: cart.totalQuantity,
+      add: async (input) => setCart(await cartBackend.addLine(input)),
+      updateQty: async (lineId, quantity) => setCart(await cartBackend.updateLine(lineId, quantity)),
+      remove: async (lineId) => setCart(await cartBackend.removeLine(lineId)),
+      clear: async () => setCart(await cartBackend.clear()),
+    }),
+    [cart, ready],
+  );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }

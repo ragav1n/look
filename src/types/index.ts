@@ -1,19 +1,42 @@
-export type Category = "Kurta Set" | "Coord Set" | "Tops" | "Bottom";
+/** Product category label. Kept as a string because it maps to Shopify's
+ *  productType (or a collection), which is admin-configurable. */
+export type Category = string;
+
+export interface Money {
+  amount: number;
+  currencyCode: string;
+}
+
+export interface ProductVariant {
+  /** Shopify variant GID — the cart's `merchandiseId`. Fixtures use a `fixture:` prefix. */
+  id: string;
+  title: string;
+  size: string;
+  color: string;
+  availableForSale: boolean;
+  price: Money;
+}
 
 export interface Product {
+  /** Shopify product GID (fixtures use a `fixture:` prefix) */
   id: string;
+  /** Shopify product handle — used as the URL slug */
   slug: string;
   name: string;
   sku: string;
   category: Category;
   /** Secondary label shown on cards, e.g. "Tops" */
   group: string;
+  /** Display price in major units (Shopify minVariantPrice). Display-only. */
   price: number;
+  /** Compare-at / MRP in major units (Shopify compareAtPrice). Display-only. */
   mrp?: number;
+  currencyCode: string;
   badge?: "New" | "Sale";
   images: string[];
   colors: { name: string; hex: string }[];
   sizes: string[];
+  variants: ProductVariant[];
   rating: number;
   reviewCount: number;
   stockLeft?: number;
@@ -26,6 +49,8 @@ export interface Product {
 export interface Review {
   id: string;
   productId: string;
+  /** Product display name, denormalised so review cards need no product fetch */
+  productName?: string;
   author: string;
   rating: number;
   date: string;
@@ -34,11 +59,56 @@ export interface Review {
   verified?: boolean;
 }
 
-export interface CartItem {
-  productId: string;
-  color: string;
+/* ------------------------------------------------------------------ *
+ * Cart — shaped after Shopify's Cart API so live + fixture share it.  *
+ * Totals come straight from Shopify; tax/shipping stay null until     *
+ * checkout (Shopify computes them from the address). We never invent  *
+ * discount, tax or shipping figures on our side.                      *
+ * ------------------------------------------------------------------ */
+
+export interface CartLine {
+  /** Shopify cart line id (fixtures use a synthetic id) */
+  id: string;
+  variantId: string;
+  productSlug: string;
+  name: string;
+  image: string;
   size: string;
-  qty: number;
+  color: string;
+  quantity: number;
+  unitPrice: Money;
+  lineTotal: Money;
+}
+
+export interface CartCost {
+  subtotal: Money;
+  total: Money;
+  /** null until Shopify returns them at checkout */
+  totalTax: Money | null;
+  totalShipping: Money | null;
+}
+
+export interface Cart {
+  /** Shopify cart id, or null for an empty/unstarted cart */
+  id: string | null;
+  /** Shopify-hosted checkout URL — where we hand off to buy */
+  checkoutUrl: string | null;
+  totalQuantity: number;
+  lines: CartLine[];
+  cost: CartCost;
+}
+
+/** Payload the UI sends to add a variant. Only `variantId`/`quantity` reach
+ *  Shopify; the snapshot fields drive optimistic display + the fixture cart. */
+export interface AddToCartInput {
+  variantId: string;
+  quantity: number;
+  productSlug: string;
+  name: string;
+  image: string;
+  size: string;
+  color: string;
+  unitPrice: Money;
 }
 
 export type OrderStatus =
@@ -53,7 +123,16 @@ export interface Order {
   id: string;
   placedAt: string;
   status: OrderStatus;
-  items: (CartItem & { name: string; price: number; image: string })[];
+  items: {
+    productSlug: string;
+    variantId: string;
+    name: string;
+    image: string;
+    size: string;
+    color: string;
+    quantity: number;
+    price: number;
+  }[];
   address: Address;
   shippingMethod: string;
   paymentMethod: string;

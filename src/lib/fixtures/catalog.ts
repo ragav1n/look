@@ -1,4 +1,14 @@
-import type { Product } from "@/types";
+/**
+ * DEV-ONLY fixture catalog. This is the single isolated module that stands in
+ * for live Shopify data during development — no component imports it directly
+ * (they go through src/lib/catalog). The moment VITE_SHOPIFY_* env vars are set,
+ * src/lib/catalog switches to the live Storefront API and this file is unused.
+ *
+ * Do NOT scatter this data into components or treat it as the source of truth:
+ * products, prices, and images live in Shopify.
+ */
+import type { Product, ProductVariant } from "@/types";
+import { DEFAULT_CURRENCY } from "../format";
 import product17 from "@/assets/product-17.jpg";
 import product18 from "@/assets/product-18.jpg";
 import product19 from "@/assets/product-19.jpg";
@@ -39,7 +49,29 @@ const defaultDetails = (fabric: string) => ({
   ],
 });
 
-export const products: Product[] = [
+type RawProduct = Omit<Product, "variants" | "currencyCode">;
+
+/** Fabricate a Shopify-shaped variant per colour×size so the cart has real
+ *  merchandise ids to work with in dev. */
+const makeVariants = (p: RawProduct): ProductVariant[] =>
+  p.colors.flatMap((c) =>
+    p.sizes.map((s) => ({
+      id: `fixture:variant:${p.slug}:${c.name}:${s}`,
+      title: `${c.name} / ${s}`,
+      size: s,
+      color: c.name,
+      availableForSale: true,
+      price: { amount: p.price, currencyCode: DEFAULT_CURRENCY },
+    })),
+  );
+
+const withVariants = (p: RawProduct): Product => ({
+  ...p,
+  currencyCode: DEFAULT_CURRENCY,
+  variants: makeVariants(p),
+});
+
+const raw: RawProduct[] = [
   {
     id: "p-red-kurta-set",
     slug: "red-kurta-set",
@@ -170,8 +202,7 @@ export const products: Product[] = [
     sizes: SIZES,
     rating: 4.2,
     reviewCount: 6,
-    description:
-      "Clean ivory two-piece with an easy drape — quiet luxury for warm days.",
+    description: "Clean ivory two-piece with an easy drape — quiet luxury for warm days.",
     details: defaultDetails("linen blend"),
     bestSeller: true,
   },
@@ -271,10 +302,39 @@ export const products: Product[] = [
   },
 ];
 
-export const getProduct = (idOrSlug: string) =>
-  products.find((p) => p.id === idOrSlug || p.slug === idOrSlug);
+export const FIXTURE_PRODUCTS: Product[] = raw.map(withVariants);
 
-export const bestSellers = () => products.filter((p) => p.bestSeller);
-export const newArrivals = () => products.filter((p) => p.newArrival);
+const byHandle = (handle: string) =>
+  FIXTURE_PRODUCTS.find((p) => p.slug === handle || p.id === handle) ?? null;
 
-export const formatPrice = (n: number) => `Rs. ${n.toLocaleString("en-IN")}`;
+/* ---- catalog interface (mirrors src/lib/shopify/catalog.ts) ---- */
+
+export async function getAllProducts(): Promise<Product[]> {
+  return FIXTURE_PRODUCTS;
+}
+
+export async function getProductByHandle(handle: string): Promise<Product | null> {
+  return byHandle(handle);
+}
+
+export async function getCollectionProducts(handle: string, first = 24): Promise<Product[]> {
+  const set =
+    handle === "new-arrivals"
+      ? FIXTURE_PRODUCTS.filter((p) => p.newArrival)
+      : handle === "best-sellers"
+        ? FIXTURE_PRODUCTS.filter((p) => p.bestSeller)
+        : FIXTURE_PRODUCTS;
+  return set.slice(0, first);
+}
+
+export async function getNewArrivals(): Promise<Product[]> {
+  return FIXTURE_PRODUCTS.filter((p) => p.newArrival);
+}
+
+export async function getBestSellers(): Promise<Product[]> {
+  return FIXTURE_PRODUCTS.filter((p) => p.bestSeller);
+}
+
+export async function getSaleProducts(): Promise<Product[]> {
+  return FIXTURE_PRODUCTS.filter((p) => p.mrp != null && p.mrp > p.price);
+}
