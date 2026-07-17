@@ -37,7 +37,7 @@ export default function Footer() {
     <footer className="border-t border-line bg-page">
       <div className="mx-auto grid w-full max-w-[1227px] grid-cols-1 gap-12 px-6 py-[72px] sm:grid-cols-2 lg:grid-cols-[250px_1fr_1fr] lg:gap-[120px] min-[1300px]:px-0">
         <div>
-          <img src={logoBlack} alt="LOOK" className="h-[48px] w-auto object-contain" />
+          <img src={logoBlack} alt="LOOK" className="w-[105px] object-contain" />
           <p className="mt-4 max-w-[247px] text-[14px] leading-[26px] text-footer-ink/70 tracking-[-0.1px]">
             Modern western essentials — curated kurta and coord sets designed for
             comfort, confidence, and everyday elegance.
