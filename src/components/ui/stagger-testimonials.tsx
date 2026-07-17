@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -64,9 +64,18 @@ const TestimonialCard: React.FC<TestimonialCardProps> = ({
         className="absolute block origin-top-right rotate-45 bg-line"
         style={{ right: -2, top: 48, width: SQRT_5000, height: 2 }}
       />
+      <span
+        aria-hidden
+        className={cn(
+          "pointer-events-none absolute top-3 right-6 font-display text-[64px] leading-none select-none",
+          isCenter ? "text-white/25" : "text-accent/15",
+        )}
+      >
+        &rdquo;
+      </span>
       <div
         className={cn(
-          "mb-4 flex h-14 w-12 items-center justify-center text-[16px] font-medium",
+          "mb-4 flex h-14 w-12 items-center justify-center font-display text-[16px] font-semibold",
           isCenter ? "bg-white/90 text-accent" : "bg-lavender text-accent",
         )}
         style={{ boxShadow: "3px 3px 0px rgba(0,0,0,0.08)" }}
@@ -74,7 +83,12 @@ const TestimonialCard: React.FC<TestimonialCardProps> = ({
       >
         {initials(testimonial.author)}
       </div>
-      <h3 className={cn("text-base font-medium sm:text-xl", isCenter ? "text-white" : "text-black")}>
+      <h3
+        className={cn(
+          "font-display text-lg leading-snug font-medium sm:text-[22px]",
+          isCenter ? "text-white" : "text-black",
+        )}
+      >
         “{testimonial.quote}”
       </h3>
       <p
@@ -96,23 +110,28 @@ export const StaggerTestimonials: React.FC<{ items: Testimonial[] }> = ({ items 
     items.map((t, i) => ({ ...t, tempId: i })),
   );
 
-  const handleMove = (steps: number) => {
-    const newList = [...list];
-    if (steps > 0) {
-      for (let i = steps; i > 0; i--) {
-        const item = newList.shift();
-        if (!item) return;
-        newList.push({ ...item, tempId: Math.random() });
+  const paused = useRef(false);
+
+  // Functional update keeps this stable for the auto-advance interval.
+  const handleMove = useCallback((steps: number) => {
+    setList((prev) => {
+      const newList = [...prev];
+      if (steps > 0) {
+        for (let i = steps; i > 0; i--) {
+          const item = newList.shift();
+          if (!item) return prev;
+          newList.push({ ...item, tempId: Math.random() });
+        }
+      } else {
+        for (let i = steps; i < 0; i++) {
+          const item = newList.pop();
+          if (!item) return prev;
+          newList.unshift({ ...item, tempId: Math.random() });
+        }
       }
-    } else {
-      for (let i = steps; i < 0; i++) {
-        const item = newList.pop();
-        if (!item) return;
-        newList.unshift({ ...item, tempId: Math.random() });
-      }
-    }
-    setList(newList);
-  };
+      return newList;
+    });
+  }, []);
 
   useEffect(() => {
     const updateSize = () => {
@@ -124,8 +143,24 @@ export const StaggerTestimonials: React.FC<{ items: Testimonial[] }> = ({ items 
     return () => window.removeEventListener("resize", updateSize);
   }, []);
 
+  // Gentle auto-advance so the fan feels alive; pauses on hover/focus.
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const id = window.setInterval(() => {
+      if (!paused.current) handleMove(1);
+    }, 5000);
+    return () => window.clearInterval(id);
+  }, [handleMove]);
+
   return (
-    <div className="relative w-full overflow-hidden" style={{ height: 560 }}>
+    <div
+      className="relative w-full overflow-hidden"
+      style={{ height: 560 }}
+      onPointerEnter={() => (paused.current = true)}
+      onPointerLeave={() => (paused.current = false)}
+      onFocusCapture={() => (paused.current = true)}
+      onBlurCapture={() => (paused.current = false)}
+    >
       {list.map((testimonial, index) => {
         const position =
           list.length % 2 ? index - (list.length + 1) / 2 : index - list.length / 2;
