@@ -1,6 +1,7 @@
 import { Outlet, ScrollRestoration, useLocation } from "react-router-dom";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
+import ChatWidget from "@/components/chat/ChatWidget";
 
 /* Home uses the dark navbar variant; every other page the light one (per Figma). */
 export default function PageShell() {
@@ -14,6 +15,7 @@ export default function PageShell() {
         <Outlet />
       </div>
       <Footer />
+      <ChatWidget />
       <ScrollRestoration />
     </div>
   );
