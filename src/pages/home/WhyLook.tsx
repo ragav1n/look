@@ -84,21 +84,20 @@ export default function WhyLook() {
           </div>
 
           <div>
-            <p className="text-[12px] tracking-[0.08em] text-accent uppercase">
-              Our Style Philosophy
-            </p>
+            <p className="text-[12px] tracking-[0.08em] text-accent uppercase">Why LOOK?</p>
             <h2
               id="why-look-heading"
-              className="mt-3 max-w-[539px] font-display text-[35px] leading-[47px] font-medium text-heading-soft"
+              className="mt-3 max-w-[560px] font-display text-[35px] leading-[47px] font-medium text-heading-soft"
             >
-              The Essence Behind Every Design
+              Luxury is not about exclusivity, it is about making every woman feel extraordinary.
             </h2>
-            <p className="mt-5 max-w-[687px] text-[16px] leading-[22px] text-body">
-              Our collections are inspired by the timeless charm of Western style blended with
-              contemporary fashion trends. Every piece is thoughtfully designed to deliver comfort,
-              confidence, and effortless elegance. From everyday essentials to statement outfits,
-              we focus on quality fabrics, refined tailoring, and styles that help individuals
-              express their personality with confidence.
+            <p className="mt-5 max-w-[687px] text-[16px] leading-[26px] text-body">
+              Every LOOK piece is thoughtfully crafted with premium quality, timeless design, and
+              inclusive tailoring to celebrate every skin tone, every body shape, and every unique
+              story.
+            </p>
+            <p className="mt-5 font-script text-[28px] leading-[1.25] text-accent-bright">
+              Because confidence is the most beautiful thing you can wear.
             </p>
           </div>
         </div>
