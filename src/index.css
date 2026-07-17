@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+/* Design tokens extracted from the Look Figma file (design/2UujILS7NRzN6BInT1cxpX).
+   Colors come from get_design_context on Home 2007:3267 and PDP 1:1561. */
+@theme {
+  --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Playfair Display", ui-serif, Georgia, serif;
+  --font-script: "Great Vibes", cursive; /* Figma uses Florelie DEMO (unlicensed demo font) */
+  --font-ui: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  --color-page: #fdfdfe;
+  --color-surface: #f8f8f8;
+  --color-card: #faf8ff;
+  --color-ink: #0a0a0a;
+
+  --color-accent: #4402d3;
+  --color-accent-bright: #5000ff;
+  --color-lavender: #e2d5ff;
+  --color-lavender-soft: #f4effd;
+  --color-banner-blue: #1754cf;
+
+  --color-body: #4e4e4e;
+  --color-heading-soft: #434343;
+  --color-muted: #6d6d6d;
+  --color-faint: #757575;
+  --color-footer-ink: #161c2d;
+  --color-placeholder: #6b7280;
+  --color-sale: #ff0004;
+
+  --color-line: #e8e8e8;
+  --color-line-strong: #e4e4e4;
+
+  --shadow-xs: 0px 1px 2px 0px rgba(16, 24, 40, 0.05);
+  --shadow-nav: 0px -7px 11.2px rgba(0, 0, 0, 0.25);
+
+  --radius-btn: 8px;
+  --radius-card: 11px;
+  --radius-img: 6px;
+  --radius-faq: 14px;
+}
+
+body {
+  background-color: var(--color-page);
+  color: var(--color-body);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
