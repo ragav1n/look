@@ -3,6 +3,8 @@ import { CartProvider } from "./context/CartContext";
 import { WishlistProvider } from "./context/WishlistContext";
 import PageShell from "./components/layout/PageShell";
 import Home from "./pages/Home";
+import About from "./pages/About";
+import Privacy from "./pages/Privacy";
 import Placeholder from "./pages/Placeholder";
 
 const router = createBrowserRouter([
@@ -10,7 +12,8 @@ const router = createBrowserRouter([
     element: <PageShell />,
     children: [
       { path: "/", element: <Home /> },
-      { path: "/about", element: <Placeholder title="About Us" /> },
+      { path: "/about", element: <About /> },
+      { path: "/privacy", element: <Privacy /> },
       { path: "/shop", element: <Placeholder title="Shop" /> },
       { path: "/shop/:slug", element: <Placeholder title="Product" /> },
       { path: "/cart", element: <Placeholder title="Cart" /> },
