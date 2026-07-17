@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { Product } from "@/types";
 import Hero from "./home/Hero";
 import NewArrivals from "./home/NewArrivals";
+import FeaturedEdit from "./home/FeaturedEdit";
 import InstaReels from "./home/InstaReels";
 import PriceDrop from "./home/PriceDrop";
 import WhyLook from "./home/WhyLook";
@@ -22,6 +23,7 @@ export default function Home() {
     <>
       <Hero />
       <NewArrivals />
+      <FeaturedEdit />
       <InstaReels />
       <PriceDrop />
       <WhyLook />
