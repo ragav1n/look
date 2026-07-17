@@ -13,11 +13,18 @@ must be wired to live Shopify before launch.
   `InstaReels` (links to @look_.in), `HomeReviews`, and `FeaturedEdit`
   ("Shop the Edit", after New Arrivals).
 - **Two 21st.dev components integrated**, adapted to LOOK tokens + real data:
-  `stagger-testimonials` (the Reviews section, fed by real reviews) and
+  `stagger-testimonials` (the Reviews section, fed by real reviews; now
+  auto-advances with pause-on-hover and uses Playfair quotes) and
   `executive-impact-carousel` ("Shop the Edit", fed by best-sellers). The
-  carousel's original GSAP scroll-**pin** was changed to a non-pinning parallax
-  so it composes cleanly inside the multi-section Home — the full-page pin
-  version can be restored if wanted as a standalone.
+  carousel's original GSAP scroll-pin/parallax was **replaced with a real
+  horizontal carousel** (scroll-snap track, prev/next arrows that loop, pointer
+  drag-to-scroll with a click-guard, gentle auto-advance, edge fades, product →
+  styled-shot hover crossfade). GSAP is no longer a dependency.
+- **Scroll-reveal motion system** (`src/components/ui/Reveal.tsx` + `[data-reveal]`
+  transitions in `index.css`): every Home block fades/slides into place on scroll
+  with staggered delays for a "butter-smooth" feel. Uses IntersectionObserver,
+  honours `prefers-reduced-motion`, and shows content immediately if it's already
+  scrolled past (reload with restored scroll never leaves anything hidden).
 - **`StyleBanner`** ("Style That Speaks Before You Do") is built but **not mounted**
   on Home — it isn't in the requested lineup. Available if wanted.
 - **Why LOOK / About / Privacy / FAQ** use the brand's real supplied copy, which

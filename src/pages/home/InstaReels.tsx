@@ -3,6 +3,7 @@ import heroModel2 from "@/assets/hero-model-2.jpg";
 import kurtaFloral2 from "@/assets/kurta-floral-2.jpg";
 import promoM6 from "@/assets/promo-m6.jpg";
 import iconPlay from "@/assets/icon-essence-play.svg";
+import Reveal from "@/components/ui/Reveal";
 
 const IG_URL = "https://www.instagram.com/look_.in";
 
@@ -19,7 +20,7 @@ export default function InstaReels() {
   return (
     <section className="py-[72px]" aria-labelledby="reels-heading">
       <div className="mx-auto w-full max-w-[1338px] px-6 min-[1400px]:px-0">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <Reveal className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-[12px] tracking-[0.08em] text-accent uppercase">@look_.in</p>
             <h2
@@ -33,16 +34,17 @@ export default function InstaReels() {
             href={IG_URL}
             target="_blank"
             rel="noreferrer"
-            className="text-[16px] font-medium text-body transition-colors hover:text-accent"
+            className="group/link text-[16px] font-medium text-body transition-colors hover:text-accent"
           >
-            Follow us on Instagram →
+            Follow us on Instagram{" "}
+            <span className="inline-block transition-transform duration-300 group-hover/link:translate-x-1">→</span>
           </a>
-        </div>
+        </Reveal>
 
         <div className="mt-[44px] grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
-          {reels.map(({ src, caption }) => (
+          {reels.map(({ src, caption }, i) => (
+            <Reveal key={caption} variant="up" delay={i * 90}>
             <a
-              key={caption}
               href={IG_URL}
               target="_blank"
               rel="noreferrer"
@@ -63,6 +65,7 @@ export default function InstaReels() {
                 {caption}
               </p>
             </a>
+            </Reveal>
           ))}
         </div>
       </div>

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { faqs } from "@/data/faqs";
+import Reveal from "@/components/ui/Reveal";
 
 /* Figma FAQ accordion (Home 2007:3505): faq radius 14, one panel open at a
    time, +/- affordance rotating to a cross. Accessible disclosure pattern. */
@@ -9,7 +10,7 @@ export default function FaqSection() {
   return (
     <section className="py-[72px]" aria-labelledby="faq-heading">
       <div className="mx-auto w-full max-w-[820px] px-6">
-        <div className="text-center">
+        <Reveal className="text-center">
           <p className="text-[12px] tracking-[0.08em] text-accent uppercase">Need Help?</p>
           <h2
             id="faq-heading"
@@ -17,13 +18,18 @@ export default function FaqSection() {
           >
             Frequently Asked Questions
           </h2>
-        </div>
+        </Reveal>
 
         <div className="mt-[44px] flex flex-col gap-4">
-          {faqs.map((f) => {
+          {faqs.map((f, i) => {
             const isOpen = open === f.id;
             return (
-              <div key={f.id} className="overflow-hidden rounded-[14px] border border-line bg-card">
+              <Reveal key={f.id} variant="up" delay={i * 70}>
+              <div
+                className={`overflow-hidden rounded-[14px] border bg-card transition-colors duration-300 ${
+                  isOpen ? "border-accent/40" : "border-line"
+                }`}
+              >
                 <h3 className="m-0">
                   <button
                     type="button"
@@ -48,12 +54,16 @@ export default function FaqSection() {
                   id={`faq-panel-${f.id}`}
                   role="region"
                   aria-labelledby={`faq-btn-${f.id}`}
-                  hidden={!isOpen}
-                  className="px-6 pb-5 text-[15px] leading-[23px] text-body"
+                  className={`grid transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                    isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                  }`}
                 >
-                  {f.a}
+                  <div className="overflow-hidden">
+                    <p className="px-6 pb-5 text-[15px] leading-[23px] text-body">{f.a}</p>
+                  </div>
                 </div>
               </div>
+              </Reveal>
             );
           })}
         </div>

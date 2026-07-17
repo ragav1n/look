@@ -3,6 +3,7 @@ import { getSaleProducts } from "@/lib/catalog";
 import { formatPrice } from "@/lib/format";
 import { useAsyncData } from "@/hooks/useAsyncData";
 import Skeleton from "@/components/ui/Skeleton";
+import Reveal from "@/components/ui/Reveal";
 
 /* Figma promo cards (2007:3587): 518x250 surface cards, "Up to N% off" with
    red percentage, 26px title, black Shop Now, 159px circular photo.
@@ -18,7 +19,7 @@ export default function PriceDrop() {
   return (
     <section className="py-[72px]" aria-labelledby="price-drop-heading">
       <div className="mx-auto w-full max-w-[1338px] px-6 min-[1400px]:px-0">
-        <div className="text-center">
+        <Reveal className="text-center">
           <p className="text-[12px] tracking-[0.08em] text-accent uppercase">Limited Time</p>
           <h2
             id="price-drop-heading"
@@ -26,7 +27,7 @@ export default function PriceDrop() {
           >
             Price Drop!
           </h2>
-        </div>
+        </Reveal>
 
         <div className="mx-auto mt-[44px] flex max-w-[1071px] flex-col justify-center gap-[35px] lg:flex-row">
           {loading &&
@@ -34,13 +35,16 @@ export default function PriceDrop() {
               <Skeleton key={i} className="h-[250px] w-full max-w-[518px] rounded-card" />
             ))}
           {!loading &&
-            promos.map((p) => {
+            promos.map((p, i) => {
               const percent = p.mrp ? Math.round(((p.mrp - p.price) / p.mrp) * 100) : 0;
               return (
-                <div
+                <Reveal
                   key={p.id}
-                  className="relative h-[250px] w-full max-w-[518px] shrink-0 rounded-card bg-surface"
+                  variant={i === 0 ? "left" : "right"}
+                  delay={i * 120}
+                  className="w-full max-w-[518px] shrink-0"
                 >
+                <div className="group relative h-[250px] w-full overflow-hidden rounded-card bg-surface transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(0,0,0,0.10)]">
                   <div className="flex h-full flex-col justify-center pl-[47px]">
                     <p className="text-[16px] text-body">
                       Up to <span className="text-[24px] text-sale">{percent}%</span> off
@@ -65,9 +69,10 @@ export default function PriceDrop() {
                     src={p.images[0]}
                     alt={p.name}
                     loading="lazy"
-                    className="absolute top-[50px] right-[26px] hidden size-[159px] rounded-full object-cover object-top sm:block"
+                    className="absolute top-[50px] right-[26px] hidden size-[159px] rounded-full object-cover object-top transition-transform duration-700 ease-out group-hover:scale-[1.06] sm:block"
                   />
                 </div>
+                </Reveal>
               );
             })}
         </div>
