@@ -1,188 +1,232 @@
-import { useLayoutEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { Product } from "@/types";
 import { formatPrice } from "@/lib/format";
 
-gsap.registerPlugin(ScrollTrigger);
+/* "Shop the Edit" — a real horizontal product carousel (replaces the earlier
+   static parallax grid). Features:
+   - smooth scroll-snap track, native touch scroll on mobile
+   - prev/next arrows that glide two cards at a time and loop at the ends
+   - pointer drag-to-scroll on desktop, with a click-guard so a drag never
+     accidentally opens a product
+   - gentle auto-advance that pauses on hover/focus/drag
+   - product → styled-shot crossfade on hover, cards link to the PDP
+   Honours prefers-reduced-motion (no auto-advance, no drag inertia). */
 
-/* 21st.dev "executive impact" carousel, adapted to LOOK: brand palette + Playfair,
-   real products, product→model image swap on hover, cards link to the PDP.
-   The original pins columns and scroll-jacks the page; to compose cleanly inside
-   the multi-section Home this uses a non-pinning parallax drift on alternating
-   columns instead (respects prefers-reduced-motion). */
-
-const styles = `
-  .products-carousel {
-    background-color: var(--color-page, #fdfdfe);
-    color: var(--color-ink, #0a0a0a);
-    margin: 0;
-    overflow-x: hidden;
-  }
-  .col-scroll {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    justify-items: center;
-    width: 90vw;
-    max-width: 1338px;
-    margin: 0 auto;
-    box-sizing: border-box;
-  }
-  @media (max-width: 768px) {
-    .col-scroll { display: flex; flex-direction: column; width: 100%; gap: 5vh; align-items: center; }
-  }
-  .col-scroll__box { display: flex; flex-direction: column; padding: 6vh 0; }
-  .col-scroll__box--odd { flex-direction: column-reverse; margin-top: 10vh; }
-  @media (max-width: 768px) {
-    .col-scroll__box--odd { flex-direction: column; margin-top: 0; padding: 0; }
-    .col-scroll__box { width: 100%; align-items: center; padding: 0; }
-  }
-  .col-scroll__list { display: flex; flex-direction: column; will-change: transform; gap: 7vh; }
-  .col-scroll__box--odd .col-scroll__list { flex-direction: column-reverse; }
-  @media (max-width: 768px) {
-    .col-scroll__box--odd .col-scroll__list { flex-direction: column; }
-    .col-scroll__list { gap: 6vh; }
-  }
-  .product-card {
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    width: 22vw; background: transparent; cursor: pointer; text-decoration: none;
-    -webkit-tap-highlight-color: transparent;
-  }
-  @media (max-width: 768px) {
-    .product-card { width: 84vw; margin: 0 0 6vh 0; }
-    .product-card:last-child { margin-bottom: 0; }
-  }
-  .col-scroll__img-wrapper {
-    position: relative; aspect-ratio: 0.8; width: 100%; overflow: hidden;
-    border: 1px solid var(--color-line, #e8e8e8); padding: 1rem; background: #fff;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-    display: flex; justify-content: center; align-items: center; border-radius: 8px;
-  }
-  .col-scroll__img-wrapper img {
-    position: absolute; top: 1rem; left: 1rem; right: 1rem; bottom: 1rem;
-    width: calc(100% - 2rem); height: calc(100% - 2rem);
-    object-fit: cover; object-position: top; transition: opacity 0.5s ease-in-out;
-  }
-  .product-img { z-index: 1; opacity: 1; }
-  .model-img { z-index: 2; opacity: 0; }
-  .product-card:hover .product-img, .product-card:focus-visible .product-img { opacity: 0; }
-  .product-card:hover .model-img, .product-card:focus-visible .model-img { opacity: 1; }
-  .product-card__info {
-    position: absolute; bottom: 2rem; left: 0; width: 100%; text-align: center; z-index: 3;
-    padding: 0 1.5rem; box-sizing: border-box; transition: opacity 0.4s ease, transform 0.4s ease;
-  }
-  .product-card:hover .product-card__info, .product-card:focus-visible .product-card__info {
-    opacity: 0; transform: translateY(10px);
-  }
-  .product-card__title {
-    margin: 0 0 0.5rem; font-family: 'Playfair Display', serif; font-weight: 500;
-    font-size: 1.2rem; line-height: 1.3; color: var(--color-ink, #0a0a0a);
-    text-shadow: 0 2px 10px rgba(255, 255, 255, 0.85);
-  }
-  .product-card__price-wrapper { font-family: 'Playfair Display', serif; font-size: 1.05rem; letter-spacing: 0.5px; }
-  .product-card__price--old { text-decoration: line-through; opacity: 0.5; margin-right: 0.5rem; }
-  .product-card__price { color: var(--color-accent, #4402d3); }
-  .product-card__btn {
-    position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(20px);
-    z-index: 4; opacity: 0; background: rgba(255,255,255,0.95); border: 1px solid var(--color-ink, #0a0a0a);
-    padding: 0.9rem 1.8rem; font-family: 'Playfair Display', serif; text-transform: uppercase;
-    letter-spacing: 2px; font-size: 0.75rem; font-weight: 600; transition: all 0.4s ease;
-    white-space: nowrap; color: var(--color-ink, #0a0a0a); border-radius: 6px;
-  }
-  .product-card:hover .product-card__btn, .product-card:focus-visible .product-card__btn {
-    opacity: 1; transform: translateX(-50%) translateY(0);
-  }
-  .product-card__btn:hover { background: var(--color-ink, #0a0a0a); color: #fff; }
-  @media (max-width: 768px) {
-    .product-card__title { font-size: 1.1rem; }
-    .product-card__price-wrapper { font-size: 1rem; }
-    .product-card__btn { padding: 0.7rem 1.4rem; font-size: 0.7rem; }
-  }
-`;
+const AUTO_MS = 3800;
 
 export default function ExecutiveImpactCarousel({ products }: { products: Product[] }) {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [canPrev, setCanPrev] = useState(false);
+  const [canNext, setCanNext] = useState(true);
+  const draggingRef = useRef(false);
+  const movedRef = useRef(false);
 
-  const per = Math.ceil(products.length / 3);
-  const columns = [products.slice(0, per), products.slice(per, per * 2), products.slice(per * 2)];
+  const updateArrows = useCallback(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    const max = el.scrollWidth - el.clientWidth;
+    setCanPrev(el.scrollLeft > 8);
+    setCanNext(el.scrollLeft < max - 8);
+  }, []);
 
-  useLayoutEffect(() => {
-    const container = containerRef.current;
-    if (!container || products.length === 0) return;
+  const step = useCallback((dir: 1 | -1) => {
+    const el = trackRef.current;
+    if (!el) return;
+    const card = el.querySelector<HTMLElement>("[data-card]");
+    const gap = 24;
+    const per = window.innerWidth < 768 ? 1 : 2;
+    const amount = card ? (card.offsetWidth + gap) * per : el.clientWidth * 0.8;
+    const max = el.scrollWidth - el.clientWidth;
+
+    if (dir > 0 && el.scrollLeft >= max - 8) {
+      el.scrollTo({ left: 0, behavior: "smooth" }); // loop back to start
+    } else if (dir < 0 && el.scrollLeft <= 8) {
+      el.scrollTo({ left: max, behavior: "smooth" }); // loop to end
+    } else {
+      el.scrollBy({ left: amount * dir, behavior: "smooth" });
+    }
+  }, []);
+
+  // Track scroll position → arrow enabled states.
+  useEffect(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    updateArrows();
+    el.addEventListener("scroll", updateArrows, { passive: true });
+    window.addEventListener("resize", updateArrows);
+    return () => {
+      el.removeEventListener("scroll", updateArrows);
+      window.removeEventListener("resize", updateArrows);
+    };
+  }, [updateArrows, products.length]);
+
+  // Auto-advance, paused on hover / focus / active drag.
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const el = trackRef.current;
+    if (!el) return;
+    let paused = false;
+    const pause = () => (paused = true);
+    const resume = () => (paused = false);
+    el.addEventListener("pointerenter", pause);
+    el.addEventListener("pointerleave", resume);
+    el.addEventListener("focusin", pause);
+    el.addEventListener("focusout", resume);
+    const id = window.setInterval(() => {
+      if (!paused && !draggingRef.current) step(1);
+    }, AUTO_MS);
+    return () => {
+      window.clearInterval(id);
+      el.removeEventListener("pointerenter", pause);
+      el.removeEventListener("pointerleave", resume);
+      el.removeEventListener("focusin", pause);
+      el.removeEventListener("focusout", resume);
+    };
+  }, [step]);
+
+  // Pointer drag-to-scroll (desktop). Touch uses native overflow scrolling.
+  useEffect(() => {
+    const el = trackRef.current;
+    if (!el) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-    const mm = gsap.matchMedia();
-    mm.add("(min-width: 769px)", () => {
-      const ctx = gsap.context(() => {
-        // Subtle counter-scroll parallax on alternating columns — no pinning.
-        gsap.utils.toArray<HTMLElement>(".col-scroll__list").forEach((el, i) => {
-          gsap.fromTo(
-            el,
-            { yPercent: i % 2 === 0 ? 6 : -4 },
-            {
-              yPercent: i % 2 === 0 ? -6 : 4,
-              ease: "none",
-              scrollTrigger: {
-                trigger: container,
-                start: "top bottom",
-                end: "bottom top",
-                scrub: true,
-              },
-            },
-          );
-        });
-      }, container);
-      return () => ctx.revert();
-    });
+    let startX = 0;
+    let startLeft = 0;
 
-    return () => mm.revert();
-  }, [products.length]);
+    const onDown = (e: PointerEvent) => {
+      if (e.pointerType === "touch") return;
+      draggingRef.current = true;
+      movedRef.current = false;
+      startX = e.clientX;
+      startLeft = el.scrollLeft;
+      el.classList.add("cursor-grabbing");
+    };
+    const onMove = (e: PointerEvent) => {
+      if (!draggingRef.current) return;
+      const dx = e.clientX - startX;
+      if (Math.abs(dx) > 5) movedRef.current = true;
+      el.scrollLeft = startLeft - dx;
+    };
+    const onUp = () => {
+      if (!draggingRef.current) return;
+      draggingRef.current = false;
+      el.classList.remove("cursor-grabbing");
+    };
+    // Swallow the click that follows a real drag so we don't navigate.
+    const onClickCapture = (e: MouseEvent) => {
+      if (movedRef.current) {
+        e.preventDefault();
+        e.stopPropagation();
+        movedRef.current = false;
+      }
+    };
+
+    el.addEventListener("pointerdown", onDown);
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    el.addEventListener("click", onClickCapture, true);
+    return () => {
+      el.removeEventListener("pointerdown", onDown);
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      el.removeEventListener("click", onClickCapture, true);
+    };
+  }, []);
+
+  if (products.length === 0) return null;
 
   return (
-    <>
-      <style dangerouslySetInnerHTML={{ __html: styles }} />
-      <div className="products-carousel">
-        <div ref={containerRef} className="col-scroll">
-          {columns.map((col, i) => (
-            <div key={i} className={`col-scroll__box${i % 2 === 0 ? " col-scroll__box--odd" : ""}`}>
-              <div className="col-scroll__list">
-                {col.map((p) => (
-                  <CarouselCard key={p.id} product={p} />
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
+    <div className="relative">
+      {/* edge fades hint at more content on either side */}
+      <div className="pointer-events-none absolute inset-y-0 left-0 z-20 w-10 bg-gradient-to-r from-page to-transparent sm:w-16" />
+      <div className="pointer-events-none absolute inset-y-0 right-0 z-20 w-10 bg-gradient-to-l from-page to-transparent sm:w-16" />
+
+      {/* arrows (desktop) */}
+      <button
+        type="button"
+        onClick={() => step(-1)}
+        aria-label="Previous products"
+        className="absolute top-1/2 left-2 z-30 hidden size-12 -translate-y-1/2 items-center justify-center rounded-full border border-line bg-white/90 text-ink shadow-[0_6px_20px_rgba(0,0,0,0.12)] backdrop-blur-sm transition-all hover:scale-105 hover:border-accent hover:text-accent disabled:opacity-0 md:flex"
+        disabled={!canPrev}
+      >
+        <ChevronLeft className="size-5" />
+      </button>
+      <button
+        type="button"
+        onClick={() => step(1)}
+        aria-label="Next products"
+        className="absolute top-1/2 right-2 z-30 hidden size-12 -translate-y-1/2 items-center justify-center rounded-full border border-line bg-white/90 text-ink shadow-[0_6px_20px_rgba(0,0,0,0.12)] backdrop-blur-sm transition-all hover:scale-105 hover:border-accent hover:text-accent disabled:opacity-0 md:flex"
+        disabled={!canNext}
+      >
+        <ChevronRight className="size-5" />
+      </button>
+
+      <div
+        ref={trackRef}
+        className="no-scrollbar flex snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth px-6 py-3 md:cursor-grab min-[1400px]:px-[calc((100vw-1338px)/2)]"
+        style={{ scrollPaddingLeft: 24, scrollPaddingRight: 24 }}
+        role="region"
+        aria-label="Shop the edit carousel"
+      >
+        {products.map((p) => (
+          <CarouselCard key={p.id} product={p} />
+        ))}
       </div>
-    </>
+    </div>
   );
 }
 
 function CarouselCard({ product }: { product: Product }) {
   const prod = product.images[0] ?? "";
   const model = product.images[1] ?? prod;
-  return (
-    <Link to={`/shop/${product.slug}`} className="product-card" aria-label={product.name}>
-      <div className="col-scroll__img-wrapper">
-        <img className="product-img" src={prod} alt={product.name} loading="lazy" />
-        <img className="model-img" src={model} alt="" loading="lazy" />
 
-        <div className="product-card__info">
-          <h3 className="product-card__title">{product.name}</h3>
-          <div className="product-card__price-wrapper">
+  return (
+    <Link
+      to={`/shop/${product.slug}`}
+      data-card
+      aria-label={product.name}
+      className="group relative w-[264px] shrink-0 snap-start sm:w-[300px]"
+    >
+      <div className="relative aspect-[3/4] overflow-hidden rounded-[10px] border border-line bg-white shadow-[0_6px_24px_rgba(0,0,0,0.06)] transition-all duration-500 group-hover:-translate-y-1 group-hover:shadow-[0_18px_44px_rgba(68,2,211,0.14)]">
+        <img
+          src={prod}
+          alt={product.name}
+          loading="lazy"
+          draggable={false}
+          className="absolute inset-0 h-full w-full object-cover object-top transition-all duration-700 ease-out group-hover:scale-[1.05] group-hover:opacity-0"
+        />
+        <img
+          src={model}
+          alt=""
+          loading="lazy"
+          draggable={false}
+          aria-hidden
+          className="absolute inset-0 h-full w-full scale-[1.05] object-cover object-top opacity-0 transition-all duration-700 ease-out group-hover:scale-100 group-hover:opacity-100"
+        />
+
+        {/* readability gradient + info */}
+        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 p-5">
+          <h3 className="font-display text-[19px] leading-tight font-medium text-white drop-shadow-sm">
+            {product.name}
+          </h3>
+          <div className="mt-1 flex items-center gap-2 font-display text-[15px]">
             {product.mrp && (
-              <span className="product-card__price--old">
+              <span className="text-white/55 line-through">
                 {formatPrice(product.mrp, product.currencyCode)}
               </span>
             )}
-            <span className="product-card__price">
+            <span className="font-semibold text-white">
               {formatPrice(product.price, product.currencyCode)}
             </span>
           </div>
+          <span className="mt-3 inline-flex translate-y-2 items-center gap-1 text-[12px] font-medium tracking-[0.12em] text-white uppercase opacity-0 transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100">
+            View Details
+            <ChevronRight className="size-3.5" />
+          </span>
         </div>
-
-        <span className="product-card__btn">View Details +</span>
       </div>
     </Link>
   );

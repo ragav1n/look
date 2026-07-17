@@ -1,19 +1,19 @@
 import { getBestSellers } from "@/lib/catalog";
 import { useAsyncData } from "@/hooks/useAsyncData";
 import ExecutiveImpactCarousel from "@/components/ui/executive-impact-carousel";
+import Reveal from "@/components/ui/Reveal";
 
-/* "Shop the Edit" — editorial product showcase using the 21st.dev executive
-   carousel, fed by live/fixture best-sellers. Hover swaps product → styled shot. */
+/* "Shop the Edit" — editorial product carousel fed by live/fixture best-sellers.
+   Scrolls horizontally (arrows, drag, auto-advance); hover swaps product → styled shot. */
 export default function FeaturedEdit() {
   const { data } = useAsyncData(() => getBestSellers(), []);
   const products = data ?? [];
 
-  // GSAP needs the cards present at mount, so render only once products load.
   if (products.length === 0) return null;
 
   return (
-    <section className="py-[56px]" aria-labelledby="edit-heading">
-      <div className="mx-auto w-full max-w-[1338px] px-6 text-center min-[1400px]:px-0">
+    <section className="overflow-hidden py-[64px]" aria-labelledby="edit-heading">
+      <Reveal className="mx-auto w-full max-w-[1338px] px-6 text-center min-[1400px]:px-0">
         <p className="text-[12px] tracking-[0.08em] text-accent uppercase">The Edit</p>
         <h2
           id="edit-heading"
@@ -21,11 +21,11 @@ export default function FeaturedEdit() {
         >
           Shop the Edit
         </h2>
-        <p className="mt-2 text-[16px] text-body">Hover any piece to see it styled.</p>
-      </div>
-      <div className="mt-8">
+        <p className="mt-2 text-[16px] text-body">Swipe through — hover any piece to see it styled.</p>
+      </Reveal>
+      <Reveal variant="fade" delay={120} className="mt-9">
         <ExecutiveImpactCarousel products={products} />
-      </div>
+      </Reveal>
     </section>
   );
 }
