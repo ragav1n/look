@@ -88,11 +88,86 @@ body {
   animation: float-soft 6s ease-in-out infinite;
 }
 
+/* Scroll-reveal: elements start offset + transparent and ease into place when
+   they enter the viewport (JS toggles data-shown via IntersectionObserver).
+   Springy cubic-bezier for a soft, butter-smooth settle. */
+[data-reveal] {
+  opacity: 0;
+  transition:
+    opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.75s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+[data-reveal="up"] {
+  transform: translate3d(0, 32px, 0);
+}
+[data-reveal="scale"] {
+  transform: scale(0.93);
+}
+[data-reveal="left"] {
+  transform: translate3d(-40px, 0, 0);
+}
+[data-reveal="right"] {
+  transform: translate3d(40px, 0, 0);
+}
+[data-reveal="fade"] {
+  transform: none;
+}
+[data-reveal][data-shown="true"] {
+  opacity: 1;
+  transform: none;
+}
+
+/* Marquee for the Instagram / trust strip — seamless infinite drift */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.animate-marquee {
+  animation: marquee 32s linear infinite;
+}
+
+/* Soft accent glow pulse used behind CTAs / eyebrows */
+@keyframes glow-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.06);
+  }
+}
+.animate-glow {
+  animation: glow-pulse 5s ease-in-out infinite;
+}
+
+/* Hide scrollbars on drag/snap carousels while keeping scroll behaviour */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-kenburns,
   .animate-fade-up,
-  .animate-float {
+  .animate-float,
+  .animate-marquee,
+  .animate-glow {
     animation: none;
     opacity: 1;
+  }
+  [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
   }
 }
