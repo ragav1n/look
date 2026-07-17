@@ -2,13 +2,14 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { CartProvider } from "./context/CartContext";
 import { WishlistProvider } from "./context/WishlistContext";
 import PageShell from "./components/layout/PageShell";
+import Home from "./pages/Home";
 import Placeholder from "./pages/Placeholder";
 
 const router = createBrowserRouter([
   {
     element: <PageShell />,
     children: [
-      { path: "/", element: <Placeholder title="Home" /> },
+      { path: "/", element: <Home /> },
       { path: "/about", element: <Placeholder title="About Us" /> },
       { path: "/shop", element: <Placeholder title="Shop" /> },
       { path: "/shop/:slug", element: <Placeholder title="Product" /> },
