@@ -5,6 +5,9 @@ import PageShell from "./components/layout/PageShell";
 import Home from "./pages/Home";
 import About from "./pages/About";
 import Privacy from "./pages/Privacy";
+import Shop from "./pages/Shop";
+import ProductDetail from "./pages/ProductDetail";
+import Cart from "./pages/Cart";
 import Placeholder from "./pages/Placeholder";
 
 const router = createBrowserRouter([
@@ -14,14 +17,9 @@ const router = createBrowserRouter([
       { path: "/", element: <Home /> },
       { path: "/about", element: <About /> },
       { path: "/privacy", element: <Privacy /> },
-      { path: "/shop", element: <Placeholder title="Shop" /> },
-      { path: "/shop/:slug", element: <Placeholder title="Product" /> },
-      { path: "/cart", element: <Placeholder title="Cart" /> },
-      { path: "/checkout", element: <Placeholder title="Checkout" /> },
-      {
-        path: "/checkout/confirmation/:orderId",
-        element: <Placeholder title="Order Confirmation" />,
-      },
+      { path: "/shop", element: <Shop /> },
+      { path: "/shop/:slug", element: <ProductDetail /> },
+      { path: "/cart", element: <Cart /> },
       { path: "/support", element: <Placeholder title="Support" /> },
       { path: "/account/*", element: <Placeholder title="My Account" /> },
       { path: "*", element: <Placeholder title="Page not found" /> },
