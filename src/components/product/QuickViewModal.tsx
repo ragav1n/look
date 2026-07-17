@@ -1,0 +1,167 @@
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import type { Product } from "@/types";
+import { formatPrice } from "@/lib/format";
+import { useCart } from "@/context/CartContext";
+import Modal from "@/components/ui/Modal";
+import Button from "@/components/ui/Button";
+import RatingStars from "@/components/ui/RatingStars";
+import { ColorSwatches, SizeChips, QuantityStepper } from "./PurchaseControls";
+import iconClose from "@/assets/icon-vector-close.svg";
+
+interface Props {
+  product: Product | null;
+  onClose: () => void;
+}
+
+/* Figma "Home/Popoup" 1:1030 — quick-view over Top Picks */
+export default function QuickViewModal({ product, onClose }: Props) {
+  const { add } = useCart();
+  const [color, setColor] = useState<string | null>(null);
+  const [size, setSize] = useState<string | null>(null);
+  const [qty, setQty] = useState(1);
+  const [added, setAdded] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  const key = product?.id;
+  const [lastKey, setLastKey] = useState(key);
+  if (key !== lastKey) {
+    setLastKey(key);
+    setColor(null);
+    setSize(null);
+    setQty(1);
+    setAdded(false);
+    setBusy(false);
+  }
+
+  const variant =
+    product && color && size
+      ? product.variants.find((v) => v.color === color && v.size === size)
+      : undefined;
+  const canAdd = Boolean(variant?.availableForSale);
+
+  const handleAdd = async () => {
+    if (!product || !variant) return;
+    setBusy(true);
+    try {
+      await add({
+        variantId: variant.id,
+        quantity: qty,
+        productSlug: product.slug,
+        name: product.name,
+        image: product.images[0] ?? "",
+        size: variant.size,
+        color: variant.color,
+        unitPrice: variant.price,
+      });
+      setAdded(true);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Modal open={!!product} onClose={onClose} label={product ? `Quick view: ${product.name}` : ""}>
+      {product && (
+        <div className="grid grid-cols-1 gap-8 p-6 md:grid-cols-[minmax(0,340px)_1fr] md:p-8">
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close quick view"
+            className="absolute top-4 right-4 flex size-9 cursor-pointer items-center justify-center rounded-full hover:bg-surface"
+          >
+            <img src={iconClose} alt="" className="size-3.5" />
+          </button>
+
+          <div>
+            <img
+              src={product.images[0]}
+              alt={product.name}
+              className="aspect-[294/348] w-full rounded-img object-cover object-top"
+            />
+            {product.images.length > 1 && (
+              <div className="mt-3 flex gap-2">
+                {product.images.slice(1, 5).map((src) => (
+                  <img
+                    key={src}
+                    src={src}
+                    alt=""
+                    className="h-[64px] w-[52px] rounded-[4px] object-cover object-top"
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-5 pr-2 md:pt-2">
+            <div>
+              <p className="font-display text-[24px] leading-8 font-medium text-black">
+                {product.name}
+              </p>
+              <div className="mt-1 flex items-center gap-2">
+                <RatingStars rating={product.rating} size={18} />
+                <span className="text-[14px] text-body">({product.reviewCount})</span>
+              </div>
+            </div>
+
+            <div className="flex items-end gap-3">
+              <span className="text-[28px] leading-none font-medium text-black">
+                {formatPrice(product.price, product.currencyCode)}
+              </span>
+              {product.mrp && (
+                <span className="text-[18px] leading-none text-body line-through">
+                  {formatPrice(product.mrp, product.currencyCode)}
+                </span>
+              )}
+            </div>
+
+            <p className="text-[15px] leading-[22px] text-body">{product.description}</p>
+
+            <div className="flex flex-col gap-2">
+              <p className="text-[16px] font-medium text-[#3d4e5c]">Color</p>
+              <ColorSwatches
+                colors={product.colors}
+                value={color ?? ""}
+                onChange={(c) => {
+                  setColor(c);
+                  setAdded(false);
+                }}
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <p className="text-[16px] font-medium text-[#3d4e5c]">Size</p>
+              <SizeChips
+                sizes={product.sizes}
+                value={size ?? ""}
+                onChange={(s) => {
+                  setSize(s);
+                  setAdded(false);
+                }}
+              />
+            </div>
+
+            <div className="flex items-center gap-5">
+              <QuantityStepper value={qty} onChange={setQty} />
+              <Button className="flex-1" disabled={!canAdd || busy} onClick={handleAdd}>
+                {busy ? "Adding…" : added ? "Added to cart ✓" : "ADD TO CART"}
+              </Button>
+            </div>
+            {color && size && !variant ? (
+              <p className="text-[13px] text-sale">That colour and size combination is unavailable.</p>
+            ) : !color || !size ? (
+              <p className="text-[13px] text-muted">Select a colour and size to add to cart.</p>
+            ) : null}
+            <Link
+              to={`/shop/${product.slug}`}
+              onClick={onClose}
+              className="text-[14px] font-medium text-accent hover:underline"
+            >
+              View full details →
+            </Link>
+          </div>
+        </div>
+      )}
+    </Modal>
+  );
+}
