@@ -20,7 +20,7 @@ import Wishlist from "./pages/account/Wishlist";
 import Addresses from "./pages/account/Addresses";
 import Wallet from "./pages/account/Wallet";
 import Help from "./pages/account/Help";
-import Placeholder from "./pages/Placeholder";
+import NotFound from "./pages/NotFound";
 
 const router = createBrowserRouter([
   {
@@ -47,7 +47,7 @@ const router = createBrowserRouter([
           { path: "support", element: <Help /> },
         ],
       },
-      { path: "*", element: <Placeholder title="Page not found" /> },
+      { path: "*", element: <NotFound /> },
     ],
   },
   { path: "/login", element: <Login /> },
