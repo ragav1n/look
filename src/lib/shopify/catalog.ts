@@ -1,4 +1,4 @@
-import type { Product } from "@/types";
+import type { Product, ProductSort } from "@/types";
 import { storefront } from "./client";
 import {
   COLLECTION_PRODUCTS_QUERY,
@@ -11,10 +11,28 @@ import type { SFProduct } from "./types";
 /** Live Storefront API catalog. Product order always comes from Shopify's own
  *  sort keys (or a collection's admin-configured order) — never re-sorted here. */
 
+const SORT_MAP: Record<ProductSort, { sortKey: string; reverse: boolean }> = {
+  featured: { sortKey: "BEST_SELLING", reverse: false },
+  "price-asc": { sortKey: "PRICE", reverse: false },
+  "price-desc": { sortKey: "PRICE", reverse: true },
+  newest: { sortKey: "CREATED_AT", reverse: true },
+};
+
 export async function getAllProducts(): Promise<Product[]> {
   const data = await storefront<{ products: { nodes: SFProduct[] } }>(PRODUCTS_QUERY, {
     first: 50,
     sortKey: "BEST_SELLING",
+  });
+  return data.products.nodes.map(toProduct);
+}
+
+/** Shop listing — sort is pushed to Shopify's sort key, not re-sorted locally. */
+export async function getProducts(opts: { sort?: ProductSort } = {}): Promise<Product[]> {
+  const { sortKey, reverse } = SORT_MAP[opts.sort ?? "featured"];
+  const data = await storefront<{ products: { nodes: SFProduct[] } }>(PRODUCTS_QUERY, {
+    first: 50,
+    sortKey,
+    reverse,
   });
   return data.products.nodes.map(toProduct);
 }

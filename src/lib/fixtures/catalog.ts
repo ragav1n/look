@@ -7,7 +7,7 @@
  * Do NOT scatter this data into components or treat it as the source of truth:
  * products, prices, and images live in Shopify.
  */
-import type { Product, ProductVariant } from "@/types";
+import type { Product, ProductSort, ProductVariant } from "@/types";
 import { DEFAULT_CURRENCY } from "../format";
 import product17 from "@/assets/product-17.jpg";
 import product18 from "@/assets/product-18.jpg";
@@ -311,6 +311,21 @@ const byHandle = (handle: string) =>
 
 export async function getAllProducts(): Promise<Product[]> {
   return FIXTURE_PRODUCTS;
+}
+
+export async function getProducts(opts: { sort?: ProductSort } = {}): Promise<Product[]> {
+  const list = [...FIXTURE_PRODUCTS];
+  switch (opts.sort) {
+    case "price-asc":
+      return list.sort((a, b) => a.price - b.price);
+    case "price-desc":
+      return list.sort((a, b) => b.price - a.price);
+    case "newest":
+      // newArrival items first, otherwise keep fixture order
+      return list.sort((a, b) => Number(b.newArrival ?? false) - Number(a.newArrival ?? false));
+    default:
+      return list; // "featured" = fixture (Shopify default) order
+  }
 }
 
 export async function getProductByHandle(handle: string): Promise<Product | null> {

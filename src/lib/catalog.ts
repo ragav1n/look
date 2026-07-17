@@ -11,6 +11,7 @@ import * as fixture from "./fixtures/catalog";
 const impl = isShopifyConfigured ? live : fixture;
 
 export const getAllProducts = impl.getAllProducts;
+export const getProducts = impl.getProducts;
 export const getProductByHandle = impl.getProductByHandle;
 export const getCollectionProducts = impl.getCollectionProducts;
 export const getNewArrivals = impl.getNewArrivals;

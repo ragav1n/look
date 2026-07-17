@@ -2,6 +2,9 @@
  *  productType (or a collection), which is admin-configurable. */
 export type Category = string;
 
+/** Shop sort options — map to Shopify sort keys in live mode. */
+export type ProductSort = "featured" | "price-asc" | "price-desc" | "newest";
+
 export interface Money {
   amount: number;
   currencyCode: string;
