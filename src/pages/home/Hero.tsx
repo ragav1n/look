@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { ArrowRight } from "lucide-react";
 import heroBg from "@/assets/hero-bg.jpg";
 import heroModel1 from "@/assets/hero-model-1.jpg";
 import heroModel2 from "@/assets/hero-model-2.jpg";
@@ -43,40 +44,46 @@ export default function Hero() {
       <div className="absolute inset-0 bg-gradient-to-r from-white/70 via-white/25 to-transparent" />
 
       <div className="relative mx-auto flex h-full w-full max-w-[1512px] flex-col justify-center px-6 pb-16 lg:px-[87px]">
-        <div className="max-w-[855px]">
-          <h1 className="animate-fade-up font-script text-[48px] leading-[1.15] lg:text-[65px]">
-            <span className="text-accent-bright">Elevate </span>
-            <span className="text-black">Your Style</span>
+        <div className="max-w-[860px]">
+          <p
+            className="animate-fade-up text-[13px] font-medium tracking-[0.22em] text-accent uppercase"
+          >
+            Modern Western Essentials
+          </p>
+          <h1
+            className="animate-fade-up mt-3 font-display text-[46px] leading-[1.02] font-medium text-black lg:text-[68px]"
+            style={{ animationDelay: "0.1s" }}
+          >
+            Style that speaks
+            <span className="mt-1 block font-script text-[42px] leading-[1.1] font-normal text-accent-bright lg:text-[62px]">
+              before you do.
+            </span>
           </h1>
           <p
-            className="animate-fade-up mt-3 text-[22px] font-extralight tracking-[0.02em] text-black lowercase lg:text-[31px]"
-            style={{ animationDelay: "0.15s" }}
+            className="animate-fade-up mt-6 max-w-[540px] text-[16px] leading-[26px] text-body lg:text-[17px]"
+            style={{ animationDelay: "0.28s" }}
           >
-            MODERN WESTERN ESSENTIALS
-          </p>
-          <p
-            className="animate-fade-up mt-6 max-w-[520px] text-[16px] leading-[22px] text-body"
-            style={{ animationDelay: "0.3s" }}
-          >
-            Step into effortless fashion with our modern western wear collection. From timeless
-            denim to sleek everyday outfits, discover pieces designed for comfort, confidence, and
-            contemporary style.
+            Kurta sets and coord sets, thoughtfully crafted with premium fabric and inclusive
+            tailoring — designed to celebrate every skin tone, every body shape, and make every woman
+            feel extraordinary.
           </p>
           <div
-            className="animate-fade-up mt-8 flex flex-wrap items-center gap-[29px]"
-            style={{ animationDelay: "0.45s" }}
+            className="animate-fade-up mt-9 flex flex-wrap items-center gap-4"
+            style={{ animationDelay: "0.42s" }}
           >
             <Link
               to="/shop"
-              className="inline-flex w-[157px] items-center justify-center rounded-btn bg-black px-5 py-3 text-[16px] leading-6 font-medium text-white shadow-xs transition-opacity hover:opacity-85"
+              className="group inline-flex items-center gap-2 rounded-full bg-black px-7 py-3.5 text-[15px] font-medium text-white transition-all duration-300 hover:bg-accent hover:shadow-[0_12px_34px_rgba(68,2,211,0.34)]"
             >
               Shop Now
+              <ArrowRight className="size-[18px] transition-transform duration-300 group-hover:translate-x-1" />
             </Link>
             <Link
               to="/shop"
-              className="inline-flex w-[169px] items-center justify-center rounded-btn border border-body px-5 py-3 text-[16px] leading-6 font-medium text-body transition-colors hover:border-black hover:text-black"
+              className="group inline-flex items-center gap-2 rounded-full border border-black px-7 py-3.5 text-[15px] font-medium text-black transition-all duration-300 hover:bg-black hover:text-white"
             >
               Explore Collection
+              <ArrowRight className="size-[18px] -translate-x-1 opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100" />
             </Link>
           </div>
         </div>
