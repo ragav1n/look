@@ -1,32 +1,30 @@
+import { BadgePercent, Sparkles, RefreshCw, BadgeCheck, type LucideIcon } from "lucide-react";
 import heroModel1 from "@/assets/hero-model-1.jpg";
 import heroModel2 from "@/assets/hero-model-2.jpg";
-import benefitOffers from "@/assets/benefit-offers.png";
-import benefitArrivals from "@/assets/benefit-arrivals.svg";
-import benefitReturns from "@/assets/benefit-returns.png";
-import benefitQuality from "@/assets/benefit-quality.png";
 import iconCheck from "@/assets/icon-essence-check.svg";
 import Reveal from "@/components/ui/Reveal";
 
 /* Figma benefits bar (2007:3296) + "The Essence Behind Every Design" (2007:3506),
-   composed as the user's "Why LOOK?" section */
-const benefits = [
+   composed as the user's "Why LOOK?" section. Uniform lucide line-icons keep all
+   four glyphs identically sized (the old PNG/SVG mix each had different padding). */
+const benefits: { icon: LucideIcon; title: string; desc: string }[] = [
   {
-    icon: benefitOffers,
+    icon: BadgePercent,
     title: "Exclusive Offers",
     desc: "Enjoy special discounts on selected western wear collections.",
   },
   {
-    icon: benefitArrivals,
+    icon: Sparkles,
     title: "New Arrivals",
     desc: "Discover the latest styles added to our collection.",
   },
   {
-    icon: benefitReturns,
+    icon: RefreshCw,
     title: "Easy Returns",
     desc: "Hassle-free returns for a worry-free shopping experience.",
   },
   {
-    icon: benefitQuality,
+    icon: BadgeCheck,
     title: "Premium Quality",
     desc: "Crafted with high-quality fabrics for comfort and durability.",
   },
@@ -57,13 +55,11 @@ export default function WhyLook() {
       {/* benefits strip */}
       <div className="bg-surface">
         <div className="mx-auto grid w-full max-w-[1338px] grid-cols-1 gap-6 px-6 py-[22px] sm:grid-cols-2 lg:grid-cols-4 lg:gap-[25px] min-[1400px]:px-0">
-          {benefits.map(({ icon, title, desc }, i) => (
-            <Reveal key={title} variant="up" delay={i * 90} className="flex items-center gap-[10px]">
-              <img
-                src={icon}
-                alt=""
-                className="h-[54px] w-[50px] shrink-0 object-contain transition-transform duration-500 hover:scale-110 hover:-rotate-3"
-              />
+          {benefits.map(({ icon: Icon, title, desc }, i) => (
+            <Reveal key={title} variant="up" delay={i * 90} className="group flex items-center gap-[14px]">
+              <span className="grid size-[52px] shrink-0 place-items-center rounded-full bg-white text-accent shadow-[0_2px_10px_rgba(0,0,0,0.05)] transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-3">
+                <Icon className="size-7" strokeWidth={1.6} aria-hidden />
+              </span>
               <div>
                 <p className="text-[18px] leading-6 font-medium text-black tracking-[-0.2px]">
                   {title}
