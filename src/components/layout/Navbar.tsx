@@ -83,10 +83,10 @@ export default function Navbar() {
         {/* CENTER: logo */}
         <Link
           to="/"
-          className="flex h-[48px] shrink-0 items-center justify-self-center transition-transform duration-200 hover:scale-[1.03]"
+          className="flex h-[58px] shrink-0 items-center justify-self-center transition-transform duration-200 hover:scale-[1.03]"
           aria-label="LOOK — home"
         >
-          <img src={logoWhite} alt="LOOK" className="h-[42px] w-auto object-contain" />
+          <img src={logoWhite} alt="LOOK" className="h-[56px] w-auto object-contain" />
         </Link>
 
         {/* RIGHT: search + account actions */}
