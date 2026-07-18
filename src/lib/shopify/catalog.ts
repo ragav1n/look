@@ -42,10 +42,18 @@ export async function getProductByHandle(handle: string): Promise<Product | null
   return data.product ? toProduct(data.product) : null;
 }
 
-export async function getCollectionProducts(handle: string, first = 24): Promise<Product[]> {
+/** `sortKey: "MANUAL"` honours the drag order set on the collection in the admin.
+ *  "COLLECTION_DEFAULT" instead follows the collection's *sort dropdown*, which
+ *  silently ignores that drag order unless the dropdown is also set to Manual —
+ *  so curated collections (the hero) must ask for MANUAL explicitly. */
+export async function getCollectionProducts(
+  handle: string,
+  first = 24,
+  sortKey = "MANUAL",
+): Promise<Product[]> {
   const data = await storefront<{ collection: { products: { nodes: SFProduct[] } } | null }>(
     COLLECTION_PRODUCTS_QUERY,
-    { handle, first, sortKey: "COLLECTION_DEFAULT" },
+    { handle, first, sortKey },
   );
   return data.collection?.products.nodes.map(toProduct) ?? [];
 }

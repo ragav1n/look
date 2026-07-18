@@ -332,7 +332,11 @@ export async function getProductByHandle(handle: string): Promise<Product | null
   return byHandle(handle);
 }
 
-export async function getCollectionProducts(handle: string, first = 24): Promise<Product[]> {
+export async function getCollectionProducts(
+  handle: string,
+  first = 24,
+  _sortKey = "MANUAL",
+): Promise<Product[]> {
   const set =
     handle === "new-arrivals"
       ? FIXTURE_PRODUCTS.filter((p) => p.newArrival)
