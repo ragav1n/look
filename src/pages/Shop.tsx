@@ -19,6 +19,7 @@ export default function Shop() {
   const [params, setParams] = useSearchParams();
   const sort = (params.get("sort") as ProductSort) || "featured";
   const category = params.get("category") || "All";
+  const query = (params.get("q") || "").trim();
   const [quickView, setQuickView] = useState<Product | null>(null);
 
   const { data, loading } = useAsyncData(() => getProducts({ sort }), [sort]);
@@ -28,7 +29,24 @@ export default function Shop() {
     () => ["All", ...Array.from(new Set(products.map((p) => p.category)))],
     [products],
   );
-  const visible = category === "All" ? products : products.filter((p) => p.category === category);
+
+  const byCategory = category === "All" ? products : products.filter((p) => p.category === category);
+  const q = query.toLowerCase();
+  const visible = q
+    ? byCategory.filter((p) =>
+        `${p.name} ${p.category} ${p.group ?? ""} ${p.sku ?? ""}`.toLowerCase().includes(q),
+      )
+    : byCategory;
+
+  const clearSearch = () =>
+    setParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.delete("q");
+        return next;
+      },
+      { replace: true },
+    );
 
   const setParam = (key: string, value: string) => {
     setParams(
@@ -47,11 +65,21 @@ export default function Shop() {
       <div className="text-center">
         <p className="text-[12px] tracking-[0.08em] text-accent uppercase">Shop</p>
         <h1 className="mt-2 font-display text-[35px] leading-[47px] font-medium text-black">
-          All Products
+          {query ? `Results for “${query}”` : "All Products"}
         </h1>
-        <p className="mt-2 text-[16px] text-body">
-          Explore our full collection of modern western essentials.
-        </p>
+        {query ? (
+          <button
+            type="button"
+            onClick={clearSearch}
+            className="mt-2 text-[15px] text-accent underline-offset-4 hover:underline"
+          >
+            Clear search
+          </button>
+        ) : (
+          <p className="mt-2 text-[16px] text-body">
+            Explore our full collection of modern western essentials.
+          </p>
+        )}
       </div>
 
       <div className="mt-10 flex flex-col gap-4 border-b border-line pb-5 sm:flex-row sm:items-center sm:justify-between">
@@ -111,7 +139,9 @@ export default function Shop() {
       {!loading && visible.length === 0 && (
         <div className="py-20 text-center">
           <p className="text-[18px] font-medium text-black">No products found</p>
-          <p className="mt-1 text-[14px] text-body">Try a different category.</p>
+          <p className="mt-1 text-[14px] text-body">
+            {query ? "Try a different search term or category." : "Try a different category."}
+          </p>
         </div>
       )}
 

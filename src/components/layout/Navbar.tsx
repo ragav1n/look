@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { Search } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import logoWhite from "@/assets/look-logo-white.png";
 import logoBlack from "@/assets/look-logo-black.png";
-import iconSearch from "@/assets/icon-search.svg";
 import iconUser from "@/assets/icon-user.svg";
 import iconWishlist from "@/assets/icon-wishlist-nav.svg";
 import iconCart from "@/assets/icon-cart.svg";
@@ -16,24 +16,37 @@ const links = [
 ];
 
 /* Figma has two navbar variants: dark (Home, node 2007:3816) and
-   light (inner pages, node 2028:1588). Both sticky, py-[22px].
-   Mobile (<lg): links collapse into a hamburger-triggered panel. */
+   light (inner pages, node 2028:1588). Both sticky, h-[87px].
+   Layout is a 3-column grid so the logo stays perfectly centred regardless
+   of how wide the left nav / right actions get. */
 export default function Navbar({ variant = "light" }: { variant?: "dark" | "light" }) {
   const dark = variant === "dark";
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { itemCount } = useCart();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [query, setQuery] = useState("");
 
   // close the mobile menu whenever the route changes
   useEffect(() => setMenuOpen(false), [pathname]);
+
+  const submitSearch = (e: FormEvent) => {
+    e.preventDefault();
+    const q = query.trim();
+    navigate(q ? `/shop?q=${encodeURIComponent(q)}` : "/shop");
+  };
+
+  const iconClass = `h-6 w-6 transition-transform duration-200 hover:scale-110 active:scale-95 ${
+    dark ? "invert" : ""
+  }`;
 
   return (
     <header
       className={`sticky top-0 z-40 ${dark ? "bg-black" : "bg-white"} shadow-[0px_7px_11.2px_rgba(0,0,0,0.08)]`}
     >
-      <div className="mx-auto flex h-[87px] w-full max-w-[1512px] items-center justify-between gap-6 px-6 lg:px-[85px]">
-        <div className="flex items-center gap-4">
+      <div className="mx-auto grid h-[87px] w-full max-w-[1512px] grid-cols-[1fr_auto_1fr] items-center gap-6 px-6 lg:px-[85px]">
+        {/* LEFT: hamburger + primary nav */}
+        <div className="flex items-center gap-4 justify-self-start">
           <button
             type="button"
             aria-label="Open menu"
@@ -53,59 +66,95 @@ export default function Navbar({ variant = "light" }: { variant?: "dark" | "ligh
 
           <nav className="hidden items-center gap-[31px] lg:flex" aria-label="Primary">
             {links.map(({ to, label }) => (
-              <NavLink
-                key={to}
-                to={to}
-                className={({ isActive }) =>
-                  `text-[16px] transition-colors ${
-                    isActive
-                      ? dark
-                        ? "font-semibold text-surface"
-                        : "font-semibold text-black"
-                      : dark
-                        ? "font-normal text-faint hover:text-surface"
-                        : "font-normal text-muted hover:text-black"
-                  }`
-                }
-              >
-                {label}
+              <NavLink key={to} to={to} className="group relative py-1 text-[16px]" end={to === "/"}>
+                {({ isActive }) => (
+                  <>
+                    <span
+                      className={`transition-colors ${
+                        isActive
+                          ? dark
+                            ? "font-semibold text-white"
+                            : "font-semibold text-black"
+                          : dark
+                            ? "font-normal text-white/60 group-hover:text-white"
+                            : "font-normal text-muted group-hover:text-black"
+                      }`}
+                    >
+                      {label}
+                    </span>
+                    {/* animated underline: full when active, slides in on hover */}
+                    <span
+                      className={`absolute -bottom-0.5 left-0 h-[2px] origin-left rounded-full transition-transform duration-300 ease-out ${
+                        dark ? "bg-white" : "bg-accent"
+                      } ${isActive ? "w-full scale-x-100" : "w-full scale-x-0 group-hover:scale-x-100"}`}
+                    />
+                  </>
+                )}
               </NavLink>
             ))}
           </nav>
         </div>
 
-        <Link to="/" className="flex h-[43px] shrink-0 items-center" aria-label="LOOK — home">
-          <img
-            src={dark ? logoWhite : logoBlack}
-            alt="LOOK"
-            className="h-[36px] w-auto object-contain"
-          />
+        {/* CENTER: logo */}
+        <Link
+          to="/"
+          className="flex h-[43px] shrink-0 items-center justify-self-center transition-transform duration-200 hover:scale-[1.03]"
+          aria-label="LOOK — home"
+        >
+          <img src={dark ? logoWhite : logoBlack} alt="LOOK" className="h-[36px] w-auto object-contain" />
         </Link>
 
-        <div className="flex items-center gap-6 lg:gap-[43px]">
-          <button
-            type="button"
-            onClick={() => navigate("/shop")}
-            className={`hidden h-[40px] w-[311px] items-center justify-between rounded-full border px-[22px] md:flex ${
-              dark ? "border-faint" : "border-muted"
+        {/* RIGHT: search + account actions */}
+        <div className="flex items-center gap-6 justify-self-end lg:gap-[34px]">
+          <form
+            onSubmit={submitSearch}
+            role="search"
+            className={`hidden h-[42px] w-[300px] items-center gap-2 rounded-full border pr-2 pl-[22px] transition-colors md:flex ${
+              dark
+                ? "border-white/25 focus-within:border-white/70"
+                : "border-line focus-within:border-accent"
             }`}
           >
-            <span className={`text-[16px] ${dark ? "text-faint" : "text-muted"}`}>
-              Search for products
-            </span>
-            <img src={iconSearch} alt="" className={`h-6 w-6 ${dark ? "invert" : ""}`} />
-          </button>
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search for products"
+              aria-label="Search for products"
+              className={`min-w-0 flex-1 bg-transparent text-[15px] outline-none ${
+                dark ? "text-white placeholder:text-white/50" : "text-black placeholder:text-muted"
+              }`}
+            />
+            <button
+              type="submit"
+              aria-label="Search"
+              className={`grid size-8 shrink-0 place-items-center rounded-full transition-colors ${
+                dark ? "text-white/70 hover:bg-white/10 hover:text-white" : "text-muted hover:bg-surface hover:text-accent"
+              }`}
+            >
+              <Search className="size-5" strokeWidth={1.8} />
+            </button>
+          </form>
+
           <div className="flex items-center gap-5 sm:gap-6">
+            <button
+              type="button"
+              onClick={() => navigate("/shop")}
+              aria-label="Search"
+              className={`grid place-items-center md:hidden ${dark ? "text-white" : "text-black"}`}
+            >
+              <Search className="size-6" strokeWidth={1.8} />
+            </button>
             <Link to="/account/profile" aria-label="My account">
-              <img src={iconUser} alt="" className={`h-6 w-6 ${dark ? "invert" : ""}`} />
+              <img src={iconUser} alt="" className={iconClass} />
             </Link>
             <Link to="/account/wishlist" aria-label="Wishlist" className="hidden sm:block">
-              <img src={iconWishlist} alt="" className={`h-6 w-6 ${dark ? "invert" : ""}`} />
+              <img src={iconWishlist} alt="" className={iconClass} />
             </Link>
-            <Link to="/cart" aria-label="Cart" className="relative">
-              <img src={iconCart} alt="" className={`h-6 w-6 ${dark ? "invert" : ""}`} />
+            <Link to="/cart" aria-label="Cart" className="group relative">
+              <img src={iconCart} alt="" className={iconClass} />
               {itemCount > 0 && (
-                <span className="absolute -top-2 -right-2 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-accent px-1 font-ui text-[11px] font-medium text-white">
+                <span className="absolute -top-2 -right-2 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-accent px-1 font-ui text-[11px] font-medium text-white transition-transform duration-200 group-hover:scale-110">
                   {itemCount}
                 </span>
               )}
@@ -116,15 +165,13 @@ export default function Navbar({ variant = "light" }: { variant?: "dark" | "ligh
 
       {/* Mobile menu panel */}
       {menuOpen && (
-        <nav
-          className="border-t border-line bg-white lg:hidden"
-          aria-label="Mobile"
-        >
+        <nav className="border-t border-line bg-white lg:hidden" aria-label="Mobile">
           <ul className="flex flex-col px-6 py-2">
             {links.map(({ to, label }) => (
               <li key={to}>
                 <NavLink
                   to={to}
+                  end={to === "/"}
                   className={({ isActive }) =>
                     `block py-3 text-[16px] ${isActive ? "font-semibold text-accent" : "text-body"}`
                   }
