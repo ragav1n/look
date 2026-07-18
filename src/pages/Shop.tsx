@@ -48,9 +48,21 @@ const COL_ALIASES: Record<string, string> = {
   "new-arrival": "new-arrivals",
 };
 
+const canonical = (s: string) => {
+  const k = s.trim().toLowerCase();
+  return COL_ALIASES[k] ?? k;
+};
+
+/* A product belongs to a category if EITHER its Shopify collections say so, or
+   its product type matches. Collections are the real source of truth — putting
+   a "Skirt" in the Bottoms collection is enough, no code change needed — but the
+   type fallback keeps products visible before their collection exists (and in
+   fixture mode, which has no collections at all). */
 const matchesCol = (p: Product, col: string) => {
-  const key = COL_ALIASES[col.trim().toLowerCase()] ?? col.trim().toLowerCase();
+  const key = canonical(col);
   if (key === "new-arrivals") return !!p.newArrival;
+
+  if (p.collectionHandles?.some((h) => canonical(h) === key)) return true;
 
   const types = COL_TYPES[key];
   if (!types) return true;

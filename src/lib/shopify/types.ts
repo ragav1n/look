@@ -42,6 +42,7 @@ export interface SFProduct {
   featuredImage: SFImage | null;
   images: { nodes: SFImage[] };
   options: { name: string; values: string[] }[];
+  collections: { nodes: { handle: string }[] };
   variants: { nodes: SFVariant[] };
   /** `custom.hero_tagline` — null on products that don't set it. */
   heroTagline: { value: string } | null;

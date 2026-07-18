@@ -63,7 +63,11 @@ export default function ProductCard({ product, onQuickView }: Props) {
           <Heart className="size-[18px]" strokeWidth={1.8} fill={wished ? "currentColor" : "none"} />
         </button>
       </div>
-      <p className="mt-[6px] text-[14px] leading-[22px] text-body">{product.group}</p>
+      {/* Shopify gives one product type, which lands in both `group` and
+          `category` — show the sub-label only when it says something new. */}
+      {product.group.trim().toLowerCase() !== product.category.trim().toLowerCase() && (
+        <p className="mt-[6px] text-[14px] leading-[22px] text-body">{product.group}</p>
+      )}
 
       <div className="mt-[12px] border-t border-line pt-[8px]">
         <div className="flex items-end justify-between">

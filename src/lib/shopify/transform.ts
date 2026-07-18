@@ -117,6 +117,7 @@ export function toProduct(p: SFProduct): Product {
     bestSeller: p.tags.some((t) => t.toLowerCase() === "best-seller"),
     newArrival: isNew,
     heroTagline: p.heroTagline?.value || undefined,
+    collectionHandles: p.collections.nodes.map((c) => c.handle),
   };
 }
 

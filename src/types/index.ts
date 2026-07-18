@@ -50,6 +50,9 @@ export interface Product {
   /** Short editorial line shown under the product name on hero slides.
    *  Shopify: the `custom.hero_tagline` product metafield. */
   heroTagline?: string;
+  /** Handles of the Shopify collections this product belongs to. Drives the
+   *  Shop category filters, so categorisation lives in Shopify. */
+  collectionHandles?: string[];
 }
 
 export interface Review {
