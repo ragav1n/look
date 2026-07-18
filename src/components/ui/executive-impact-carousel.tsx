@@ -1,29 +1,54 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { Product } from "@/types";
 import { formatPrice } from "@/lib/format";
 
-/* "Shop the Edit" — a real horizontal product carousel (replaces the earlier
-   static parallax grid). Features:
-   - smooth scroll-snap track, native touch scroll on mobile
-   - prev/next arrows that glide two cards at a time and loop at the ends
-   - pointer drag-to-scroll on desktop, with a click-guard so a drag never
-     accidentally opens a product
-   - gentle auto-advance that pauses on hover/focus/drag
-   - product → styled-shot crossfade on hover, cards link to the PDP
-   Honours prefers-reduced-motion (no auto-advance, no drag inertia). */
+/* "Shop the Edit" — a truly infinite horizontal product carousel.
+
+   How the infinite loop works (a seamless "treadmill"):
+   - We render THREE identical copies of the product list and keep the scroll
+     position parked in the middle copy. Whenever scrolling drifts past half a
+     copy in either direction we silently jump back by exactly one copy width
+     (instant, no animation). Because the neighbouring copy is pixel-identical,
+     the jump is invisible — so arrows / drag / auto-advance can run forever
+     without ever hitting an edge.
+   - Smooth moves (arrows, dots, auto-advance) use scrollBy/scrollTo; the
+     recenter jump sets scrollLeft directly (instant).
+
+   Also: pointer drag-to-scroll on desktop with a click-guard, gentle
+   auto-advance that pauses on hover/focus/drag, and a product → styled-shot
+   crossfade on hover. Honours prefers-reduced-motion. */
 
 const AUTO_MS = 3800;
+const COPIES = 3;
 
 export default function ExecutiveImpactCarousel({ products }: { products: Product[] }) {
   const trackRef = useRef<HTMLDivElement>(null);
+  // Loop only makes sense with enough cards to fill the copies convincingly.
+  const loop = products.length >= 3;
+  const [active, setActive] = useState(0);
+  const [pages, setPages] = useState(1);
+  // Non-loop fallback still disables arrows at the extremes.
   const [canPrev, setCanPrev] = useState(false);
   const [canNext, setCanNext] = useState(true);
-  const [pages, setPages] = useState(1);
-  const [active, setActive] = useState(0);
   const draggingRef = useRef(false);
   const movedRef = useRef(false);
+  const readyRef = useRef(false);
+
+  const items = loop
+    ? Array.from({ length: COPIES }).flatMap((_, c) =>
+        products.map((p) => ({ p, key: `${c}-${p.id}` })),
+      )
+    : products.map((p) => ({ p, key: p.id }));
+
+  // Exact width of one product copy, measured from card offsets so it is
+  // immune to the track's start/end padding.
+  const copyWidth = (el: HTMLElement) => {
+    const cards = el.querySelectorAll<HTMLElement>("[data-card]");
+    if (!loop || cards.length <= products.length) return el.scrollWidth;
+    return cards[products.length].offsetLeft - cards[0].offsetLeft;
+  };
 
   const stepAmount = (el: HTMLElement) => {
     const card = el.querySelector<HTMLElement>("[data-card]");
@@ -31,55 +56,107 @@ export default function ExecutiveImpactCarousel({ products }: { products: Produc
     return card ? (card.offsetWidth + 24) * per : el.clientWidth * 0.8;
   };
 
-  const updateArrows = useCallback(() => {
+  // Jump back into the middle copy if we've drifted past its bounds. Instant.
+  const recenter = useCallback(() => {
+    const el = trackRef.current;
+    if (!el || !loop) return;
+    const w = copyWidth(el);
+    if (w <= 0) return;
+    let x = el.scrollLeft;
+    while (x < w * 0.5) x += w;
+    while (x >= w * 1.5) x -= w;
+    if (Math.abs(x - el.scrollLeft) > 0.5) el.scrollLeft = x;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loop, products.length]);
+
+  const updateState = useCallback(() => {
     const el = trackRef.current;
     if (!el) return;
-    const max = el.scrollWidth - el.clientWidth;
-    setCanPrev(el.scrollLeft > 8);
-    setCanNext(el.scrollLeft < max - 8);
     const amt = stepAmount(el);
-    const count = amt > 0 ? Math.max(1, Math.round(max / amt) + 1) : 1;
-    setPages(count);
-    setActive(Math.min(count - 1, Math.round(el.scrollLeft / amt)));
-  }, []);
+    if (loop) {
+      const w = copyWidth(el);
+      const withinCopy = w > 0 ? ((el.scrollLeft % w) + w) % w : 0;
+      const count = amt > 0 && w > 0 ? Math.max(1, Math.round(w / amt)) : 1;
+      setPages(count);
+      setActive(amt > 0 ? Math.round(withinCopy / amt) % count : 0);
+    } else {
+      const max = el.scrollWidth - el.clientWidth;
+      setCanPrev(el.scrollLeft > 8);
+      setCanNext(el.scrollLeft < max - 8);
+      const count = amt > 0 ? Math.max(1, Math.round(max / amt) + 1) : 1;
+      setPages(count);
+      setActive(Math.min(count - 1, Math.round(el.scrollLeft / amt)));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loop, products.length]);
+
+  const step = useCallback(
+    (dir: 1 | -1) => {
+      const el = trackRef.current;
+      if (!el) return;
+      const amount = stepAmount(el);
+      if (loop) {
+        recenter(); // stay parked in the middle copy before every move
+        el.scrollBy({ left: amount * dir, behavior: "smooth" });
+        return;
+      }
+      const max = el.scrollWidth - el.clientWidth;
+      if (dir > 0 && el.scrollLeft >= max - 8) el.scrollTo({ left: 0, behavior: "smooth" });
+      else if (dir < 0 && el.scrollLeft <= 8) el.scrollTo({ left: max, behavior: "smooth" });
+      else el.scrollBy({ left: amount * dir, behavior: "smooth" });
+    },
+    [loop, recenter],
+  );
 
   const goToPage = (i: number) => {
     const el = trackRef.current;
     if (!el) return;
-    const max = el.scrollWidth - el.clientWidth;
-    el.scrollTo({ left: Math.min(i * stepAmount(el), max), behavior: "smooth" });
+    const amt = stepAmount(el);
+    if (loop) {
+      const w = copyWidth(el);
+      // Pick the copy whose page `i` sits closest to where we are now, so a dot
+      // tap only ever glides a short distance (never a whole copy backwards).
+      const base = Math.round((el.scrollLeft - i * amt) / w) * w;
+      el.scrollTo({ left: base + i * amt, behavior: "smooth" });
+    } else {
+      const max = el.scrollWidth - el.clientWidth;
+      el.scrollTo({ left: Math.min(i * amt, max), behavior: "smooth" });
+    }
   };
 
-  const step = useCallback((dir: 1 | -1) => {
+  // Park the scroll in the middle copy on mount / when the set changes.
+  useLayoutEffect(() => {
     const el = trackRef.current;
-    if (!el) return;
-    const card = el.querySelector<HTMLElement>("[data-card]");
-    const gap = 24;
-    const per = window.innerWidth < 768 ? 1 : 2;
-    const amount = card ? (card.offsetWidth + gap) * per : el.clientWidth * 0.8;
-    const max = el.scrollWidth - el.clientWidth;
-
-    if (dir > 0 && el.scrollLeft >= max - 8) {
-      el.scrollTo({ left: 0, behavior: "smooth" }); // loop back to start
-    } else if (dir < 0 && el.scrollLeft <= 8) {
-      el.scrollTo({ left: max, behavior: "smooth" }); // loop to end
-    } else {
-      el.scrollBy({ left: amount * dir, behavior: "smooth" });
+    if (!el || !loop) {
+      readyRef.current = true;
+      return;
     }
-  }, []);
+    readyRef.current = false;
+    const id = requestAnimationFrame(() => {
+      el.scrollLeft = copyWidth(el); // start of the middle copy
+      readyRef.current = true;
+      updateState();
+    });
+    return () => cancelAnimationFrame(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loop, products.length]);
 
-  // Track scroll position → arrow enabled states.
+  // Keep the loop centred and the dots in sync as the track scrolls.
   useEffect(() => {
     const el = trackRef.current;
     if (!el) return;
-    updateArrows();
-    el.addEventListener("scroll", updateArrows, { passive: true });
-    window.addEventListener("resize", updateArrows);
-    return () => {
-      el.removeEventListener("scroll", updateArrows);
-      window.removeEventListener("resize", updateArrows);
+    updateState();
+    const onScroll = () => {
+      if (readyRef.current) recenter();
+      updateState();
     };
-  }, [updateArrows, products.length]);
+    el.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", updateState);
+    return () => {
+      el.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", updateState);
+    };
+  }, [updateState, recenter]);
 
   // Auto-advance, paused on hover / focus / active drag.
   useEffect(() => {
@@ -159,44 +236,44 @@ export default function ExecutiveImpactCarousel({ products }: { products: Produc
   return (
     <div>
       <div className="relative">
-      {/* edge fades hint at more content on either side */}
-      <div className="pointer-events-none absolute inset-y-0 left-0 z-20 w-10 bg-gradient-to-r from-page to-transparent sm:w-16" />
-      <div className="pointer-events-none absolute inset-y-0 right-0 z-20 w-10 bg-gradient-to-l from-page to-transparent sm:w-16" />
+        {/* edge fades hint at more content on either side */}
+        <div className="pointer-events-none absolute inset-y-0 left-0 z-20 w-10 bg-gradient-to-r from-page to-transparent sm:w-16" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 z-20 w-10 bg-gradient-to-l from-page to-transparent sm:w-16" />
 
-      {/* arrows (desktop) */}
-      <button
-        type="button"
-        onClick={() => step(-1)}
-        aria-label="Previous products"
-        className="absolute top-1/2 left-2 z-30 hidden size-12 -translate-y-1/2 items-center justify-center rounded-full border border-line bg-white/90 text-ink shadow-[0_6px_20px_rgba(0,0,0,0.12)] backdrop-blur-sm transition-all hover:scale-105 hover:border-accent hover:text-accent disabled:opacity-0 md:flex"
-        disabled={!canPrev}
-      >
-        <ChevronLeft className="size-5" />
-      </button>
-      <button
-        type="button"
-        onClick={() => step(1)}
-        aria-label="Next products"
-        className="absolute top-1/2 right-2 z-30 hidden size-12 -translate-y-1/2 items-center justify-center rounded-full border border-line bg-white/90 text-ink shadow-[0_6px_20px_rgba(0,0,0,0.12)] backdrop-blur-sm transition-all hover:scale-105 hover:border-accent hover:text-accent disabled:opacity-0 md:flex"
-        disabled={!canNext}
-      >
-        <ChevronRight className="size-5" />
-      </button>
+        {/* arrows (desktop) — never disabled when the loop is active */}
+        <button
+          type="button"
+          onClick={() => step(-1)}
+          aria-label="Previous products"
+          className="absolute top-1/2 left-2 z-30 hidden size-12 -translate-y-1/2 items-center justify-center rounded-full border border-line bg-white/90 text-ink shadow-[0_6px_20px_rgba(0,0,0,0.12)] backdrop-blur-sm transition-all hover:scale-105 hover:border-accent hover:text-accent disabled:opacity-0 md:flex"
+          disabled={!loop && !canPrev}
+        >
+          <ChevronLeft className="size-5" />
+        </button>
+        <button
+          type="button"
+          onClick={() => step(1)}
+          aria-label="Next products"
+          className="absolute top-1/2 right-2 z-30 hidden size-12 -translate-y-1/2 items-center justify-center rounded-full border border-line bg-white/90 text-ink shadow-[0_6px_20px_rgba(0,0,0,0.12)] backdrop-blur-sm transition-all hover:scale-105 hover:border-accent hover:text-accent disabled:opacity-0 md:flex"
+          disabled={!loop && !canNext}
+        >
+          <ChevronRight className="size-5" />
+        </button>
 
-      <div
-        ref={trackRef}
-        className="no-scrollbar flex snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth px-6 py-3 md:cursor-grab min-[1400px]:px-[calc((100vw-1338px)/2)]"
-        style={{ scrollPaddingLeft: 24, scrollPaddingRight: 24 }}
-        role="region"
-        aria-label="Shop the edit carousel"
-      >
-        {products.map((p) => (
-          <CarouselCard key={p.id} product={p} />
-        ))}
+        <div
+          ref={trackRef}
+          className="no-scrollbar flex snap-x snap-mandatory gap-6 overflow-x-auto px-6 py-3 md:cursor-grab min-[1400px]:px-[calc((100vw-1338px)/2)]"
+          style={{ scrollPaddingLeft: 24, scrollPaddingRight: 24 }}
+          role="region"
+          aria-label="Shop the edit carousel"
+        >
+          {items.map(({ p, key }) => (
+            <CarouselCard key={key} product={p} />
+          ))}
+        </div>
       </div>
-      </div>
 
-      {/* pagination dots — make it obvious this row scrolls */}
+      {/* pagination dots — track position within one copy */}
       {pages > 1 && (
         <div className="mt-7 flex items-center justify-center gap-2.5" role="tablist" aria-label="Carousel pages">
           {Array.from({ length: pages }).map((_, i) => (
