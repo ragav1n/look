@@ -20,7 +20,7 @@ export default function SectionHeading({
       {eyebrow && (
         <p className="text-[12px] tracking-[0.08em] text-accent uppercase">{eyebrow}</p>
       )}
-      <h2 className="font-display text-[35px] leading-[47px] font-medium text-black">{title}</h2>
+      <h2 className="font-display text-[35px] leading-[47px] font-medium text-white">{title}</h2>
       {sub && <p className="text-[16px] leading-[22px] text-body">{sub}</p>}
     </div>
   );

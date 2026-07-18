@@ -3,9 +3,11 @@ import type { ButtonHTMLAttributes, ReactNode } from "react";
 type Variant = "primary" | "outline" | "accent";
 
 const styles: Record<Variant, string> = {
-  primary: "bg-black text-white border border-black",
-  outline: "border border-body text-body bg-transparent",
-  accent: "bg-accent text-white border border-accent",
+  // On the black theme the primary action is a crisp white button; red is
+  // reserved for the strongest emphasis (the `accent` variant).
+  primary: "bg-white text-black border border-white hover:opacity-90",
+  outline: "border border-white/40 text-white bg-transparent hover:bg-white/10",
+  accent: "bg-accent text-white border border-accent hover:bg-accent-bright",
 };
 
 interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {

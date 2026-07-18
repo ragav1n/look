@@ -1,37 +1,43 @@
 @import "tailwindcss";
 
-/* Design tokens extracted from the Look Figma file (design/2UujILS7NRzN6BInT1cxpX).
-   Colors come from get_design_context on Home 2007:3267 and PDP 1:1561. */
+/* Design tokens — LOOK dark theme.
+   The site follows a black theme: black/near-black surfaces, white text, and a
+   single red accent for emphasis (replacing the previous blue/violet). No other
+   accent colour is introduced. */
 @theme {
   --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Playfair Display", ui-serif, Georgia, serif;
   --font-script: "Great Vibes", cursive; /* Figma uses Florelie DEMO (unlicensed demo font) */
   --font-ui: "Inter", ui-sans-serif, system-ui, sans-serif;
 
-  --color-page: #fdfdfe;
-  --color-surface: #f8f8f8;
-  --color-card: #faf8ff;
-  --color-ink: #0a0a0a;
+  /* Surfaces — layered blacks so sections read apart without leaving the theme */
+  --color-page: #0a0a0a;
+  --color-surface: #141414;
+  --color-card: #161616;
+  --color-ink: #ffffff;
 
-  --color-accent: #4402d3;
-  --color-accent-bright: #5000ff;
-  --color-lavender: #e2d5ff;
-  --color-lavender-soft: #f4effd;
-  --color-banner-blue: #1754cf;
+  /* Red is the ONLY accent — used sparingly for emphasis */
+  --color-accent: #e11d2a;
+  --color-accent-bright: #ff3b47;
+  --color-lavender: #2a1214; /* dark red-tinted circle backdrop (was pale violet) */
+  --color-lavender-soft: #1c0f10;
+  --color-banner-blue: #e11d2a; /* legacy name — now red */
 
-  --color-body: #4e4e4e;
-  --color-heading-soft: #434343;
-  --color-muted: #6d6d6d;
-  --color-faint: #757575;
-  --color-footer-ink: #161c2d;
-  --color-placeholder: #6b7280;
-  --color-sale: #ff0004;
+  /* Text — white primary, graded greys for body/secondary on dark */
+  --color-body: #c9c9c9;
+  --color-heading-soft: #ededed;
+  --color-muted: #9a9a9a;
+  --color-faint: #7f7f7f;
+  --color-footer-ink: #ffffff;
+  --color-placeholder: #8a8a8a;
+  --color-sale: #ff4d52;
 
-  --color-line: #e8e8e8;
-  --color-line-strong: #e4e4e4;
+  /* Hairlines / borders on dark */
+  --color-line: #272727;
+  --color-line-strong: #3a3a3a;
 
-  --shadow-xs: 0px 1px 2px 0px rgba(16, 24, 40, 0.05);
-  --shadow-nav: 0px -7px 11.2px rgba(0, 0, 0, 0.25);
+  --shadow-xs: 0px 1px 2px 0px rgba(0, 0, 0, 0.4);
+  --shadow-nav: 0px 7px 11.2px rgba(0, 0, 0, 0.5);
 
   --radius-btn: 8px;
   --radius-card: 11px;
@@ -162,6 +168,61 @@ body {
   animation: glow-pulse 5s ease-in-out infinite;
 }
 
+/* Modal entrance: backdrop fades in, panel eases up + scales from slightly small */
+@keyframes modal-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes modal-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.animate-modal-backdrop {
+  animation: modal-backdrop-in 0.22s ease-out both;
+}
+.animate-modal-panel {
+  animation: modal-panel-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Auth (login / signup) entrance — the split screen eases in instead of
+   popping when a signed-out user is redirected here from wishlist/account. */
+@keyframes auth-image-in {
+  from {
+    opacity: 0;
+    transform: scale(1.06);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes auth-panel-in {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.animate-auth-image {
+  animation: auth-image-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.animate-auth-panel {
+  animation: auth-panel-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.08s both;
+}
+
 /* Hide scrollbars on drag/snap carousels while keeping scroll behaviour */
 .no-scrollbar {
   -ms-overflow-style: none;
@@ -177,7 +238,11 @@ body {
   .animate-float,
   .animate-marquee,
   .animate-glow,
-  .animate-page-in {
+  .animate-page-in,
+  .animate-modal-backdrop,
+  .animate-modal-panel,
+  .animate-auth-image,
+  .animate-auth-panel {
     animation: none;
     opacity: 1;
   }

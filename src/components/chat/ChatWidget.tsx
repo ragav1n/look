@@ -27,7 +27,7 @@ export default function ChatWidget() {
         <div
           role="dialog"
           aria-label="LOOK assistant"
-          className="fixed right-4 bottom-24 z-50 flex h-[480px] w-[min(360px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-line bg-white shadow-[0_20px_60px_rgba(0,0,0,0.25)] sm:right-6"
+          className="fixed right-4 bottom-24 z-50 flex h-[480px] w-[min(360px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-[0_20px_60px_rgba(0,0,0,0.6)] sm:right-6"
         >
           <div className="flex items-center justify-between bg-accent px-5 py-4 text-white">
             <div>
@@ -85,7 +85,7 @@ export default function ChatWidget() {
         onClick={() => setOpen((o) => !o)}
         aria-label={open ? "Close chat" : "Open chat assistant"}
         aria-expanded={open}
-        className="fixed right-4 bottom-6 z-50 flex size-14 cursor-pointer items-center justify-center rounded-full bg-accent text-white shadow-[0_10px_30px_rgba(68,2,211,0.4)] transition-transform hover:scale-105 sm:right-6"
+        className="fixed right-4 bottom-6 z-50 flex size-14 cursor-pointer items-center justify-center rounded-full bg-accent text-white shadow-[0_10px_30px_rgba(225,29,42,0.45)] transition-transform hover:scale-105 sm:right-6"
       >
         {open ? (
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
