@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import authPhoto from "@/assets/hero-model-1.jpg";
-import logoBlack from "@/assets/look-logo-black.png";
+import logoWhite from "@/assets/look-logo-white.png";
 
 /* Figma auth (Login 1:6446 / Signup 1:6486): split layout, editorial photo
    left, form right, Google auth. */
@@ -18,8 +18,12 @@ export default function AuthShell({
 }) {
   return (
     <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2">
-      <div className="relative hidden lg:block">
-        <img src={authPhoto} alt="" className="h-full w-full object-cover object-top" />
+      <div className="relative hidden overflow-hidden lg:block">
+        <img
+          src={authPhoto}
+          alt=""
+          className="animate-auth-image h-full w-full object-cover object-top"
+        />
         <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
         <div className="absolute bottom-12 left-12 max-w-[380px] text-white">
           <p className="font-script text-[40px] leading-tight">Elevate Your Style</p>
@@ -30,11 +34,11 @@ export default function AuthShell({
       </div>
 
       <div className="flex items-center justify-center px-6 py-12">
-        <div className="w-full max-w-[384px]">
+        <div className="animate-auth-panel w-full max-w-[384px]">
           <Link to="/" aria-label="LOOK — home">
-            <img src={logoBlack} alt="LOOK" className="h-8 w-auto object-contain" />
+            <img src={logoWhite} alt="LOOK" className="h-8 w-auto object-contain" />
           </Link>
-          <h1 className="mt-8 font-display text-[28px] leading-[36px] font-medium text-black">
+          <h1 className="mt-8 font-display text-[28px] leading-[36px] font-medium text-white">
             {title}
           </h1>
           <p className="mt-1 text-[15px] text-body">{subtitle}</p>
@@ -47,7 +51,7 @@ export default function AuthShell({
 }
 
 export const authInputClass =
-  "h-[48px] w-full rounded-btn border border-line bg-white px-4 text-[15px] text-black outline-none transition-colors focus:border-accent";
+  "h-[48px] w-full rounded-btn border border-line bg-surface px-4 text-[15px] text-white outline-none transition-colors focus:border-accent";
 
 export function AuthField({
   label,
@@ -58,7 +62,7 @@ export function AuthField({
 }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="text-[14px] font-medium text-[#3d4e5c]">{label}</span>
+      <span className="text-[14px] font-medium text-heading-soft">{label}</span>
       {children}
     </label>
   );
@@ -69,7 +73,7 @@ export function GoogleButton({ onClick, label }: { onClick: () => void; label: s
     <button
       type="button"
       onClick={onClick}
-      className="flex h-[48px] w-full cursor-pointer items-center justify-center gap-3 rounded-btn border border-line bg-white text-[15px] font-medium text-black transition-colors hover:bg-surface"
+      className="flex h-[48px] w-full cursor-pointer items-center justify-center gap-3 rounded-btn border border-line bg-surface text-[15px] font-medium text-white transition-colors hover:bg-surface"
     >
       <svg viewBox="0 0 48 48" width="20" height="20" aria-hidden>
         <path

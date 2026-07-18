@@ -56,7 +56,7 @@ export default function Login() {
         </div>
         <button
           type="submit"
-          className="h-[50px] cursor-pointer rounded-btn bg-black text-[15px] font-medium text-white transition-opacity hover:opacity-85"
+          className="h-[50px] cursor-pointer rounded-btn bg-white text-[15px] font-medium text-black transition-opacity hover:opacity-85"
         >
           Sign In
         </button>
