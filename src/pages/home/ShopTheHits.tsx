@@ -14,20 +14,24 @@ export default function ShopTheHits() {
   // Need at least a couple of pieces to make the wall worthwhile.
   if (hits.length < 3) return null;
 
-  return (
-    <section className="py-[84px]" aria-labelledby="hits-heading">
-      <Reveal className="mx-auto w-full max-w-[1338px] px-6 text-center min-[1400px]:px-0">
-        <p className="text-[12px] tracking-[0.08em] text-accent uppercase">Most Loved</p>
-        <h2
-          id="hits-heading"
-          className="mt-2 font-display text-[35px] leading-[47px] font-medium text-white"
-        >
-          Shop the Hits
-        </h2>
-        <p className="mt-2 text-[16px] text-body">The pieces our customers keep coming back to.</p>
-      </Reveal>
+  /* Rendered inside the pinned viewport so it stays with the wall while it
+     scrolls, rather than disappearing the moment the pin engages. */
+  const heading = (
+    <Reveal className="text-center">
+      <p className="text-[12px] tracking-[0.08em] text-accent uppercase">Most Loved</p>
+      <h2
+        id="hits-heading"
+        className="mt-2 font-display text-[35px] leading-[47px] font-medium text-white"
+      >
+        Shop the Hits
+      </h2>
+      <p className="mt-2 text-[16px] text-body">The pieces our customers keep coming back to.</p>
+    </Reveal>
+  );
 
-      <StaggeredCarousel products={hits} />
+  return (
+    <section className="pt-[84px] pb-[84px]" aria-labelledby="hits-heading">
+      <StaggeredCarousel products={hits} heading={heading} />
     </section>
   );
 }

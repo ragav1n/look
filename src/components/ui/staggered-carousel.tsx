@@ -1,136 +1,202 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 import type { Product } from "@/types";
 import { formatPrice } from "@/lib/format";
 import Badge from "@/components/ui/Badge";
 
-/* Staggered infinite product wall — a lightweight take on the 21st.dev
-   "staggered carousel".
+/* Staggered infinite product wall — a take on the 21st.dev "staggered carousel".
 
-   How the infinite columns work:
-   - Products are dealt round-robin into columns, and each column repeats its
-     set COPIES times so the track is far taller than the visible mask.
-   - As the page scrolls past, every column translates by its own speed (and
-     sign, so neighbours travel in opposite directions). The offset is wrapped
-     modulo one copy's height, so a column never runs out — it loops forever and
-     the seam is invisible because the neighbouring copy is pixel-identical.
-   - A per-column phase keeps the columns from ever lining up.
+   Scroll behaviour (desktop): the wall is pinned to the viewport with a plain
+   sticky element inside a tall spacer. While it's pinned the page appears to
+   hold still and only the columns move, which is the effect the original got
+   from GSAP's `pin: true` + scrub — but achieved with CSS sticky, so we never
+   preventDefault the wheel. That matters: the columns loop forever, so hijacking
+   the wheel would trap the reader with no way to scroll past. Here the pin
+   simply releases once the spacer is consumed, and trackpad, keyboard and touch
+   all behave normally.
 
-   This gives the reference's alternating-column motion WITHOUT pinning the page
-   or pulling in GSAP, matching the site's hand-rolled, CSS-first motion. Below
-   `lg` it degrades to a plain static grid (one copy, no transforms), and the
-   whole effect is skipped under prefers-reduced-motion. */
+   Column motion: products are dealt round-robin into columns and each column
+   repeats its set COPIES times. Two things drive a column — scroll progress
+   through the spacer, plus a steady auto-scroll drift so the wall cycles through
+   everything on its own without the reader having to move. Both are scaled by
+   the column's own speed/direction and wrapped modulo one copy's height, so a
+   column never runs out and the seam is invisible (the neighbouring copy is
+   pixel-identical). A per-column phase keeps the columns from lining up. The
+   drift pauses on hover/focus so cards stay readable and clickable, and the rAF
+   loop only runs while the wall is near the viewport.
 
+   Below `lg`, and under prefers-reduced-motion, the pin and the transforms are
+   dropped entirely for a plain static grid. */
+
+const NAV_H = 72; // sticky navbar height the pin sits below
+const PIN_VH = 300; // spacer height; how long the wall stays pinned
 const COPIES = 3;
-/* Per-column scroll speed as a fraction of scroll distance. Sign flips the
-   direction so adjacent columns visibly move apart from each other. */
-const SPEEDS = [0.45, -0.3, 0.6];
-/* Starting offset (fraction of one copy) so columns look staggered at rest. */
-const PHASES = [0, 0.5, 0.25];
+const TRAVEL = 2400; // px a speed-1.0 column travels across the whole pin
+const AUTO_PX_S = 50; // px/second a speed-1.0 column drifts on its own
+const SPEEDS = [1, -0.8, 1.3]; // per column; sign flips the direction
+const PHASES = [0, 0.5, 0.25]; // starting offset as a fraction of one copy
 
-export default function StaggeredCarousel({ products }: { products: Product[] }) {
-  const maskRef = useRef<HTMLDivElement>(null);
+const canPin = () =>
+  typeof window !== "undefined" &&
+  window.matchMedia("(min-width: 1024px)").matches &&
+  !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+export default function StaggeredCarousel({
+  products,
+  heading,
+}: {
+  products: Product[];
+  heading?: ReactNode;
+}) {
+  const spacerRef = useRef<HTMLDivElement>(null);
   const colRefs = useRef<(HTMLDivElement | null)[]>([]);
   const copyRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const [cols, setCols] = useState(3);
-  const [looping, setLooping] = useState(false);
+  const [pinned, setPinned] = useState(canPin);
 
-  // Three looping columns on desktop; a plain two-column grid below that.
   useEffect(() => {
-    const mq = window.matchMedia("(min-width: 1024px)");
-    const apply = () => {
-      setCols(mq.matches ? 3 : 2);
-      setLooping(mq.matches);
+    const wide = window.matchMedia("(min-width: 1024px)");
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const apply = () => setPinned(wide.matches && !still.matches);
+    wide.addEventListener("change", apply);
+    still.addEventListener("change", apply);
+    return () => {
+      wide.removeEventListener("change", apply);
+      still.removeEventListener("change", apply);
     };
-    apply();
-    mq.addEventListener("change", apply);
-    return () => mq.removeEventListener("change", apply);
   }, []);
 
   useEffect(() => {
-    const reset = () => {
+    if (!pinned) {
       for (const c of colRefs.current) if (c) c.style.transform = "";
-    };
-
-    if (!looping || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      reset();
       return;
     }
 
+    const spacer = spacerRef.current;
+    if (!spacer) return;
+
     let raf = 0;
-    const update = () => {
-      raf = 0;
-      const mask = maskRef.current;
-      if (!mask) return;
-      const rect = mask.getBoundingClientRect();
-      // Distance scrolled since the wall first entered the viewport.
-      const travelled = window.innerHeight - rect.top;
-      for (let i = 0; i < cols; i++) {
+    let last = 0;
+    let auto = 0; // px of self-drift accumulated over time
+    let paused = false;
+
+    const render = () => {
+      const stickyH = window.innerHeight - NAV_H;
+      const total = spacer.offsetHeight - stickyH;
+      if (total <= 0) return;
+      // 0 when the wall locks into place, 1 when the pin lets go.
+      const p = Math.min(1, Math.max(0, (NAV_H - spacer.getBoundingClientRect().top) / total));
+      for (let i = 0; i < colRefs.current.length; i++) {
         const col = colRefs.current[i];
         const copy = copyRefs.current[i];
         if (!col || !copy) continue;
         const h = copy.offsetHeight;
         if (h <= 0) continue;
-        const raw = -travelled * SPEEDS[i] + PHASES[i] * h;
+        // Scroll-driven travel + the auto-scroll drift, both scaled per column.
+        const raw = (p * TRAVEL + auto) * SPEEDS[i] + PHASES[i] * h;
         // Wrap into [0, h) then sit in [-h, 0) so a copy always covers the mask.
-        const wrapped = ((raw % h) + h) % h;
-        col.style.transform = `translate3d(0, ${wrapped - h}px, 0)`;
+        col.style.transform = `translate3d(0, ${(((raw % h) + h) % h) - h}px, 0)`;
       }
     };
-    const onScroll = () => {
-      if (!raf) raf = requestAnimationFrame(update);
-    };
 
-    update();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
+    const frame = (now: number) => {
+      const dt = last ? Math.min(0.05, (now - last) / 1000) : 0;
+      last = now;
+      if (!paused) auto += AUTO_PX_S * dt;
+      render();
+      raf = requestAnimationFrame(frame);
+    };
+    const start = () => {
+      if (!raf) {
+        last = 0;
+        raf = requestAnimationFrame(frame);
+      }
+    };
+    const stop = () => {
       if (raf) cancelAnimationFrame(raf);
-      reset();
+      raf = 0;
     };
-  }, [looping, cols, products.length]);
 
-  // Deal products round-robin into the active number of columns.
+    // Only animate while the wall is anywhere near the viewport.
+    const io = new IntersectionObserver(([e]) => (e.isIntersecting ? start() : stop()), {
+      rootMargin: "200px",
+    });
+    io.observe(spacer);
+
+    // Hold still while the reader is hovering or tabbing through a card.
+    const pause = () => (paused = true);
+    const resume = () => (paused = false);
+    spacer.addEventListener("pointerenter", pause);
+    spacer.addEventListener("pointerleave", resume);
+    spacer.addEventListener("focusin", pause);
+    spacer.addEventListener("focusout", resume);
+
+    render();
+    return () => {
+      io.disconnect();
+      stop();
+      spacer.removeEventListener("pointerenter", pause);
+      spacer.removeEventListener("pointerleave", resume);
+      spacer.removeEventListener("focusin", pause);
+      spacer.removeEventListener("focusout", resume);
+    };
+  }, [pinned, products.length]);
+
+  const cols = pinned ? 3 : 2;
   const columns: Product[][] = Array.from({ length: cols }, () => []);
   products.forEach((p, i) => columns[i % cols].push(p));
-  const copies = looping ? COPIES : 1;
 
-  return (
-    <div className="mx-auto mt-4 w-full max-w-[1120px] px-6">
-      <div ref={maskRef} className="relative overflow-hidden lg:h-[720px]">
-        <div className="grid grid-cols-2 items-start gap-4 sm:gap-5 lg:grid-cols-3 lg:gap-6">
-          {columns.map((col, i) => (
+  const grid = (
+    <div className="grid grid-cols-2 items-start gap-4 sm:gap-5 lg:grid-cols-3 lg:gap-6">
+      {columns.map((col, i) => (
+        <div
+          key={i}
+          ref={(el) => {
+            colRefs.current[i] = el;
+          }}
+          className="flex flex-col will-change-transform"
+        >
+          {Array.from({ length: pinned ? COPIES : 1 }).map((_, c) => (
             <div
-              key={i}
+              key={c}
               ref={(el) => {
-                colRefs.current[i] = el;
+                if (c === 0) copyRefs.current[i] = el;
               }}
-              className="flex flex-col will-change-transform"
+              className="flex flex-col gap-4 pb-4 sm:gap-5 sm:pb-5 lg:gap-6 lg:pb-6"
             >
-              {Array.from({ length: copies }).map((_, c) => (
-                <div
-                  key={c}
-                  ref={(el) => {
-                    if (c === 0) copyRefs.current[i] = el;
-                  }}
-                  className="flex flex-col gap-4 pb-4 sm:gap-5 sm:pb-5 lg:gap-6 lg:pb-6"
-                >
-                  {col.map((p) => (
-                    <StaggeredCard key={`${c}-${p.id}`} product={p} />
-                  ))}
-                </div>
+              {col.map((p) => (
+                <StaggeredCard key={`${c}-${p.id}`} product={p} />
               ))}
             </div>
           ))}
         </div>
+      ))}
+    </div>
+  );
 
-        {/* edge fades so cards dissolve into the page instead of hard-clipping */}
-        <div className="pointer-events-none absolute inset-x-0 top-0 hidden h-24 bg-gradient-to-b from-page to-transparent lg:block" />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 hidden h-24 bg-gradient-to-t from-page to-transparent lg:block" />
-      </div>
+  return (
+    <div className="mx-auto w-full max-w-[1120px] px-6">
+      {pinned ? (
+        <div ref={spacerRef} className="relative" style={{ height: `${PIN_VH}vh` }}>
+          <div
+            className="sticky flex flex-col overflow-hidden"
+            style={{ top: NAV_H, height: `calc(100vh - ${NAV_H}px)` }}
+          >
+            {heading && <div className="shrink-0 pt-10 pb-8">{heading}</div>}
+            <div className="relative min-h-0 flex-1 overflow-hidden">
+              {grid}
+              {/* edge fades so cards dissolve instead of hard-clipping */}
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-page to-transparent" />
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-page to-transparent" />
+            </div>
+          </div>
+        </div>
+      ) : (
+        <>
+          {heading && <div className="pb-8">{heading}</div>}
+          {grid}
+        </>
+      )}
 
       <div className="mt-16 flex justify-center">
         <Link
