@@ -45,7 +45,9 @@ export default function Hero() {
         {slides.map((p, i) => (
           <div
             key={p.id}
-            className={`absolute inset-0 transition-opacity duration-1000 ${
+            /* Short crossfade on purpose: while it runs, both photos are
+               superimposed, which reads as a blurry double-exposure. */
+            className={`absolute inset-0 transition-opacity duration-500 ${
               i === slide ? "opacity-100" : "opacity-0"
             }`}
           >
@@ -62,9 +64,10 @@ export default function Hero() {
         ))}
       </div>
 
-      {/* dark overlay — bottom-weighted so the low-set headline stays legible */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-black/25" />
-      <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent" />
+      {/* Legibility scrim. Deliberately light and confined to the lower third —
+          the photography is the point, so it only darkens enough to carry the
+          copy that sits on it. */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent" />
 
       {/* Whole-photo link to the piece on show. Sits above the media but below
           the content layer, so the headline, CTA and dots stay clickable
@@ -80,28 +83,15 @@ export default function Hero() {
       {/* content sits in the lower portion of the hero */}
       <div className="pointer-events-none relative z-20 mx-auto flex h-full w-full max-w-[1512px] flex-col justify-end px-6 pb-14 lg:px-[87px] lg:pb-[72px]">
         <div className="max-w-[760px]">
-          <p className="animate-fade-up text-[13px] font-medium tracking-[0.22em] text-accent uppercase">
-            Modern Western Essentials
-          </p>
-          <h1
-            className="animate-fade-up mt-3 font-display text-[40px] leading-[1.02] font-semibold text-white lg:text-[62px]"
-            style={{ animationDelay: "0.1s" }}
-          >
-            Style that speaks
-            <span className="mt-1 block font-script text-[36px] leading-[1.1] font-normal text-accent-bright lg:text-[54px]">
-              before you do.
-            </span>
-          </h1>
-          <p
-            className="animate-fade-up mt-5 max-w-[540px] text-[15px] leading-[24px] text-white/80 lg:text-[17px]"
-            style={{ animationDelay: "0.28s" }}
-          >
+          {/* Text shadows rather than a heavier scrim: they keep the copy legible
+              over a bright frame without dimming the photograph. */}
+          <p className="animate-fade-up max-w-[540px] text-[15px] leading-[24px] text-white/90 [text-shadow:0_1px_14px_rgba(0,0,0,0.75)] lg:text-[17px]">
             Kurta sets and coord sets, thoughtfully crafted with premium fabric and inclusive
             tailoring — made to make every woman feel extraordinary.
           </p>
           <div
             className="animate-fade-up mt-7 flex flex-wrap items-center gap-4"
-            style={{ animationDelay: "0.42s" }}
+            style={{ animationDelay: "0.14s" }}
           >
             <Link
               to="/shop"
@@ -116,12 +106,15 @@ export default function Hero() {
         {/* Which piece is on screen. Keyed on the slug so it re-runs its entrance
             animation on every slide change. */}
         {current && (
-          <div key={current.slug} className="animate-fade-up mt-9">
+          <div
+            key={current.slug}
+            className="animate-fade-up mt-9 [text-shadow:0_1px_14px_rgba(0,0,0,0.75)]"
+          >
             <p className="text-[13px] leading-[18px] font-medium tracking-[0.14em] text-white uppercase">
               {current.name}
             </p>
             {current.heroTagline && (
-              <p className="mt-1 text-[13px] leading-[18px] text-white/60">{current.heroTagline}</p>
+              <p className="mt-1 text-[13px] leading-[18px] text-white/75">{current.heroTagline}</p>
             )}
           </div>
         )}
