@@ -25,21 +25,39 @@ const CATEGORY_FILTERS = [
   { key: "co-ords", label: "Co-Ords" },
 ] as const;
 
+/* Which Shopify product types each filter covers. Matching is case-insensitive
+   and singular/plural tolerant, because these strings are typed by hand in the
+   Shopify admin — a stray "bottom" for "Bottom" used to drop a product from its
+   category with no visible error. */
+const COL_TYPES: Record<string, string[]> = {
+  dresses: ["kurta set", "gown", "dress", "dresses"],
+  tops: ["tops", "top"],
+  bottoms: ["bottom", "bottoms"],
+  "co-ords": ["coord set", "co-ord set", "coords", "co-ords"],
+};
+
+/** Collection handles vary ("bottom" vs "bottoms"); fold them onto one filter key. */
+const COL_ALIASES: Record<string, string> = {
+  bottom: "bottoms",
+  top: "tops",
+  dress: "dresses",
+  gown: "dresses",
+  gowns: "dresses",
+  coords: "co-ords",
+  "co-ord": "co-ords",
+  "new-arrival": "new-arrivals",
+};
+
 const matchesCol = (p: Product, col: string) => {
-  switch (col) {
-    case "new-arrivals":
-      return !!p.newArrival;
-    case "dresses":
-      return p.category === "Kurta Set" || p.category === "Gown";
-    case "tops":
-      return p.group === "Tops";
-    case "bottoms":
-      return p.group === "Bottom";
-    case "co-ords":
-      return p.category === "Coord Set";
-    default:
-      return true;
-  }
+  const key = COL_ALIASES[col.trim().toLowerCase()] ?? col.trim().toLowerCase();
+  if (key === "new-arrivals") return !!p.newArrival;
+
+  const types = COL_TYPES[key];
+  if (!types) return true;
+
+  // Live products carry productType in both fields; fixtures split them.
+  const fields = [p.category, p.group].map((v) => v.trim().toLowerCase());
+  return types.some((t) => fields.includes(t));
 };
 
 const isInStock = (p: Product) => p.variants.some((v) => v.availableForSale);
