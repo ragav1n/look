@@ -5,7 +5,14 @@ import heroBg from "@/assets/hero-bg.jpg";
 import heroModel1 from "@/assets/hero-model-1.jpg";
 import heroModel2 from "@/assets/hero-model-2.jpg";
 
-const slides = [heroBg, heroModel1, heroModel2];
+/* Each hero slide links to the product it shows, so clicking the photo opens
+   that piece. `productSlug` must match a catalog handle (see the Shop URLs) —
+   update these whenever the hero photography changes. */
+const slides: { src: string; productSlug: string }[] = [
+  { src: heroBg, productSlug: "red-kurta-set" },
+  { src: heroModel1, productSlug: "crimson-coord-set" },
+  { src: heroModel2, productSlug: "sage-coord-set" },
+];
 
 /* LOOK hero.
    ────────────────────────────────────────────────────────────────────────
@@ -37,7 +44,7 @@ export default function Hero() {
     >
       {/* ===== BACKGROUND MEDIA (swap for <video> later) ===== */}
       <div className="hero-media absolute inset-0" aria-hidden>
-        {slides.map((src, i) => (
+        {slides.map(({ src }, i) => (
           <div
             key={src}
             className={`absolute inset-0 transition-opacity duration-1000 ${
@@ -59,8 +66,17 @@ export default function Hero() {
       <div className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-black/25" />
       <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent" />
 
+      {/* Whole-photo link to the piece on show. Sits above the media but below
+          the content layer, so the headline, CTA and dots stay clickable
+          (wrapping them in this link would nest interactive elements). */}
+      <Link
+        to={`/shop/${slides[slide].productSlug}`}
+        aria-label="Shop the look in this photo"
+        className="absolute inset-0 z-10"
+      />
+
       {/* content sits in the lower portion of the hero */}
-      <div className="relative mx-auto flex h-full w-full max-w-[1512px] flex-col justify-end px-6 pb-14 lg:px-[87px] lg:pb-[72px]">
+      <div className="pointer-events-none relative z-20 mx-auto flex h-full w-full max-w-[1512px] flex-col justify-end px-6 pb-14 lg:px-[87px] lg:pb-[72px]">
         <div className="max-w-[760px]">
           <p className="animate-fade-up text-[13px] font-medium tracking-[0.22em] text-accent uppercase">
             Modern Western Essentials
@@ -87,7 +103,7 @@ export default function Hero() {
           >
             <Link
               to="/shop"
-              className="group inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-[15px] font-medium text-black transition-all duration-300 hover:opacity-90"
+              className="group pointer-events-auto inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-[15px] font-medium text-black transition-all duration-300 hover:opacity-90"
             >
               Shop Now
               <ArrowRight className="size-[18px] transition-transform duration-300 group-hover:translate-x-1" />
@@ -96,7 +112,7 @@ export default function Hero() {
         </div>
 
         {/* slide indicators — advance the background media */}
-        <div className="mt-7 flex items-center gap-2">
+        <div className="pointer-events-auto mt-7 flex w-fit items-center gap-2">
           {slides.map((_, i) => (
             <button
               key={i}
