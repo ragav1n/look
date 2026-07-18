@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { Heart, RefreshCw, ShieldCheck, Users, Ruler, X } from "lucide-react";
 import type { Product } from "@/types";
@@ -48,9 +48,19 @@ function PdpContent({ product }: { product: Product }) {
   const [busy, setBusy] = useState(false);
   const [sizeChartOpen, setSizeChartOpen] = useState(false);
 
+  // Revert the "Added ✓" confirmation after a short pause.
+  useEffect(() => {
+    if (!added) return;
+    const t = setTimeout(() => setAdded(false), 2000);
+    return () => clearTimeout(t);
+  }, [added]);
+
+  const hasColorOpt = product.colors.length > 0;
   const variant =
-    color && size
-      ? product.variants.find((v) => v.color === color && v.size === size)
+    size && (color || !hasColorOpt)
+      ? product.variants.find(
+          (v) => v.size === size && (hasColorOpt ? v.color === color : true),
+        )
       : undefined;
   const canAdd = Boolean(variant?.availableForSale);
   const wished = has(product.id);
@@ -144,6 +154,12 @@ function PdpContent({ product }: { product: Product }) {
               </span>
             )}
           </div>
+
+          {product.stockLeft != null && (
+            <p className="mt-3 text-[13px] font-medium text-sale">
+              Only {product.stockLeft} left in stock
+            </p>
+          )}
 
           {product.colors.length > 0 && (
             <div className="mt-6 flex flex-col gap-2">

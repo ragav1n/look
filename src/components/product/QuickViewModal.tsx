@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import type { Product } from "@/types";
 import { formatPrice } from "@/lib/format";
@@ -17,7 +17,7 @@ interface Props {
 /* Figma "Home/Popoup" 1:1030 — quick-view over Top Picks */
 export default function QuickViewModal({ product, onClose }: Props) {
   const { add } = useCart();
-  const [color, setColor] = useState<string | null>(null);
+  const [color, setColor] = useState<string | null>(product?.colors[0]?.name ?? null);
   const [size, setSize] = useState<string | null>(null);
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
@@ -27,16 +27,26 @@ export default function QuickViewModal({ product, onClose }: Props) {
   const [lastKey, setLastKey] = useState(key);
   if (key !== lastKey) {
     setLastKey(key);
-    setColor(null);
+    setColor(product?.colors[0]?.name ?? null);
     setSize(null);
     setQty(1);
     setAdded(false);
     setBusy(false);
   }
 
+  // Revert the "Added ✓" confirmation after a short pause.
+  useEffect(() => {
+    if (!added) return;
+    const t = setTimeout(() => setAdded(false), 2000);
+    return () => clearTimeout(t);
+  }, [added]);
+
+  const hasColorOpt = (product?.colors.length ?? 0) > 0;
   const variant =
-    product && color && size
-      ? product.variants.find((v) => v.color === color && v.size === size)
+    product && size && (color || !hasColorOpt)
+      ? product.variants.find(
+          (v) => v.size === size && (hasColorOpt ? v.color === color : true),
+        )
       : undefined;
   const canAdd = Boolean(variant?.availableForSale);
 
@@ -117,17 +127,19 @@ export default function QuickViewModal({ product, onClose }: Props) {
 
             <p className="text-[15px] leading-[22px] text-body">{product.description}</p>
 
-            <div className="flex flex-col gap-2">
-              <p className="text-[16px] font-medium text-white">Color</p>
-              <ColorSwatches
-                colors={product.colors}
-                value={color ?? ""}
-                onChange={(c) => {
-                  setColor(c);
-                  setAdded(false);
-                }}
-              />
-            </div>
+            {product.colors.length > 0 && (
+              <div className="flex flex-col gap-2">
+                <p className="text-[16px] font-medium text-white">Color</p>
+                <ColorSwatches
+                  colors={product.colors}
+                  value={color ?? ""}
+                  onChange={(c) => {
+                    setColor(c);
+                    setAdded(false);
+                  }}
+                />
+              </div>
+            )}
 
             <div className="flex flex-col gap-2">
               <p className="text-[16px] font-medium text-white">Size</p>
@@ -147,10 +159,12 @@ export default function QuickViewModal({ product, onClose }: Props) {
                 {busy ? "Adding…" : added ? "Added to cart ✓" : "ADD TO CART"}
               </Button>
             </div>
-            {color && size && !variant ? (
-              <p className="text-[13px] text-sale">That colour and size combination is unavailable.</p>
-            ) : !color || !size ? (
+            {size && (color || !hasColorOpt) && !variant ? (
+              <p className="text-[13px] text-sale">That combination is unavailable.</p>
+            ) : hasColorOpt && !color ? (
               <p className="text-[13px] text-muted">Select a colour and size to add to cart.</p>
+            ) : !size ? (
+              <p className="text-[13px] text-muted">Select a size to add to cart.</p>
             ) : null}
             <Link
               to={`/shop/${product.slug}`}
