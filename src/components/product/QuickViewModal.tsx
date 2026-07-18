@@ -7,7 +7,7 @@ import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import RatingStars from "@/components/ui/RatingStars";
 import { ColorSwatches, SizeChips, QuantityStepper } from "./PurchaseControls";
-import iconClose from "@/assets/icon-vector-close.svg";
+import { X } from "lucide-react";
 
 interface Props {
   product: Product | null;
@@ -68,9 +68,9 @@ export default function QuickViewModal({ product, onClose }: Props) {
             type="button"
             onClick={onClose}
             aria-label="Close quick view"
-            className="absolute top-4 right-4 flex size-9 cursor-pointer items-center justify-center rounded-full hover:bg-surface"
+            className="absolute top-4 right-4 z-10 flex size-9 cursor-pointer items-center justify-center rounded-full text-white/70 hover:bg-white/10 hover:text-white"
           >
-            <img src={iconClose} alt="" className="size-3.5" />
+            <X className="size-4" />
           </button>
 
           <div>
@@ -95,7 +95,7 @@ export default function QuickViewModal({ product, onClose }: Props) {
 
           <div className="flex flex-col gap-5 pr-2 md:pt-2">
             <div>
-              <p className="font-display text-[24px] leading-8 font-medium text-black">
+              <p className="font-display text-[24px] leading-8 font-medium text-white">
                 {product.name}
               </p>
               <div className="mt-1 flex items-center gap-2">
@@ -105,7 +105,7 @@ export default function QuickViewModal({ product, onClose }: Props) {
             </div>
 
             <div className="flex items-end gap-3">
-              <span className="text-[28px] leading-none font-medium text-black">
+              <span className="text-[28px] leading-none font-medium text-white">
                 {formatPrice(product.price, product.currencyCode)}
               </span>
               {product.mrp && (
@@ -118,7 +118,7 @@ export default function QuickViewModal({ product, onClose }: Props) {
             <p className="text-[15px] leading-[22px] text-body">{product.description}</p>
 
             <div className="flex flex-col gap-2">
-              <p className="text-[16px] font-medium text-[#3d4e5c]">Color</p>
+              <p className="text-[16px] font-medium text-white">Color</p>
               <ColorSwatches
                 colors={product.colors}
                 value={color ?? ""}
@@ -130,7 +130,7 @@ export default function QuickViewModal({ product, onClose }: Props) {
             </div>
 
             <div className="flex flex-col gap-2">
-              <p className="text-[16px] font-medium text-[#3d4e5c]">Size</p>
+              <p className="text-[16px] font-medium text-white">Size</p>
               <SizeChips
                 sizes={product.sizes}
                 value={size ?? ""}

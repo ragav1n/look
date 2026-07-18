@@ -1,10 +1,10 @@
 import { Link } from "react-router-dom";
+import { Heart } from "lucide-react";
 import type { Product } from "@/types";
 import { formatPrice } from "@/lib/format";
 import { useWishlist } from "@/context/WishlistContext";
 import Badge from "@/components/ui/Badge";
 import Skeleton from "@/components/ui/Skeleton";
-import iconHeart from "@/assets/icon-heart.svg";
 
 interface Props {
   product: Product;
@@ -47,7 +47,7 @@ export default function ProductCard({ product, onQuickView }: Props) {
       <div className="mt-[14px] flex items-center justify-between">
         <Link
           to={`/shop/${product.slug}`}
-          className="text-[18px] leading-[22px] font-medium text-black hover:text-accent"
+          className="text-[18px] leading-[22px] font-medium text-white hover:text-accent"
         >
           {product.name}
         </Link>
@@ -57,14 +57,10 @@ export default function ProductCard({ product, onQuickView }: Props) {
           aria-label={wished ? `Remove ${product.name} from wishlist` : `Add ${product.name} to wishlist`}
           aria-pressed={wished}
           className={`flex size-[34px] shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors ${
-            wished ? "bg-accent" : "bg-lavender hover:bg-accent/20"
+            wished ? "bg-accent text-white" : "bg-white/10 text-white hover:bg-white/20"
           }`}
         >
-          <img
-            src={iconHeart}
-            alt=""
-            className={`size-[20px] -rotate-[32deg] ${wished ? "invert" : ""}`}
-          />
+          <Heart className="size-[18px]" strokeWidth={1.8} fill={wished ? "currentColor" : "none"} />
         </button>
       </div>
       <p className="mt-[6px] text-[14px] leading-[22px] text-body">{product.group}</p>

@@ -39,7 +39,7 @@ const PINK = { name: "Pink", hex: "#E8A0B0" };
 const YELLOW = { name: "Mustard", hex: "#D9A404" };
 const CREAM = { name: "Cream", hex: "#EFE7D8" };
 
-const SIZES = ["S", "M", "L", "XL"];
+const SIZES = ["XXS", "XS", "S", "M", "L", "XL", "XXL", "3XL", "4XL"];
 
 const defaultDetails = (fabric: string) => ({
   title: "Timeless Elegance",

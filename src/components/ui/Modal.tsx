@@ -30,7 +30,7 @@ export default function Modal({ open, onClose, label, children, maxWidth = "max-
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4"
+      className="animate-modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
       onClick={onClose}
     >
       <div
@@ -40,7 +40,7 @@ export default function Modal({ open, onClose, label, children, maxWidth = "max-
         aria-label={label}
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
-        className={`relative max-h-[90vh] w-full ${maxWidth} overflow-y-auto rounded-card bg-white shadow-[0px_24px_60px_rgba(0,0,0,0.25)] outline-none`}
+        className={`animate-modal-panel relative max-h-[90vh] w-full ${maxWidth} overflow-y-auto rounded-card border border-line bg-surface shadow-[0px_24px_60px_rgba(0,0,0,0.6)] outline-none`}
       >
         {children}
       </div>

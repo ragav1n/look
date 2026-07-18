@@ -40,7 +40,7 @@ export function SizeChips({
   onChange: (size: string) => void;
 }) {
   return (
-    <div role="radiogroup" aria-label="Size" className="flex items-center gap-4">
+    <div role="radiogroup" aria-label="Size" className="flex flex-wrap items-center gap-3">
       {sizes.map((s) => (
         <button
           key={s}
@@ -50,8 +50,8 @@ export function SizeChips({
           onClick={() => onChange(s)}
           className={`flex h-[48px] min-w-[47px] cursor-pointer items-center justify-center rounded-btn border px-3 text-[16px] font-medium transition-colors ${
             value === s
-              ? "border-black bg-black text-white"
-              : "border-muted text-muted hover:border-black hover:text-black"
+              ? "border-white bg-white text-black"
+              : "border-line-strong text-body hover:border-white hover:text-white"
           }`}
         >
           {s}
