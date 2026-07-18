@@ -23,7 +23,7 @@ export default function AccountLayout() {
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[240px_1fr] lg:gap-12">
         <aside className="h-fit">
           <div className="rounded-card bg-card p-5">
-            <p className="text-[16px] font-medium text-black">{user?.name}</p>
+            <p className="text-[16px] font-medium text-white">{user?.name}</p>
             <p className="mt-0.5 truncate text-[13px] text-muted">{user?.email}</p>
           </div>
           <nav className="mt-4 flex flex-col" aria-label="Account">
@@ -36,7 +36,7 @@ export default function AccountLayout() {
                   `rounded-btn px-4 py-3 text-[15px] transition-colors ${
                     isActive
                       ? "bg-accent/10 font-medium text-accent"
-                      : "text-body hover:bg-surface hover:text-black"
+                      : "text-body hover:bg-surface hover:text-white"
                   }`
                 }
               >
