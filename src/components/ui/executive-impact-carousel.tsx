@@ -245,7 +245,7 @@ export default function ExecutiveImpactCarousel({ products }: { products: Produc
           type="button"
           onClick={() => step(-1)}
           aria-label="Previous products"
-          className="absolute top-1/2 left-2 z-30 hidden size-12 -translate-y-1/2 items-center justify-center rounded-full border border-line bg-white/90 text-ink shadow-[0_6px_20px_rgba(0,0,0,0.12)] backdrop-blur-sm transition-all hover:scale-105 hover:border-accent hover:text-accent disabled:opacity-0 md:flex"
+          className="absolute top-1/2 left-2 z-30 hidden size-12 -translate-y-1/2 items-center justify-center rounded-full border border-line bg-surface/90 text-white shadow-[0_6px_20px_rgba(0,0,0,0.5)] backdrop-blur-sm transition-all hover:scale-105 hover:border-accent hover:text-accent disabled:opacity-0 md:flex"
           disabled={!loop && !canPrev}
         >
           <ChevronLeft className="size-5" />
@@ -254,7 +254,7 @@ export default function ExecutiveImpactCarousel({ products }: { products: Produc
           type="button"
           onClick={() => step(1)}
           aria-label="Next products"
-          className="absolute top-1/2 right-2 z-30 hidden size-12 -translate-y-1/2 items-center justify-center rounded-full border border-line bg-white/90 text-ink shadow-[0_6px_20px_rgba(0,0,0,0.12)] backdrop-blur-sm transition-all hover:scale-105 hover:border-accent hover:text-accent disabled:opacity-0 md:flex"
+          className="absolute top-1/2 right-2 z-30 hidden size-12 -translate-y-1/2 items-center justify-center rounded-full border border-line bg-surface/90 text-white shadow-[0_6px_20px_rgba(0,0,0,0.5)] backdrop-blur-sm transition-all hover:scale-105 hover:border-accent hover:text-accent disabled:opacity-0 md:flex"
           disabled={!loop && !canNext}
         >
           <ChevronRight className="size-5" />
@@ -304,9 +304,9 @@ function CarouselCard({ product }: { product: Product }) {
       to={`/shop/${product.slug}`}
       data-card
       aria-label={product.name}
-      className="group relative w-[264px] shrink-0 snap-start sm:w-[300px]"
+      className="group relative w-[320px] shrink-0 snap-start sm:w-[420px]"
     >
-      <div className="relative aspect-[3/4] overflow-hidden rounded-[10px] border border-line bg-white shadow-[0_6px_24px_rgba(0,0,0,0.06)] transition-all duration-500 group-hover:-translate-y-1 group-hover:shadow-[0_18px_44px_rgba(68,2,211,0.14)]">
+      <div className="relative aspect-[2/3] overflow-hidden rounded-[10px] border border-line bg-card shadow-[0_6px_24px_rgba(0,0,0,0.4)] transition-all duration-500 group-hover:-translate-y-1 group-hover:border-accent/40 group-hover:shadow-[0_18px_44px_rgba(225,29,42,0.18)]">
         <img
           src={prod}
           alt={product.name}

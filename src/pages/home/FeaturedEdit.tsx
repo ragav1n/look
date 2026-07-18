@@ -14,16 +14,16 @@ export default function FeaturedEdit() {
   return (
     <section
       id="the-edit"
-      className="scroll-mt-[87px] overflow-hidden py-[64px]"
+      className="scroll-mt-[72px] overflow-hidden py-[84px]"
       aria-labelledby="edit-heading"
     >
       <Reveal className="mx-auto w-full max-w-[1338px] px-6 text-center min-[1400px]:px-0">
-        <p className="text-[12px] tracking-[0.08em] text-accent uppercase">The Edit</p>
+        <p className="text-[12px] tracking-[0.08em] text-accent uppercase">Trending Now</p>
         <h2
           id="edit-heading"
-          className="mt-2 font-display text-[35px] leading-[47px] font-medium text-black"
+          className="mt-2 font-display text-[35px] leading-[47px] font-medium text-white"
         >
-          Shop the Edit
+          What&rsquo;s New
         </h2>
         <p className="mt-2 text-[16px] text-body">Swipe through — hover any piece to see it styled.</p>
       </Reveal>
