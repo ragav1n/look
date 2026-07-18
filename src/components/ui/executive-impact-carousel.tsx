@@ -20,8 +20,16 @@ export default function ExecutiveImpactCarousel({ products }: { products: Produc
   const trackRef = useRef<HTMLDivElement>(null);
   const [canPrev, setCanPrev] = useState(false);
   const [canNext, setCanNext] = useState(true);
+  const [pages, setPages] = useState(1);
+  const [active, setActive] = useState(0);
   const draggingRef = useRef(false);
   const movedRef = useRef(false);
+
+  const stepAmount = (el: HTMLElement) => {
+    const card = el.querySelector<HTMLElement>("[data-card]");
+    const per = window.innerWidth < 768 ? 1 : 2;
+    return card ? (card.offsetWidth + 24) * per : el.clientWidth * 0.8;
+  };
 
   const updateArrows = useCallback(() => {
     const el = trackRef.current;
@@ -29,7 +37,18 @@ export default function ExecutiveImpactCarousel({ products }: { products: Produc
     const max = el.scrollWidth - el.clientWidth;
     setCanPrev(el.scrollLeft > 8);
     setCanNext(el.scrollLeft < max - 8);
+    const amt = stepAmount(el);
+    const count = amt > 0 ? Math.max(1, Math.round(max / amt) + 1) : 1;
+    setPages(count);
+    setActive(Math.min(count - 1, Math.round(el.scrollLeft / amt)));
   }, []);
+
+  const goToPage = (i: number) => {
+    const el = trackRef.current;
+    if (!el) return;
+    const max = el.scrollWidth - el.clientWidth;
+    el.scrollTo({ left: Math.min(i * stepAmount(el), max), behavior: "smooth" });
+  };
 
   const step = useCallback((dir: 1 | -1) => {
     const el = trackRef.current;
@@ -138,7 +157,8 @@ export default function ExecutiveImpactCarousel({ products }: { products: Produc
   if (products.length === 0) return null;
 
   return (
-    <div className="relative">
+    <div>
+      <div className="relative">
       {/* edge fades hint at more content on either side */}
       <div className="pointer-events-none absolute inset-y-0 left-0 z-20 w-10 bg-gradient-to-r from-page to-transparent sm:w-16" />
       <div className="pointer-events-none absolute inset-y-0 right-0 z-20 w-10 bg-gradient-to-l from-page to-transparent sm:w-16" />
@@ -174,6 +194,26 @@ export default function ExecutiveImpactCarousel({ products }: { products: Produc
           <CarouselCard key={p.id} product={p} />
         ))}
       </div>
+      </div>
+
+      {/* pagination dots — make it obvious this row scrolls */}
+      {pages > 1 && (
+        <div className="mt-7 flex items-center justify-center gap-2.5" role="tablist" aria-label="Carousel pages">
+          {Array.from({ length: pages }).map((_, i) => (
+            <button
+              key={i}
+              type="button"
+              role="tab"
+              aria-selected={i === active}
+              aria-label={`Go to page ${i + 1}`}
+              onClick={() => goToPage(i)}
+              className={`h-2 rounded-full transition-all duration-300 ${
+                i === active ? "w-7 bg-accent" : "w-2 bg-line hover:bg-accent/40"
+              }`}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
