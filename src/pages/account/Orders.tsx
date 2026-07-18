@@ -6,12 +6,12 @@ import StatusBadge from "@/components/order/StatusBadge";
 export default function Orders() {
   return (
     <div>
-      <h1 className="font-display text-[26px] font-medium text-black">My Orders</h1>
+      <h1 className="font-display text-[26px] font-medium text-white">My Orders</h1>
       <p className="mt-1 text-[15px] text-body">Track and manage your recent purchases.</p>
 
       {orders.length === 0 ? (
         <div className="mt-10 rounded-card bg-card p-10 text-center">
-          <p className="text-[16px] font-medium text-black">No orders yet</p>
+          <p className="text-[16px] font-medium text-white">No orders yet</p>
           <Link to="/shop" className="mt-3 inline-block text-[14px] font-medium text-accent hover:underline">
             Start shopping →
           </Link>
@@ -22,7 +22,7 @@ export default function Orders() {
             <li key={order.id} className="rounded-card border border-line p-5">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-4">
                 <div>
-                  <p className="text-[15px] font-medium text-black">Order {order.id}</p>
+                  <p className="text-[15px] font-medium text-white">Order {order.id}</p>
                   <p className="text-[13px] text-muted">Placed on {order.placedAt}</p>
                 </div>
                 <StatusBadge status={order.status} />
@@ -42,12 +42,12 @@ export default function Orders() {
                   </div>
                   <p className="text-[14px] text-body">
                     {order.items.length} {order.items.length === 1 ? "item" : "items"} ·{" "}
-                    <span className="font-medium text-black">{formatPrice(order.totals.total)}</span>
+                    <span className="font-medium text-white">{formatPrice(order.totals.total)}</span>
                   </p>
                 </div>
                 <Link
                   to={`/account/orders/${order.id}`}
-                  className="rounded-btn border border-line px-4 py-2 text-[14px] font-medium text-black transition-colors hover:border-accent hover:text-accent"
+                  className="rounded-btn border border-line px-4 py-2 text-[14px] font-medium text-white transition-colors hover:border-accent hover:text-accent"
                 >
                   View details
                 </Link>

@@ -3,7 +3,7 @@ import type { Address } from "@/types";
 import { addresses as seedAddresses } from "@/lib/fixtures/account";
 
 const inputCls =
-  "h-[46px] w-full rounded-btn border border-line bg-white px-4 text-[14px] text-black outline-none transition-colors focus:border-accent";
+  "h-[46px] w-full rounded-btn border border-line bg-surface px-4 text-[14px] text-white outline-none transition-colors focus:border-accent";
 
 const blank = (): Omit<Address, "id"> => ({
   label: "Home",
@@ -35,14 +35,14 @@ export default function Addresses() {
     <div>
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-display text-[26px] font-medium text-black">Saved Addresses</h1>
+          <h1 className="font-display text-[26px] font-medium text-white">Saved Addresses</h1>
           <p className="mt-1 text-[15px] text-body">Manage your delivery addresses.</p>
         </div>
         {!adding && (
           <button
             type="button"
             onClick={() => setAdding(true)}
-            className="h-[44px] cursor-pointer rounded-btn bg-black px-5 text-[14px] font-medium text-white transition-opacity hover:opacity-85"
+            className="h-[44px] cursor-pointer rounded-btn bg-white px-5 text-[14px] font-medium text-black transition-opacity hover:opacity-85"
           >
             + Add address
           </button>
@@ -62,10 +62,10 @@ export default function Addresses() {
             <input className={inputCls} placeholder="Label (Home / Work)" value={draft.label} onChange={(e) => set("label", e.target.value)} />
           </div>
           <div className="mt-4 flex gap-3">
-            <button type="submit" className="h-[44px] cursor-pointer rounded-btn bg-black px-6 text-[14px] font-medium text-white hover:opacity-85">
+            <button type="submit" className="h-[44px] cursor-pointer rounded-btn bg-white px-6 text-[14px] font-medium text-black hover:opacity-85">
               Save address
             </button>
-            <button type="button" onClick={() => setAdding(false)} className="h-[44px] cursor-pointer rounded-btn border border-line px-6 text-[14px] font-medium text-body hover:text-black">
+            <button type="button" onClick={() => setAdding(false)} className="h-[44px] cursor-pointer rounded-btn border border-line px-6 text-[14px] font-medium text-body hover:text-white">
               Cancel
             </button>
           </div>
@@ -82,7 +82,7 @@ export default function Addresses() {
               {a.isDefault && <span className="text-[12px] font-medium text-muted">Default</span>}
             </div>
             <p className="mt-3 text-[14px] leading-[22px] text-body">
-              <span className="font-medium text-black">{a.name}</span>
+              <span className="font-medium text-white">{a.name}</span>
               <br />
               {a.line1}
               {a.line2 ? `, ${a.line2}` : ""}

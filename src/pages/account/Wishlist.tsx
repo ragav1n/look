@@ -16,7 +16,7 @@ export default function Wishlist() {
 
   return (
     <div>
-      <h1 className="font-display text-[26px] font-medium text-black">My Wishlist</h1>
+      <h1 className="font-display text-[26px] font-medium text-white">My Wishlist</h1>
       <p className="mt-1 text-[15px] text-body">Pieces you’ve saved for later.</p>
 
       {loading ? (
@@ -27,7 +27,7 @@ export default function Wishlist() {
         </div>
       ) : items.length === 0 ? (
         <div className="mt-8 rounded-card bg-card p-10 text-center">
-          <p className="text-[16px] font-medium text-black">Your wishlist is empty</p>
+          <p className="text-[16px] font-medium text-white">Your wishlist is empty</p>
           <p className="mt-1 text-[14px] text-body">
             Tap the heart on any product to save it here.
           </p>

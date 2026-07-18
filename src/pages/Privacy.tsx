@@ -87,7 +87,7 @@ export default function Privacy() {
   return (
     <div className="mx-auto w-full max-w-[820px] px-6 py-[72px]">
       <p className="text-[12px] tracking-[0.08em] text-accent uppercase">Legal</p>
-      <h1 className="mt-3 font-display text-[38px] leading-[48px] font-medium text-black">
+      <h1 className="mt-3 font-display text-[38px] leading-[48px] font-medium text-white">
         Privacy Policy
       </h1>
       <p className="mt-3 text-[13px] text-muted">Last updated: 18 July 2026</p>

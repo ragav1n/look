@@ -13,7 +13,7 @@ export default function Cart() {
 
   return (
     <div className="mx-auto w-full max-w-[1200px] px-6 py-12">
-      <h1 className="font-display text-[32px] leading-[42px] font-medium text-black">Your Cart</h1>
+      <h1 className="font-display text-[32px] leading-[42px] font-medium text-white">Your Cart</h1>
       <p className="mt-1 text-[15px] text-body">
         {cart.totalQuantity} {cart.totalQuantity === 1 ? "item" : "items"}
       </p>
@@ -42,7 +42,7 @@ export default function Cart() {
                     <div>
                       <Link
                         to={`/shop/${line.productSlug}`}
-                        className="text-[16px] font-medium text-black hover:text-accent"
+                        className="text-[16px] font-medium text-white hover:text-accent"
                       >
                         {line.name}
                       </Link>
@@ -50,7 +50,7 @@ export default function Cart() {
                         {[line.color, line.size].filter(Boolean).join(" · ")}
                       </p>
                     </div>
-                    <p className="text-[16px] font-medium text-black">{formatMoney(line.lineTotal)}</p>
+                    <p className="text-[16px] font-medium text-white">{formatMoney(line.lineTotal)}</p>
                   </div>
 
                   <div className="mt-auto flex items-center justify-between pt-4">
@@ -87,11 +87,11 @@ export default function Cart() {
 
         {/* Summary */}
         <aside className="h-fit rounded-card bg-card p-6">
-          <h2 className="text-[18px] font-medium text-black">Order Summary</h2>
+          <h2 className="text-[18px] font-medium text-white">Order Summary</h2>
           <dl className="mt-4 flex flex-col gap-3 text-[15px]">
             <div className="flex justify-between">
               <dt className="text-body">Subtotal</dt>
-              <dd className="font-medium text-black">{formatMoney(cart.cost.subtotal)}</dd>
+              <dd className="font-medium text-white">{formatMoney(cart.cost.subtotal)}</dd>
             </div>
             <div className="flex justify-between">
               <dt className="text-body">Shipping &amp; taxes</dt>
@@ -99,8 +99,8 @@ export default function Cart() {
             </div>
           </dl>
           <div className="mt-4 flex justify-between border-t border-line pt-4">
-            <span className="text-[16px] font-medium text-black">Total</span>
-            <span className="text-[18px] font-medium text-black">
+            <span className="text-[16px] font-medium text-white">Total</span>
+            <span className="text-[18px] font-medium text-white">
               {formatMoney(cart.cost.total)}
             </span>
           </div>
@@ -108,7 +108,7 @@ export default function Cart() {
           {cart.checkoutUrl ? (
             <a
               href={cart.checkoutUrl}
-              className="mt-6 flex h-[52px] w-full items-center justify-center rounded-btn bg-black text-[16px] font-medium text-white transition-opacity hover:opacity-85"
+              className="mt-6 flex h-[52px] w-full items-center justify-center rounded-btn bg-white text-[16px] font-medium text-black transition-opacity hover:opacity-85"
             >
               Proceed to Checkout
             </a>
@@ -138,13 +138,13 @@ function EmptyCart() {
       <span className="mx-auto flex size-16 items-center justify-center rounded-full bg-card">
         <img src={iconCart} alt="" className="size-7 opacity-60" />
       </span>
-      <h1 className="mt-5 font-display text-[26px] font-medium text-black">Your cart is empty</h1>
+      <h1 className="mt-5 font-display text-[26px] font-medium text-white">Your cart is empty</h1>
       <p className="mt-2 text-[15px] text-body">
         Looks like you haven’t added anything yet. Explore our latest collection.
       </p>
       <Link
         to="/shop"
-        className="mt-6 inline-flex items-center justify-center rounded-btn bg-black px-6 py-3 text-[15px] font-medium text-white transition-opacity hover:opacity-85"
+        className="mt-6 inline-flex items-center justify-center rounded-btn bg-white px-6 py-3 text-[15px] font-medium text-black transition-opacity hover:opacity-85"
       >
         Start Shopping
       </Link>

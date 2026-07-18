@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useUser } from "@/context/UserProvider";
 
 const inputCls =
-  "h-[48px] w-full rounded-btn border border-line bg-white px-4 text-[15px] text-black outline-none transition-colors focus:border-accent";
+  "h-[48px] w-full rounded-btn border border-line bg-surface px-4 text-[15px] text-white outline-none transition-colors focus:border-accent";
 
 export default function Profile() {
   const { user, updateProfile } = useUser();
@@ -19,12 +19,12 @@ export default function Profile() {
 
   return (
     <div>
-      <h1 className="font-display text-[26px] font-medium text-black">My Profile</h1>
+      <h1 className="font-display text-[26px] font-medium text-white">My Profile</h1>
       <p className="mt-1 text-[15px] text-body">Manage your personal information.</p>
 
       <form onSubmit={submit} className="mt-8 flex max-w-[460px] flex-col gap-5">
         <label className="flex flex-col gap-1.5">
-          <span className="text-[14px] font-medium text-[#3d4e5c]">Full name</span>
+          <span className="text-[14px] font-medium text-heading-soft">Full name</span>
           <input
             className={inputCls}
             value={name}
@@ -35,7 +35,7 @@ export default function Profile() {
           />
         </label>
         <label className="flex flex-col gap-1.5">
-          <span className="text-[14px] font-medium text-[#3d4e5c]">Email</span>
+          <span className="text-[14px] font-medium text-heading-soft">Email</span>
           <input
             type="email"
             className={inputCls}
@@ -47,7 +47,7 @@ export default function Profile() {
           />
         </label>
         <label className="flex flex-col gap-1.5">
-          <span className="text-[14px] font-medium text-[#3d4e5c]">Phone</span>
+          <span className="text-[14px] font-medium text-heading-soft">Phone</span>
           <input
             type="tel"
             className={inputCls}
@@ -62,7 +62,7 @@ export default function Profile() {
         <div className="flex items-center gap-4">
           <button
             type="submit"
-            className="h-[48px] cursor-pointer rounded-btn bg-black px-7 text-[15px] font-medium text-white transition-opacity hover:opacity-85"
+            className="h-[48px] cursor-pointer rounded-btn bg-white px-7 text-[15px] font-medium text-black transition-opacity hover:opacity-85"
           >
             Save changes
           </button>

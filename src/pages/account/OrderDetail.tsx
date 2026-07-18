@@ -20,7 +20,7 @@ export default function OrderDetail() {
   if (!order) {
     return (
       <div className="rounded-card bg-card p-10 text-center">
-        <p className="text-[16px] font-medium text-black">Order not found</p>
+        <p className="text-[16px] font-medium text-white">Order not found</p>
         <Link to="/account/orders" className="mt-3 inline-block text-[14px] text-accent hover:underline">
           ← Back to orders
         </Link>
@@ -35,7 +35,7 @@ export default function OrderDetail() {
       </Link>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-display text-[26px] font-medium text-black">Order {order.id}</h1>
+          <h1 className="font-display text-[26px] font-medium text-white">Order {order.id}</h1>
           <p className="mt-1 text-[14px] text-muted">Placed on {order.placedAt}</p>
         </div>
         <StatusBadge status={order.status} />
@@ -43,7 +43,7 @@ export default function OrderDetail() {
 
       {/* Timeline */}
       <div className="mt-8 rounded-card border border-line p-6">
-        <h2 className="text-[16px] font-medium text-black">Tracking</h2>
+        <h2 className="text-[16px] font-medium text-white">Tracking</h2>
         {order.courier && (
           <p className="mt-1 text-[14px] text-body">
             {order.courier.name} · AWB {order.courier.trackingId}
@@ -58,15 +58,15 @@ export default function OrderDetail() {
                 <div className="flex flex-col items-center">
                   <span
                     className={`flex size-5 shrink-0 items-center justify-center rounded-full border-2 ${
-                      done ? "border-accent bg-accent" : "border-line bg-white"
+                      done ? "border-accent bg-accent" : "border-line bg-surface"
                     }`}
                   >
-                    {done && <span className="size-1.5 rounded-full bg-white" />}
+                    {done && <span className="size-1.5 rounded-full bg-surface" />}
                   </span>
                   {!last && <span className={`w-0.5 flex-1 ${done ? "bg-accent" : "bg-line"}`} />}
                 </div>
                 <div className={`pb-6 ${last ? "" : ""}`}>
-                  <p className={`text-[15px] ${done ? "font-medium text-black" : "text-muted"}`}>
+                  <p className={`text-[15px] ${done ? "font-medium text-white" : "text-muted"}`}>
                     {STEP_LABEL[step.status]}
                   </p>
                   {step.at && (
@@ -85,7 +85,7 @@ export default function OrderDetail() {
 
         {order.shipmentUpdates.length > 0 && (
           <div className="mt-2 border-t border-line pt-4">
-            <p className="text-[13px] font-medium text-[#3d4e5c]">Shipment updates</p>
+            <p className="text-[13px] font-medium text-heading-soft">Shipment updates</p>
             <ul className="mt-2 flex flex-col gap-1.5">
               {order.shipmentUpdates.map((u) => (
                 <li key={u.at} className="text-[13px] text-body">
@@ -102,7 +102,7 @@ export default function OrderDetail() {
 
       {/* Items */}
       <div className="mt-6 rounded-card border border-line p-6">
-        <h2 className="text-[16px] font-medium text-black">Items</h2>
+        <h2 className="text-[16px] font-medium text-white">Items</h2>
         <ul className="mt-4 flex flex-col divide-y divide-line">
           {order.items.map((it) => (
             <li key={it.variantId} className="flex gap-4 py-4 first:pt-0 last:pb-0">
@@ -116,7 +116,7 @@ export default function OrderDetail() {
                 <div>
                   <Link
                     to={`/shop/${it.productSlug}`}
-                    className="text-[15px] font-medium text-black hover:text-accent"
+                    className="text-[15px] font-medium text-white hover:text-accent"
                   >
                     {it.name}
                   </Link>
@@ -124,7 +124,7 @@ export default function OrderDetail() {
                     {[it.color, it.size].filter(Boolean).join(" · ")} · Qty {it.quantity}
                   </p>
                 </div>
-                <p className="text-[15px] font-medium text-black">{formatPrice(it.price)}</p>
+                <p className="text-[15px] font-medium text-white">{formatPrice(it.price)}</p>
               </div>
             </li>
           ))}
@@ -134,9 +134,9 @@ export default function OrderDetail() {
       {/* Summary + address */}
       <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2">
         <div className="rounded-card border border-line p-6">
-          <h2 className="text-[16px] font-medium text-black">Delivery address</h2>
+          <h2 className="text-[16px] font-medium text-white">Delivery address</h2>
           <p className="mt-3 text-[14px] leading-[22px] text-body">
-            <span className="font-medium text-black">{order.address.name}</span>
+            <span className="font-medium text-white">{order.address.name}</span>
             <br />
             {order.address.line1}
             {order.address.line2 ? `, ${order.address.line2}` : ""}
@@ -147,25 +147,25 @@ export default function OrderDetail() {
           </p>
         </div>
         <div className="rounded-card border border-line p-6">
-          <h2 className="text-[16px] font-medium text-black">Payment summary</h2>
+          <h2 className="text-[16px] font-medium text-white">Payment summary</h2>
           <dl className="mt-3 flex flex-col gap-2 text-[14px]">
             <div className="flex justify-between">
               <dt className="text-body">Subtotal</dt>
-              <dd className="text-black">{formatPrice(order.totals.subtotal)}</dd>
+              <dd className="text-white">{formatPrice(order.totals.subtotal)}</dd>
             </div>
             <div className="flex justify-between">
               <dt className="text-body">Shipping</dt>
-              <dd className="text-black">
+              <dd className="text-white">
                 {order.totals.shipping === 0 ? "Free" : formatPrice(order.totals.shipping)}
               </dd>
             </div>
             <div className="flex justify-between">
               <dt className="text-body">Taxes</dt>
-              <dd className="text-black">{formatPrice(order.totals.taxes)}</dd>
+              <dd className="text-white">{formatPrice(order.totals.taxes)}</dd>
             </div>
             <div className="mt-1 flex justify-between border-t border-line pt-2">
-              <dt className="font-medium text-black">Total</dt>
-              <dd className="font-medium text-black">{formatPrice(order.totals.total)}</dd>
+              <dt className="font-medium text-white">Total</dt>
+              <dd className="font-medium text-white">{formatPrice(order.totals.total)}</dd>
             </div>
             <p className="mt-1 text-[13px] text-muted">Paid via {order.paymentMethod}</p>
           </dl>
