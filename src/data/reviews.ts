@@ -70,6 +70,17 @@ export const reviews: Review[] = [
     body: "Wore this for a sangeet and felt incredible. The silk blend catches the light beautifully and the fit was flawless.",
     verified: true,
   },
+  {
+    id: "r-7",
+    productId: "p-mustard-anarkali",
+    productName: "Mustard Anarkali",
+    author: "Naina",
+    rating: 5,
+    date: "2026-07-08",
+    title: "Twirls beautifully",
+    body: "Ordered this for a mehendi and it was perfect — flowy, comfortable, and the colour is even richer in person. Got compliments all evening.",
+    verified: true,
+  },
 ];
 
 export const reviewsFor = (productId: string) => reviews.filter((r) => r.productId === productId);

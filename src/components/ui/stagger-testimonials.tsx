@@ -162,8 +162,8 @@ export const StaggerTestimonials: React.FC<{ items: Testimonial[] }> = ({ items 
       onBlurCapture={() => (paused.current = false)}
     >
       {list.map((testimonial, index) => {
-        const position =
-          list.length % 2 ? index - (list.length + 1) / 2 : index - list.length / 2;
+        // Center the fan around the middle card (symmetric for an odd count).
+        const position = index - Math.floor(list.length / 2);
         return (
           <TestimonialCard
             key={testimonial.tempId}
