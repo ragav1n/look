@@ -61,10 +61,18 @@ export default function About() {
           {/* editorial photo pair */}
           <div className="relative hidden h-[440px] lg:block">
             <div className="absolute top-0 left-0 w-[300px] overflow-hidden rounded-img border-4 border-line bg-surface shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
-              <img src={heroModel1} alt="" className="aspect-[3/4] w-full object-cover object-top" />
+              <img
+                src={heroModel1}
+                alt="Model in a LOOK modern western outfit"
+                className="aspect-[3/4] w-full object-cover object-top"
+              />
             </div>
             <div className="absolute right-0 bottom-0 w-[210px] overflow-hidden rounded-img border-4 border-line bg-surface shadow-[-3px_4px_20px_rgba(0,0,0,0.5)]">
-              <img src={heroModel2} alt="" className="aspect-[3/4] w-full object-cover object-top" />
+              <img
+                src={heroModel2}
+                alt="Model styled in a LOOK ensemble"
+                className="aspect-[3/4] w-full object-cover object-top"
+              />
             </div>
           </div>
         </div>

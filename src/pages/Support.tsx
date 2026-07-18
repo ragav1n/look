@@ -42,7 +42,7 @@ export default function Support() {
             href={site.whatsappHref}
             target="_blank"
             rel="noreferrer"
-            className="mt-8 inline-flex items-center justify-center gap-2.5 rounded-btn bg-accent px-7 py-3.5 text-[15px] font-medium text-white transition-all hover:scale-[1.02] hover:bg-accent-bright"
+            className="mt-8 inline-flex items-center justify-center gap-2.5 rounded-btn bg-accent px-7 py-3.5 text-[15px] font-medium text-white transition hover:scale-[1.02] hover:bg-accent-bright"
           >
             <MessageCircle className="size-5" />
             Chat on WhatsApp
@@ -54,7 +54,7 @@ export default function Support() {
               external
               icon={<MessageCircle className="size-5" />}
               title="WhatsApp"
-              value="Send us a message"
+              value={site.phone}
             />
             <ContactCard
               href={site.emailHref}
