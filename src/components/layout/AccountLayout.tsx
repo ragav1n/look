@@ -33,7 +33,7 @@ export default function AccountLayout() {
                 to={to}
                 end
                 className={({ isActive }) =>
-                  `rounded-btn px-4 py-3 text-[15px] transition-colors ${
+                  `rounded-btn px-4 py-3 text-[15px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 ${
                     isActive
                       ? "bg-accent/10 font-medium text-accent"
                       : "text-body hover:bg-surface hover:text-white"
@@ -49,7 +49,7 @@ export default function AccountLayout() {
                 logout();
                 navigate("/");
               }}
-              className="mt-1 rounded-btn px-4 py-3 text-left text-[15px] text-muted transition-colors hover:bg-surface hover:text-sale"
+              className="mt-1 rounded-btn px-4 py-3 text-left text-[15px] text-muted transition-colors hover:bg-surface hover:text-sale focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
             >
               Log out
             </button>

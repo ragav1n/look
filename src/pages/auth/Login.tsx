@@ -32,6 +32,8 @@ export default function Login() {
         <AuthField label="Email">
           <input
             type="email"
+            name="email"
+            autoComplete="email"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -42,6 +44,8 @@ export default function Login() {
         <AuthField label="Password">
           <input
             type="password"
+            name="password"
+            autoComplete="current-password"
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -56,7 +60,7 @@ export default function Login() {
         </div>
         <button
           type="submit"
-          className="h-[50px] cursor-pointer rounded-btn bg-white text-[15px] font-medium text-black transition-opacity hover:opacity-85"
+          className="h-[50px] cursor-pointer rounded-btn bg-white text-[15px] font-medium text-black transition-opacity hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-page"
         >
           Sign In
         </button>
