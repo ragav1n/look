@@ -10,9 +10,9 @@ import iconCart from "@/assets/icon-cart.svg";
 
 const links = [
   { to: "/", label: "Home" },
-  { to: "/about", label: "About Us" },
   { to: "/shop", label: "Shop" },
   { to: "/support", label: "Contact Us" },
+  { to: "/about", label: "About Us" },
 ];
 
 /* Figma has two navbar variants: dark (Home, node 2007:3816) and
@@ -42,9 +42,9 @@ export default function Navbar({ variant = "light" }: { variant?: "dark" | "ligh
 
   return (
     <header
-      className={`sticky top-0 z-40 ${dark ? "bg-black" : "bg-white"} shadow-[0px_7px_11.2px_rgba(0,0,0,0.08)]`}
+      className={`sticky top-0 z-40 border-b ${dark ? "border-white/10 bg-black" : "border-line bg-white"} shadow-[0px_7px_11.2px_rgba(0,0,0,0.35)]`}
     >
-      <div className="mx-auto grid h-[87px] w-full max-w-[1512px] grid-cols-[1fr_auto_1fr] items-center gap-6 px-6 lg:px-[85px]">
+      <div className="mx-auto grid h-[72px] w-full max-w-[1512px] grid-cols-[1fr_auto_1fr] items-center gap-6 px-6 lg:px-[85px]">
         {/* LEFT: hamburger + primary nav */}
         <div className="flex items-center gap-4 justify-self-start">
           <button
@@ -74,10 +74,10 @@ export default function Navbar({ variant = "light" }: { variant?: "dark" | "ligh
                         isActive
                           ? dark
                             ? "font-semibold text-white"
-                            : "font-semibold text-black"
+                            : "font-semibold text-white"
                           : dark
                             ? "font-normal text-white/60 group-hover:text-white"
-                            : "font-normal text-muted group-hover:text-black"
+                            : "font-normal text-muted group-hover:text-white"
                       }`}
                     >
                       {label}
@@ -98,10 +98,10 @@ export default function Navbar({ variant = "light" }: { variant?: "dark" | "ligh
         {/* CENTER: logo */}
         <Link
           to="/"
-          className="flex h-[43px] shrink-0 items-center justify-self-center transition-transform duration-200 hover:scale-[1.03]"
+          className="flex h-[48px] shrink-0 items-center justify-self-center transition-transform duration-200 hover:scale-[1.03]"
           aria-label="LOOK — home"
         >
-          <img src={dark ? logoWhite : logoBlack} alt="LOOK" className="h-[36px] w-auto object-contain" />
+          <img src={dark ? logoWhite : logoBlack} alt="LOOK" className="h-[42px] w-auto object-contain" />
         </Link>
 
         {/* RIGHT: search + account actions */}
@@ -122,7 +122,7 @@ export default function Navbar({ variant = "light" }: { variant?: "dark" | "ligh
               placeholder="Search for products"
               aria-label="Search for products"
               className={`min-w-0 flex-1 bg-transparent text-[15px] outline-none ${
-                dark ? "text-white placeholder:text-white/50" : "text-black placeholder:text-muted"
+                dark ? "text-white placeholder:text-white/50" : "text-white placeholder:text-muted"
               }`}
             />
             <button
@@ -141,7 +141,7 @@ export default function Navbar({ variant = "light" }: { variant?: "dark" | "ligh
               type="button"
               onClick={() => navigate("/shop")}
               aria-label="Search"
-              className={`grid place-items-center md:hidden ${dark ? "text-white" : "text-black"}`}
+              className={`grid place-items-center md:hidden ${dark ? "text-white" : "text-white"}`}
             >
               <Search className="size-6" strokeWidth={1.8} />
             </button>
@@ -165,7 +165,7 @@ export default function Navbar({ variant = "light" }: { variant?: "dark" | "ligh
 
       {/* Mobile menu panel */}
       {menuOpen && (
-        <nav className="border-t border-line bg-white lg:hidden" aria-label="Mobile">
+        <nav className="border-t border-line bg-black lg:hidden" aria-label="Mobile">
           <ul className="flex flex-col px-6 py-2">
             {links.map(({ to, label }) => (
               <li key={to}>
@@ -173,7 +173,7 @@ export default function Navbar({ variant = "light" }: { variant?: "dark" | "ligh
                   to={to}
                   end={to === "/"}
                   className={({ isActive }) =>
-                    `block py-3 text-[16px] ${isActive ? "font-semibold text-accent" : "text-body"}`
+                    `block py-3 text-[16px] ${isActive ? "font-semibold text-accent" : "text-white/80"}`
                   }
                 >
                   {label}
@@ -181,12 +181,12 @@ export default function Navbar({ variant = "light" }: { variant?: "dark" | "ligh
               </li>
             ))}
             <li>
-              <Link to="/account/wishlist" className="block py-3 text-[16px] text-body">
+              <Link to="/account/wishlist" className="block py-3 text-[16px] text-white/80">
                 Wishlist
               </Link>
             </li>
             <li>
-              <Link to="/account/profile" className="block py-3 text-[16px] text-body">
+              <Link to="/account/profile" className="block py-3 text-[16px] text-white/80">
                 My Account
               </Link>
             </li>
