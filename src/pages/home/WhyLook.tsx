@@ -7,14 +7,16 @@ export default function WhyLook() {
   return (
     <section className="py-[80px]" aria-labelledby="why-look-heading">
       <Reveal className="mx-auto w-full max-w-[860px] px-6 text-center">
-        <p className="text-[12px] tracking-[0.08em] text-accent uppercase">Why LOOK?</p>
         <h2
           id="why-look-heading"
-          className="mx-auto mt-3 max-w-[760px] font-display text-[32px] leading-[44px] font-medium text-white"
+          className="font-display text-[35px] leading-[47px] font-medium text-white"
         >
-          Luxury is not about exclusivity — it is about making every woman feel extraordinary.
+          Why LOOK?
         </h2>
-        <p className="mx-auto mt-6 max-w-[680px] text-[16px] leading-[27px] text-body">
+        <p className="mx-auto mt-4 max-w-[660px] text-[19px] leading-[31px] font-medium text-heading-soft">
+          Luxury is not about exclusivity — it is about making every woman feel extraordinary.
+        </p>
+        <p className="mx-auto mt-5 max-w-[680px] text-[16px] leading-[27px] text-body">
           Every LOOK piece is thoughtfully crafted with premium quality, timeless design, and
           inclusive tailoring to celebrate every skin tone, every body shape, and every unique
           story.
