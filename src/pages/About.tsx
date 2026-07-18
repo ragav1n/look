@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
+import { Check } from "lucide-react";
 import { site } from "@/config/site";
 import heroModel1 from "@/assets/hero-model-1.jpg";
 import heroModel2 from "@/assets/hero-model-2.jpg";
-import iconCheck from "@/assets/icon-essence-check.svg";
 
 const represents = [
   "The way you carry yourself",
@@ -20,7 +20,7 @@ export default function About() {
           <p className="text-[12px] tracking-[0.08em] text-accent uppercase">Our Story</p>
           <h1
             id="about-heading"
-            className="mx-auto mt-3 max-w-[720px] font-display text-[38px] leading-[50px] font-medium text-black"
+            className="mx-auto mt-3 max-w-[720px] font-display text-[38px] leading-[50px] font-medium text-white"
           >
             Every woman deserves to be seen, heard, and celebrated for who she truly is.
           </h1>
@@ -49,10 +49,10 @@ export default function About() {
             <ul className="mt-6 flex flex-col gap-3">
               {represents.map((item) => (
                 <li key={item} className="flex items-center gap-3">
-                  <span className="flex size-[28px] shrink-0 items-center justify-center rounded-full bg-lavender">
-                    <img src={iconCheck} alt="" className="size-[15px]" />
+                  <span className="flex size-[28px] shrink-0 items-center justify-center rounded-full bg-accent text-white">
+                    <Check className="size-[15px]" strokeWidth={2.5} />
                   </span>
-                  <span className="text-[16px] leading-[24px] text-black">{item}</span>
+                  <span className="text-[16px] leading-[24px] text-white">{item}</span>
                 </li>
               ))}
             </ul>
@@ -60,10 +60,10 @@ export default function About() {
 
           {/* editorial photo pair */}
           <div className="relative hidden h-[440px] lg:block">
-            <div className="absolute top-0 left-0 w-[300px] overflow-hidden rounded-img border-4 border-line bg-white shadow-[0_0_1px_rgba(0,0,0,0.09)]">
+            <div className="absolute top-0 left-0 w-[300px] overflow-hidden rounded-img border-4 border-line bg-surface shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
               <img src={heroModel1} alt="" className="aspect-[3/4] w-full object-cover object-top" />
             </div>
-            <div className="absolute right-0 bottom-0 w-[210px] overflow-hidden rounded-img border-4 border-line bg-white shadow-[-3px_4px_5px_rgba(0,0,0,0.09)]">
+            <div className="absolute right-0 bottom-0 w-[210px] overflow-hidden rounded-img border-4 border-line bg-surface shadow-[-3px_4px_20px_rgba(0,0,0,0.5)]">
               <img src={heroModel2} alt="" className="aspect-[3/4] w-full object-cover object-top" />
             </div>
           </div>
@@ -135,7 +135,7 @@ export default function About() {
 
         <Link
           to="/shop"
-          className="mt-10 inline-flex items-center justify-center rounded-btn bg-black px-6 py-3 text-[16px] font-medium text-white shadow-xs transition-opacity hover:opacity-85"
+          className="mt-10 inline-flex items-center justify-center rounded-btn bg-white px-6 py-3 text-[16px] font-medium text-black shadow-xs transition-opacity hover:opacity-85"
         >
           Explore the Collection
         </Link>
