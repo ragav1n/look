@@ -131,6 +131,21 @@ body {
   animation: marquee 32s linear infinite;
 }
 
+/* Route transition: content fades/rises in on navigation instead of popping */
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-page-in {
+  animation: page-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 /* Soft accent glow pulse used behind CTAs / eyebrows */
 @keyframes glow-pulse {
   0%,
@@ -161,7 +176,8 @@ body {
   .animate-fade-up,
   .animate-float,
   .animate-marquee,
-  .animate-glow {
+  .animate-glow,
+  .animate-page-in {
     animation: none;
     opacity: 1;
   }

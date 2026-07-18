@@ -11,7 +11,9 @@ export default function PageShell() {
   return (
     <div className="flex min-h-screen flex-col">
       <Navbar variant={isHome ? "dark" : "light"} />
-      <div className="flex-1">
+      {/* Keyed by path so each navigation replays the enter animation instead of
+          the new page popping in instantly. */}
+      <div key={pathname} className="animate-page-in flex-1">
         <Outlet />
       </div>
       <Footer />
