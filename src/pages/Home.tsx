@@ -1,37 +1,29 @@
-import { useState } from "react";
-import type { Product } from "@/types";
 import Hero from "./home/Hero";
-import NewArrivals from "./home/NewArrivals";
+import LookCollections from "./home/LookCollections";
 import FeaturedEdit from "./home/FeaturedEdit";
 import InstaReels from "./home/InstaReels";
 import PriceDrop from "./home/PriceDrop";
-import WhyLook from "./home/WhyLook";
-import BestSellers from "./home/BestSellers";
 import HomeReviews from "./home/HomeReviews";
 import FaqSection from "./home/FaqSection";
 import SignupBanner from "./home/SignupBanner";
-import QuickViewModal from "@/components/product/QuickViewModal";
 
-/* Home lineup per the user's brief:
-   Visual movement (Hero) → New arrivals → Reels from insta → Price drop! →
-   Why LOOK? → Best sellers → Reviews → FAQs → Signup → (Footer in PageShell).
-   Quick-view opens from Best Sellers cards. */
+/* Home lineup (shortened per the client's brief):
+   Hero "What's New!" → What's New (product carousel) → LOOK Collections →
+   Instagram Reels → Price Drop → LOOK's Customer Diaries → FAQs →
+   LOOK Community → (Footer in PageShell). The old New Arrivals, Why LOOK
+   benefit/feature blocks and Top Picks sections were removed to keep the page
+   from getting too long. */
 export default function Home() {
-  const [quickView, setQuickView] = useState<Product | null>(null);
-
   return (
     <>
       <Hero />
-      <NewArrivals />
       <FeaturedEdit />
+      <LookCollections />
       <InstaReels />
       <PriceDrop />
-      <WhyLook />
-      <BestSellers onQuickView={setQuickView} />
       <HomeReviews />
       <FaqSection />
       <SignupBanner />
-      <QuickViewModal product={quickView} onClose={() => setQuickView(null)} />
     </>
   );
 }

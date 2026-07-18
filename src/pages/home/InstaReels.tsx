@@ -25,7 +25,7 @@ export default function InstaReels() {
             <p className="text-[12px] tracking-[0.08em] text-accent uppercase">@look_.in</p>
             <h2
               id="reels-heading"
-              className="mt-2 font-display text-[35px] leading-[47px] font-medium text-black"
+              className="mt-2 font-display text-[35px] leading-[47px] font-medium text-white"
             >
               Straight From Our Reels
             </h2>

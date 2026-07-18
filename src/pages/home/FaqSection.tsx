@@ -14,7 +14,7 @@ export default function FaqSection() {
           <p className="text-[12px] tracking-[0.08em] text-accent uppercase">Need Help?</p>
           <h2
             id="faq-heading"
-            className="mt-2 font-display text-[35px] leading-[47px] font-medium text-black"
+            className="mt-2 font-display text-[35px] leading-[47px] font-medium text-white"
           >
             Frequently Asked Questions
           </h2>
@@ -39,7 +39,7 @@ export default function FaqSection() {
                     onClick={() => setOpen(isOpen ? null : f.id)}
                     className="flex w-full cursor-pointer items-center justify-between gap-4 px-6 py-5 text-left"
                   >
-                    <span className="text-[17px] leading-[24px] font-medium text-black">{f.q}</span>
+                    <span className="text-[17px] leading-[24px] font-medium text-white">{f.q}</span>
                     <span
                       aria-hidden
                       className={`shrink-0 text-[26px] leading-none font-light text-accent transition-transform duration-300 ${
