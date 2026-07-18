@@ -23,7 +23,7 @@ export default function ImageGallery({ images, alt }: { images: string[]; alt: s
               aria-label={`View image ${i + 1} of ${images.length}`}
               aria-current={i === active}
               className={`h-[84px] w-[68px] cursor-pointer overflow-hidden rounded-[6px] border-2 transition-colors ${
-                i === active ? "border-accent" : "border-line hover:border-black"
+                i === active ? "border-accent" : "border-line hover:border-line-strong"
               }`}
             >
               <img src={src} alt="" className="h-full w-full object-cover object-top" />
