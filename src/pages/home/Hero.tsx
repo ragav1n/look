@@ -21,7 +21,8 @@ const SLIDE_MS = 7000;
    than as a thin crop. */
 export default function Hero() {
   const { data } = useAsyncData(() => getCollectionProducts(HERO_COLLECTION, 6), []);
-  const slides = data ?? [];
+  // A product whose media is still processing would render an empty slide.
+  const slides = (data ?? []).filter((p) => p.images[0]);
   const [slide, setSlide] = useState(0);
 
   // Collection length isn't known on first render, so clamp when it arrives.

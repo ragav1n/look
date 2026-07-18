@@ -58,11 +58,14 @@ function PdpContent({ product }: { product: Product }) {
   }, [added]);
 
   const hasColorOpt = product.colors.length > 0;
-  const variant =
-    size && (color || !hasColorOpt)
-      ? product.variants.find(
-          (v) => v.size === size && (hasColorOpt ? v.color === color : true),
-        )
+  const hasSizeOpt = product.sizes.length > 0;
+  /* A product with no Size option (Shopify gives it a single "Default Title"
+     variant) has nothing to select, so resolve straight to that variant —
+     otherwise `size` stays null and Add to Cart can never enable. */
+  const variant = !hasSizeOpt
+    ? product.variants[0]
+    : size && (color || !hasColorOpt)
+      ? product.variants.find((v) => v.size === size && (hasColorOpt ? v.color === color : true))
       : undefined;
   const canAdd = Boolean(variant?.availableForSale);
   const wished = has(product.id);
@@ -232,8 +235,10 @@ function PdpContent({ product }: { product: Product }) {
             <p className="mt-3 text-[13px] text-sale">
               That colour and size combination is unavailable.
             </p>
-          ) : !size ? (
+          ) : hasSizeOpt && !size ? (
             <p className="mt-3 text-[13px] text-muted">Select a size to add to cart.</p>
+          ) : !canAdd ? (
+            <p className="mt-3 text-[13px] text-muted">This piece is currently out of stock.</p>
           ) : null}
 
           {/* Trust info */}

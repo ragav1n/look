@@ -21,12 +21,18 @@ export default function ProductCard({ product, onQuickView }: Props) {
     <div className="group relative flex flex-col rounded-card bg-card p-[13px] pb-[11px]">
       <div className="relative overflow-hidden rounded-img">
         <Link to={`/shop/${product.slug}`} aria-label={product.name}>
-          <img
-            src={product.images[0]}
-            alt={product.name}
-            loading="lazy"
-            className="aspect-[294/348] w-full rounded-img object-cover object-top transition-transform duration-500 group-hover:scale-[1.04]"
-          />
+          {/* A Shopify product can exist before its media finishes processing —
+              show a plain surface rather than a broken-image icon. */}
+          {product.images[0] ? (
+            <img
+              src={product.images[0]}
+              alt={product.name}
+              loading="lazy"
+              className="aspect-[294/348] w-full rounded-img object-cover object-top transition-transform duration-500 group-hover:scale-[1.04]"
+            />
+          ) : (
+            <div className="aspect-[294/348] w-full rounded-img bg-surface" />
+          )}
         </Link>
         {product.badge && (
           <span className="absolute top-[14px] left-[16px]">

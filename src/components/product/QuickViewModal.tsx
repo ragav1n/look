@@ -108,10 +108,15 @@ export default function QuickViewModal({ product, onClose }: Props) {
               <p className="font-display text-[24px] leading-8 font-medium text-white">
                 {product.name}
               </p>
-              <div className="mt-1 flex items-center gap-2">
-                <RatingStars rating={product.rating} size={18} />
-                <span className="text-[14px] text-body">({product.reviewCount})</span>
-              </div>
+              {/* Shopify's Storefront API serves no ratings, so live products sit
+                  at 0 — show the row only when there's a real score, matching the
+                  PDP rather than rendering five empty stars and "(0)". */}
+              {product.rating > 0 && (
+                <div className="mt-1 flex items-center gap-2">
+                  <RatingStars rating={product.rating} size={18} />
+                  <span className="text-[14px] text-body">({product.reviewCount})</span>
+                </div>
+              )}
             </div>
 
             <div className="flex items-end gap-3">
