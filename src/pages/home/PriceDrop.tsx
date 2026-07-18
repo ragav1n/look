@@ -5,13 +5,13 @@ import { useAsyncData } from "@/hooks/useAsyncData";
 import Skeleton from "@/components/ui/Skeleton";
 import Reveal from "@/components/ui/Reveal";
 
-/* Figma promo cards (2007:3587): 518x250 surface cards, "Up to N% off" with
-   red percentage, 26px title, black Shop Now, 159px circular photo.
-   Data-driven: shows products Shopify reports on sale (compareAtPrice > price);
-   the % is derived from Shopify's own compare-at, not a discount we invent. */
+/* Price Drop — data-driven from products Shopify reports on sale
+   (compareAtPrice > price). Each card shows just the essentials the client
+   asked for: image, name, original price (struck through) and the discounted
+   price. No EMI / monthly-payment clutter. */
 export default function PriceDrop() {
   const { data, loading } = useAsyncData(() => getSaleProducts(), []);
-  const promos = (data ?? []).slice(0, 2);
+  const promos = (data ?? []).slice(0, 4);
 
   // Nothing on sale in Shopify → hide the section entirely.
   if (!loading && promos.length === 0) return null;
@@ -23,55 +23,61 @@ export default function PriceDrop() {
           <p className="text-[12px] tracking-[0.08em] text-accent uppercase">Limited Time</p>
           <h2
             id="price-drop-heading"
-            className="mt-2 font-display text-[35px] leading-[47px] font-medium text-black"
+            className="mt-2 font-display text-[35px] leading-[47px] font-medium text-white"
           >
             Price Drop!
           </h2>
+          <p className="mt-2 text-[16px] text-body">Loved pieces, now at a lower price.</p>
         </Reveal>
 
-        <div className="mx-auto mt-[44px] flex max-w-[1071px] flex-col justify-center gap-[35px] lg:flex-row">
+        <div className="mt-[44px] grid grid-cols-2 gap-4 sm:gap-5 lg:grid-cols-4 lg:gap-6">
           {loading &&
-            Array.from({ length: 2 }).map((_, i) => (
-              <Skeleton key={i} className="h-[250px] w-full max-w-[518px] rounded-card" />
+            Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="flex flex-col gap-3">
+                <Skeleton className="aspect-[3/4] w-full rounded-card" />
+                <Skeleton className="h-5 w-3/4" />
+                <Skeleton className="h-5 w-1/2" />
+              </div>
             ))}
+
           {!loading &&
             promos.map((p, i) => {
               const percent = p.mrp ? Math.round(((p.mrp - p.price) / p.mrp) * 100) : 0;
               return (
-                <Reveal
-                  key={p.id}
-                  variant={i === 0 ? "left" : "right"}
-                  delay={i * 120}
-                  className="w-full max-w-[518px] shrink-0"
-                >
-                <div className="group relative h-[250px] w-full overflow-hidden rounded-card bg-surface transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(0,0,0,0.10)]">
-                  <div className="flex h-full flex-col justify-center pl-[47px]">
-                    <p className="text-[16px] text-body">
-                      Up to <span className="text-[24px] text-sale">{percent}%</span> off
-                    </p>
-                    <p className="mt-1 text-[26px] leading-tight font-medium text-heading-soft">
+                <Reveal key={p.id} variant="up" delay={i * 90}>
+                  <Link
+                    to={`/shop/${p.slug}`}
+                    aria-label={p.name}
+                    className="group flex flex-col"
+                  >
+                    <div className="relative overflow-hidden rounded-card border border-white/5 bg-card">
+                      <img
+                        src={p.images[0]}
+                        alt={p.name}
+                        loading="lazy"
+                        className="aspect-[3/4] w-full object-cover object-top transition-transform duration-700 ease-out group-hover:scale-[1.05]"
+                      />
+                      {percent > 0 && (
+                        <span className="absolute top-3 left-3 rounded-full bg-accent px-2.5 py-1 font-ui text-[11px] font-semibold tracking-[0.02em] text-white">
+                          {percent}% OFF
+                        </span>
+                      )}
+                    </div>
+
+                    <h3 className="mt-3 text-[16px] leading-[22px] font-medium text-white group-hover:text-accent">
                       {p.name}
-                    </p>
-                    <p className="mt-1 text-[14px] text-muted">
-                      Now from{" "}
-                      <span className="font-medium text-accent">
+                    </h3>
+                    <div className="mt-1 flex items-center gap-2">
+                      {p.mrp && (
+                        <span className="text-[14px] text-muted line-through">
+                          {formatPrice(p.mrp, p.currencyCode)}
+                        </span>
+                      )}
+                      <span className="text-[16px] font-semibold text-white">
                         {formatPrice(p.price, p.currencyCode)}
                       </span>
-                    </p>
-                    <Link
-                      to={`/shop/${p.slug}`}
-                      className="mt-4 inline-flex w-fit items-center justify-center rounded-btn bg-black px-4 py-2.5 font-ui text-[14px] leading-5 font-medium text-white shadow-xs transition-opacity hover:opacity-85"
-                    >
-                      Shop Now
-                    </Link>
-                  </div>
-                  <img
-                    src={p.images[0]}
-                    alt={p.name}
-                    loading="lazy"
-                    className="absolute top-[50px] right-[26px] hidden size-[159px] rounded-full object-cover object-top transition-transform duration-700 ease-out group-hover:scale-[1.06] sm:block"
-                  />
-                </div>
+                    </div>
+                  </Link>
                 </Reveal>
               );
             })}
