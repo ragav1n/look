@@ -10,8 +10,10 @@ import { useWishlist } from "@/context/WishlistContext";
 import { reviewsFor } from "@/data/reviews";
 import ImageGallery from "@/components/product/ImageGallery";
 import ProductCard, { ProductCardSkeleton } from "@/components/product/ProductCard";
+import ProductTabs from "@/components/product/ProductTabs";
 import { ColorSwatches, SizeChips, QuantityStepper } from "@/components/product/PurchaseControls";
 import RatingStars from "@/components/ui/RatingStars";
+import Reveal from "@/components/ui/Reveal";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
 import Skeleton from "@/components/ui/Skeleton";
@@ -248,66 +250,8 @@ function PdpContent({ product }: { product: Product }) {
         </div>
       </div>
 
-      {/* Description — moved down (no longer directly under the price) */}
-      <section className="mt-16 max-w-[820px]" aria-labelledby="desc-heading">
-        <h2 id="desc-heading" className="font-display text-[24px] font-medium text-white">
-          Description
-        </h2>
-        <p className="mt-4 text-[15px] leading-[25px] text-body">{product.description}</p>
-        <h3 className="mt-6 text-[17px] font-medium text-white">{product.details.title}</h3>
-        {product.details.body.map((p, i) => (
-          <p key={i} className="mt-3 text-[15px] leading-[25px] text-body">
-            {p}
-          </p>
-        ))}
-      </section>
-
-      {/* Reviews — positioned below the description */}
-      <section className="mt-14 max-w-[820px]" aria-labelledby="reviews-heading">
-        <h2 id="reviews-heading" className="font-display text-[24px] font-medium text-white">
-          Reviews ({reviews.length})
-        </h2>
-        <div className="mt-6 flex flex-col gap-6">
-          {reviews.length === 0 && (
-            <p className="text-[15px] text-body">
-              No reviews yet — be the first to share your thoughts.
-            </p>
-          )}
-          {reviews.map((r) => (
-            <div key={r.id} className="border-b border-line pb-6 last:border-0">
-              <div className="flex items-center gap-3">
-                <RatingStars rating={r.rating} size={16} />
-                <span className="text-[14px] font-medium text-white">{r.title}</span>
-              </div>
-              <p className="mt-2 text-[15px] leading-[24px] text-body">{r.body}</p>
-              <p className="mt-2 text-[13px] text-muted">
-                {r.author}
-                {r.verified && <span className="ml-2 text-accent">✓ Verified buyer</span>}
-                <span className="ml-2 text-faint">{r.date}</span>
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Exchange & Returns */}
-      <section className="mt-14 max-w-[820px]" aria-labelledby="returns-heading">
-        <h2 id="returns-heading" className="font-display text-[24px] font-medium text-white">
-          Exchange &amp; Returns
-        </h2>
-        <div className="mt-4 flex flex-col gap-3 text-[15px] leading-[25px] text-body">
-          <p>
-            We accept returns and exchanges for eligible products within our return policy period,
-            provided the item is unused, unwashed, and in its original condition with all tags
-            intact.
-          </p>
-          <p>
-            Orders are usually processed within 3–6 business days, and delivery timelines may vary
-            depending on your location. To start a return or exchange, please reach out to our
-            support team and we’ll be happy to help.
-          </p>
-        </div>
-      </section>
+      {/* Description / Reviews / Exchange & Returns — tabbed to keep the page short */}
+      <ProductTabs product={product} reviews={reviews} />
 
       <RelatedProducts currentId={product.id} category={product.category} />
 
@@ -363,13 +307,19 @@ function RelatedProducts({ currentId, category }: { currentId: string; category:
 
   return (
     <section className="mt-20" aria-labelledby="related-heading">
-      <h2 id="related-heading" className="font-display text-[26px] font-medium text-white">
-        You may also like
-      </h2>
+      <Reveal>
+        <h2 id="related-heading" className="font-display text-[26px] font-medium text-white">
+          You may also like
+        </h2>
+      </Reveal>
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-[15px]">
         {loading
           ? Array.from({ length: 4 }).map((_, i) => <ProductCardSkeleton key={i} />)
-          : items.map((p) => <ProductCard key={p.id} product={p} />)}
+          : items.map((p, i) => (
+              <Reveal key={p.id} variant="up" delay={i * 90}>
+                <ProductCard product={p} />
+              </Reveal>
+            ))}
       </div>
     </section>
   );
