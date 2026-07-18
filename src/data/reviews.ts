@@ -41,7 +41,7 @@ export const reviews: Review[] = [
     id: "r-4",
     productId: "p-mustard-anarkali",
     productName: "Mustard Anarkali",
-    author: "Sanya",
+    author: "Saara",
     rating: 5,
     date: "2026-07-02",
     title: "My new favourite",
