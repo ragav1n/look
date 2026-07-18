@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import authPhoto from "@/assets/hero-model-1.jpg";
+import authPhoto from "@/assets/auth-mirror-lace.jpg";
 import logoWhite from "@/assets/look-logo-white.png";
 
 /* Figma auth (Login 1:6446 / Signup 1:6486): split layout, editorial photo
@@ -19,12 +19,16 @@ export default function AuthShell({
   return (
     <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2">
       <div className="relative hidden overflow-hidden lg:block">
+        {/* Absolutely positioned so the photo's own aspect ratio can never drive
+            the row height — in flow, `h-full` doesn't resolve against an
+            auto-height grid item, so a portrait crop would stretch the page
+            past min-h-screen and push the caption below the fold. */}
         <img
           src={authPhoto}
           alt=""
-          className="animate-auth-image h-full w-full object-cover object-top"
+          className="animate-auth-image absolute inset-0 h-full w-full object-cover object-top"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
         <div className="absolute bottom-12 left-12 max-w-[380px] text-white">
           <p className="font-script text-[40px] leading-tight">Elevate Your Style</p>
           <p className="mt-2 text-[15px] leading-[24px] text-white/85">
