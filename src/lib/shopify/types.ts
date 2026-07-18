@@ -32,6 +32,8 @@ export interface SFProduct {
   description: string;
   productType: string;
   tags: string[];
+  createdAt: string;
+  publishedAt: string | null;
   availableForSale: boolean;
   vendor: string;
   totalInventory: number | null;

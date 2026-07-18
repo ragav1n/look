@@ -40,6 +40,17 @@ const colorHex = (name: string): string => {
   return word ? COLOR_HEX[word] : "#B8B8B8";
 };
 
+/** How long a product carries the "New" badge after going live. */
+const NEW_WINDOW_DAYS = 30;
+
+const isWithinNewWindow = (iso: string | null): boolean => {
+  if (!iso) return false;
+  const published = Date.parse(iso);
+  return (
+    Number.isFinite(published) && Date.now() - published < NEW_WINDOW_DAYS * 24 * 60 * 60 * 1000
+  );
+};
+
 const optionValue = (v: SFVariant, name: string): string =>
   v.selectedOptions.find((o) => o.name.toLowerCase() === name.toLowerCase())?.value ?? "";
 
@@ -71,7 +82,12 @@ export function toProduct(p: SFProduct): Product {
     p.images.nodes.length ? p.images.nodes.map((i) => i.url) : p.featuredImage ? [p.featuredImage.url] : []
   );
 
-  const isNew = p.tags.some((t) => t.toLowerCase() === "new" || t.toLowerCase() === "new-arrival");
+  // "New" is derived from when the product went live, so it applies itself to
+  // every new upload and expires on its own. A `new` / `new-arrival` tag still
+  // forces it on — use that to keep something featured past the window.
+  const isNew =
+    p.tags.some((t) => t.toLowerCase() === "new" || t.toLowerCase() === "new-arrival") ||
+    isWithinNewWindow(p.publishedAt ?? p.createdAt);
   const lowStock =
     p.totalInventory != null && p.totalInventory > 0 && p.totalInventory <= 5
       ? p.totalInventory

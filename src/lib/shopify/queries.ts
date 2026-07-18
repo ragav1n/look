@@ -8,6 +8,8 @@ export const PRODUCT_FRAGMENT = /* GraphQL */ `
     description
     productType
     tags
+    createdAt
+    publishedAt
     availableForSale
     vendor
     totalInventory
