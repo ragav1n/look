@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ArrowDown } from "lucide-react";
 import heroBg from "@/assets/hero-bg.jpg";
 import heroModel1 from "@/assets/hero-model-1.jpg";
 import heroModel2 from "@/assets/hero-model-2.jpg";
@@ -78,13 +78,16 @@ export default function Hero() {
               Shop Now
               <ArrowRight className="size-[18px] transition-transform duration-300 group-hover:translate-x-1" />
             </Link>
-            <Link
-              to="/shop"
+            <button
+              type="button"
+              onClick={() =>
+                document.getElementById("the-edit")?.scrollIntoView({ behavior: "smooth" })
+              }
               className="group inline-flex items-center gap-2 rounded-full border border-black px-7 py-3.5 text-[15px] font-medium text-black transition-all duration-300 hover:bg-black hover:text-white"
             >
-              Explore Collection
-              <ArrowRight className="size-[18px] -translate-x-1 opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100" />
-            </Link>
+              Explore the Edit
+              <ArrowDown className="size-[18px] transition-transform duration-300 group-hover:translate-y-0.5" />
+            </button>
           </div>
         </div>
 

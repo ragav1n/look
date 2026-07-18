@@ -12,7 +12,11 @@ export default function FeaturedEdit() {
   if (products.length === 0) return null;
 
   return (
-    <section className="overflow-hidden py-[64px]" aria-labelledby="edit-heading">
+    <section
+      id="the-edit"
+      className="scroll-mt-[87px] overflow-hidden py-[64px]"
+      aria-labelledby="edit-heading"
+    >
       <Reveal className="mx-auto w-full max-w-[1338px] px-6 text-center min-[1400px]:px-0">
         <p className="text-[12px] tracking-[0.08em] text-accent uppercase">The Edit</p>
         <h2
