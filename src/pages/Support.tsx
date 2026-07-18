@@ -15,13 +15,17 @@ export default function Support() {
             get back to you as soon as possible.
           </p>
 
-          <div className="mx-auto mt-8 grid max-w-[720px] grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="mx-auto mt-8 grid max-w-[760px] grid-cols-1 gap-4 sm:grid-cols-3">
             <a
               href={site.emailHref}
               className="rounded-card border border-line bg-white p-5 transition-colors hover:border-accent"
             >
               <p className="text-[13px] text-muted">Email</p>
-              <p className="mt-1 text-[15px] font-medium break-words text-black">{site.email}</p>
+              {/* split at "@" with a break opportunity so it never snaps mid-word */}
+              <p className="mt-1 text-[14px] font-medium break-words text-black">
+                {site.email.split("@")[0]}@<wbr />
+                {site.email.split("@")[1]}
+              </p>
             </a>
             <a
               href={site.phoneHref}

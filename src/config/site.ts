@@ -5,7 +5,7 @@ export const site = {
   tagline: "Modern Western Essentials",
   email: "looksupport.in@gmail.com",
   emailHref: "mailto:looksupport.in@gmail.com",
-  phone: "+91 9150002116",
+  phone: "+91 91500 02116",
   phoneHref: "tel:+919150002116",
   instagram: "https://www.instagram.com/look_.in",
   instagramHandle: "@look_.in",
