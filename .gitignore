@@ -4,6 +4,9 @@ dist
 .DS_Store
 npm-debug.log*
 
+# TypeScript incremental build cache
+*.tsbuildinfo
+
 # Local env — never commit real Shopify credentials (keep .env.example tracked)
 .env
 .env.*
