@@ -3,17 +3,17 @@ import { ArrowUpRight } from "lucide-react";
 import Reveal from "@/components/ui/Reveal";
 import collDress from "@/assets/product-22.jpg";
 import collTops from "@/assets/product-24.jpg";
-import collSkirts from "@/assets/product-23.jpg";
-import collExclusive from "@/assets/product-17.jpg";
+import collCoords from "@/assets/product-23.jpg";
+import collNew from "@/assets/product-17.jpg";
 
 /* "LOOK Collections" — image-led category cards showcasing what the store
    carries. Layout is inspired by the client's reference (four tall cards with
    the category name set low-left) but built in LOOK's own black/red language. */
 const collections = [
-  { label: "Dresses", image: collDress, to: "/shop" },
-  { label: "Tops", image: collTops, to: "/shop?category=Tops" },
-  { label: "Skirts", image: collSkirts, to: "/shop" },
-  { label: "Pearloze Exclusive", image: collExclusive, to: "/shop" },
+  { label: "Dresses", image: collDress, to: "/shop?col=dresses" },
+  { label: "Tops", image: collTops, to: "/shop?col=tops" },
+  { label: "Co-Ords", image: collCoords, to: "/shop?col=co-ords" },
+  { label: "New Arrivals", image: collNew, to: "/shop?col=new-arrivals" },
 ];
 
 export default function LookCollections() {
