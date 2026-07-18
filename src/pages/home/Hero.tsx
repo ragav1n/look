@@ -1,62 +1,62 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
-import heroBg from "@/assets/hero-bg.jpg";
-import heroModel1 from "@/assets/hero-model-1.jpg";
-import heroModel2 from "@/assets/hero-model-2.jpg";
+import { getCollectionProducts } from "@/lib/catalog";
+import { useAsyncData } from "@/hooks/useAsyncData";
 
-/* Each hero slide links to the product it shows, so clicking the photo opens
-   that piece. `productSlug` must match a catalog handle (see the Shop URLs) —
-   update these whenever the hero photography changes. */
-const slides: { src: string; productSlug: string }[] = [
-  { src: heroBg, productSlug: "red-kurta-set" },
-  { src: heroModel1, productSlug: "crimson-coord-set" },
-  { src: heroModel2, productSlug: "sage-coord-set" },
-];
+/** Shopify collection whose products become the hero slides. Slide order is the
+ *  collection's own manual order in the Shopify admin — reorder there, not here. */
+const HERO_COLLECTION = "hero";
+const SLIDE_MS = 7000;
 
 /* LOOK hero.
    ────────────────────────────────────────────────────────────────────────
-   VIDEO-READY: the background lives in a single self-contained media layer
-   (the `.hero-media` block below). To swap the rotating photos for a promo
-   video later, replace ONLY that block with a muted autoplay loop, e.g.:
-
-     <video className="h-full w-full object-cover" autoPlay muted loop playsInline
-            poster={heroBg} src={promoVideo} />
-
-   The dark overlay, headline, CTA and dots don't depend on it, so nothing
-   else needs to change. (No video is wired up yet.)
+   Every slide comes from Shopify: the photo is the product's first image, the
+   label is its title + `custom.hero_tagline` metafield, and the whole photo
+   links to that product. Nothing here is a local asset — to change the hero,
+   edit the "Hero" collection in Shopify.
 
    Full-bleed height: on desktop the hero fills the viewport below the 72px
    sticky navbar so the editorial photography is shown at full height rather
    than as a thin crop. */
 export default function Hero() {
+  const { data } = useAsyncData(() => getCollectionProducts(HERO_COLLECTION, 6), []);
+  const slides = data ?? [];
   const [slide, setSlide] = useState(0);
 
+  // Collection length isn't known on first render, so clamp when it arrives.
+  useEffect(() => setSlide(0), [slides.length]);
+
   useEffect(() => {
-    const t = setInterval(() => setSlide((s) => (s + 1) % slides.length), 7000);
+    if (slides.length < 2) return;
+    const t = setInterval(() => setSlide((s) => (s + 1) % slides.length), SLIDE_MS);
     return () => clearInterval(t);
-  }, []);
+  }, [slides.length]);
+
+  const current = slides[slide];
 
   return (
     <section
       className="relative h-[540px] overflow-hidden bg-black sm:h-[640px] lg:h-[calc(100vh-72px)] lg:min-h-[680px]"
       aria-label="Featured"
     >
-      {/* ===== BACKGROUND MEDIA (swap for <video> later) ===== */}
-      <div className="hero-media absolute inset-0" aria-hidden>
-        {slides.map(({ src }, i) => (
+      {/* ===== BACKGROUND MEDIA — Shopify product imagery ===== */}
+      <div className="absolute inset-0" aria-hidden>
+        {slides.map((p, i) => (
           <div
-            key={src}
+            key={p.id}
             className={`absolute inset-0 transition-opacity duration-1000 ${
               i === slide ? "opacity-100" : "opacity-0"
             }`}
           >
             <img
-              src={src}
+              src={p.images[0]}
               alt=""
-              className={`h-full w-full object-cover ${
-                i === 0 ? "object-center" : "object-[70%_20%]"
-              } ${i === slide ? "animate-kenburns" : ""}`}
+              /* Framed slightly above centre: these are full-length portraits, and
+                 a dead-centre crop cuts the model's head at wide viewports. */
+              className={`h-full w-full object-cover object-[50%_30%] ${
+                i === slide ? "animate-kenburns" : ""
+              }`}
             />
           </div>
         ))}
@@ -69,11 +69,13 @@ export default function Hero() {
       {/* Whole-photo link to the piece on show. Sits above the media but below
           the content layer, so the headline, CTA and dots stay clickable
           (wrapping them in this link would nest interactive elements). */}
-      <Link
-        to={`/shop/${slides[slide].productSlug}`}
-        aria-label="Shop the look in this photo"
-        className="absolute inset-0 z-10"
-      />
+      {current && (
+        <Link
+          to={`/shop/${current.slug}`}
+          aria-label={`Shop the ${current.name}`}
+          className="absolute inset-0 z-10"
+        />
+      )}
 
       {/* content sits in the lower portion of the hero */}
       <div className="pointer-events-none relative z-20 mx-auto flex h-full w-full max-w-[1512px] flex-col justify-end px-6 pb-14 lg:px-[87px] lg:pb-[72px]">
@@ -111,21 +113,36 @@ export default function Hero() {
           </div>
         </div>
 
+        {/* Which piece is on screen. Keyed on the slug so it re-runs its entrance
+            animation on every slide change. */}
+        {current && (
+          <div key={current.slug} className="animate-fade-up mt-9">
+            <p className="text-[13px] leading-[18px] font-medium tracking-[0.14em] text-white uppercase">
+              {current.name}
+            </p>
+            {current.heroTagline && (
+              <p className="mt-1 text-[13px] leading-[18px] text-white/60">{current.heroTagline}</p>
+            )}
+          </div>
+        )}
+
         {/* slide indicators — advance the background media */}
-        <div className="pointer-events-auto mt-7 flex w-fit items-center gap-2">
-          {slides.map((_, i) => (
-            <button
-              key={i}
-              type="button"
-              aria-label={`Go to slide ${i + 1}`}
-              aria-current={i === slide}
-              onClick={() => setSlide(i)}
-              className={`h-[7px] cursor-pointer rounded-full transition-all duration-500 ${
-                i === slide ? "w-[26px] bg-white" : "w-[7px] bg-white/40 hover:bg-white/70"
-              }`}
-            />
-          ))}
-        </div>
+        {slides.length > 1 && (
+          <div className="pointer-events-auto mt-4 flex w-fit items-center gap-2">
+            {slides.map((p, i) => (
+              <button
+                key={p.id}
+                type="button"
+                aria-label={`Show ${p.name}`}
+                aria-current={i === slide}
+                onClick={() => setSlide(i)}
+                className={`h-[7px] cursor-pointer rounded-full transition-all duration-500 ${
+                  i === slide ? "w-[26px] bg-white" : "w-[7px] bg-white/40 hover:bg-white/70"
+                }`}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

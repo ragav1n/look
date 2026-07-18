@@ -30,7 +30,7 @@ const matchesCol = (p: Product, col: string) => {
     case "new-arrivals":
       return !!p.newArrival;
     case "dresses":
-      return p.category === "Kurta Set";
+      return p.category === "Kurta Set" || p.category === "Gown";
     case "tops":
       return p.group === "Tops";
     case "bottoms":

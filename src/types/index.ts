@@ -47,6 +47,9 @@ export interface Product {
   details: { title: string; body: string[] };
   bestSeller?: boolean;
   newArrival?: boolean;
+  /** Short editorial line shown under the product name on hero slides.
+   *  Shopify: the `custom.hero_tagline` product metafield. */
+  heroTagline?: string;
 }
 
 export interface Review {

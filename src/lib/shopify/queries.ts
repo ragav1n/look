@@ -16,6 +16,7 @@ export const PRODUCT_FRAGMENT = /* GraphQL */ `
     featuredImage { url altText }
     images(first: 8) { nodes { url altText } }
     options { name values }
+    heroTagline: metafield(namespace: "custom", key: "hero_tagline") { value }
     variants(first: 50) {
       nodes {
         id

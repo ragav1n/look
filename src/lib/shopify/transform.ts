@@ -100,6 +100,7 @@ export function toProduct(p: SFProduct): Product {
     details: { title: "Product Details", body: p.description ? [p.description] : [] },
     bestSeller: p.tags.some((t) => t.toLowerCase() === "best-seller"),
     newArrival: isNew,
+    heroTagline: p.heroTagline?.value || undefined,
   };
 }
 
