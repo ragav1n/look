@@ -19,8 +19,9 @@ const slides = [heroBg, heroModel1, heroModel2];
    The dark overlay, headline, CTA and dots don't depend on it, so nothing
    else needs to change. (No video is wired up yet.)
 
-   Kept intentionally short so the "What's New" carousel below it is reachable /
-   partly visible without a full-screen scroll. */
+   Full-bleed height: on desktop the hero fills the viewport below the 72px
+   sticky navbar so the editorial photography is shown at full height rather
+   than as a thin crop. */
 export default function Hero() {
   const [slide, setSlide] = useState(0);
 
@@ -31,7 +32,7 @@ export default function Hero() {
 
   return (
     <section
-      className="relative h-[460px] overflow-hidden bg-black lg:h-[560px]"
+      className="relative h-[540px] overflow-hidden bg-black sm:h-[640px] lg:h-[calc(100vh-72px)] lg:min-h-[680px]"
       aria-label="Featured"
     >
       {/* ===== BACKGROUND MEDIA (swap for <video> later) ===== */}
