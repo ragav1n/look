@@ -69,7 +69,6 @@ export default function ProductCard({ product, onQuickView }: Props) {
         <div className="flex items-end justify-between">
           <div className="text-[14px] leading-[22px] text-body">
             <p>{product.category}</p>
-            <p>{product.sku}</p>
           </div>
           <p className="text-[18px] leading-[22px] font-medium text-accent">
             {formatPrice(product.price, product.currencyCode)}
