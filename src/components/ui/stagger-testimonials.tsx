@@ -41,8 +41,11 @@ const TestimonialCard: React.FC<TestimonialCardProps> = ({
   // Depth by distance from centre: closer = brighter, larger, higher layer.
   // Extremes fade to near-zero so a card wrapping to the far side is invisible
   // as it appears (and gently fades out as it leaves) instead of hard-cutting.
-  const opacity = dist === 0 ? 1 : dist === 1 ? 0.9 : dist === 2 ? 0.5 : 0.1;
+  const opacity = dist === 0 ? 1 : dist === 1 ? 0.9 : dist === 2 ? 0.55 : 0.15;
   const scale = 1 - dist * 0.05;
+  // Extremes are blurred out so they read as soft depth, sharpening as they
+  // travel toward the centre.
+  const blur = dist >= 3 ? 7 : dist === 2 ? 2 : 0;
 
   return (
     <div
@@ -60,6 +63,7 @@ const TestimonialCard: React.FC<TestimonialCardProps> = ({
         // centre only ever rises one layer at a time — no jarring pop to the front.
         zIndex: 30 - dist,
         opacity,
+        filter: blur ? `blur(${blur}px)` : "none",
         // Ghost cards at the very edge shouldn't intercept clicks.
         pointerEvents: dist >= 3 ? "none" : "auto",
         clipPath: `polygon(50px 0%, calc(100% - 50px) 0%, 100% 50px, 100% 100%, calc(100% - 50px) 100%, 50px 100%, 0 100%, 0 0)`,
