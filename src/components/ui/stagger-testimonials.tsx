@@ -37,25 +37,38 @@ const TestimonialCard: React.FC<TestimonialCardProps> = ({
   cardSize,
 }) => {
   const isCenter = position === 0;
+  const dist = Math.abs(position);
+  // Depth by distance from centre: closer = brighter, larger, higher layer.
+  // Extremes fade to near-zero so a card wrapping to the far side is invisible
+  // as it appears (and gently fades out as it leaves) instead of hard-cutting.
+  const opacity = dist === 0 ? 1 : dist === 1 ? 0.9 : dist === 2 ? 0.5 : 0.1;
+  const scale = 1 - dist * 0.05;
 
   return (
     <div
       onClick={() => handleMove(position)}
       className={cn(
-        "absolute top-1/2 left-1/2 cursor-pointer border-2 p-8 transition-all duration-500 ease-in-out",
+        "absolute top-1/2 left-1/2 cursor-pointer border-2 p-8 transition-all duration-[650ms] ease-[cubic-bezier(0.22,1,0.36,1)]",
         isCenter
-          ? "z-10 border-accent bg-accent text-white"
-          : "z-0 border-line bg-card text-black hover:border-accent/50",
+          ? "border-accent bg-accent text-white"
+          : "border-line bg-card text-black hover:border-accent/50",
       )}
       style={{
         width: cardSize,
         height: cardSize,
+        // Graded z-index (centre highest, fanning behind) so a card promoting to
+        // centre only ever rises one layer at a time — no jarring pop to the front.
+        zIndex: 30 - dist,
+        opacity,
+        // Ghost cards at the very edge shouldn't intercept clicks.
+        pointerEvents: dist >= 3 ? "none" : "auto",
         clipPath: `polygon(50px 0%, calc(100% - 50px) 0%, 100% 50px, 100% 100%, calc(100% - 50px) 100%, 50px 100%, 0 100%, 0 0)`,
         transform: `
           translate(-50%, -50%)
           translateX(${(cardSize / 1.5) * position}px)
           translateY(${isCenter ? -65 : position % 2 ? 15 : -15}px)
           rotate(${isCenter ? 0 : position % 2 ? 2.5 : -2.5}deg)
+          scale(${scale})
         `,
         boxShadow: isCenter ? "0px 8px 0px 4px var(--color-line)" : "0px 0px 0px 0px transparent",
       }}
