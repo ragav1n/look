@@ -61,6 +61,24 @@ export const COLLECTION_PRODUCTS_QUERY = /* GraphQL */ `
   }
 `;
 
+/** Category tiles. `products(first: 1)` supplies a fallback image for
+ *  collections the admin never gave an image to. */
+export const COLLECTIONS_QUERY = /* GraphQL */ `
+  query Collections($first: Int!) {
+    collections(first: $first) {
+      nodes {
+        id
+        handle
+        title
+        image { url altText }
+        products(first: 1) {
+          nodes { featuredImage { url altText } }
+        }
+      }
+    }
+  }
+`;
+
 export const CART_FRAGMENT = /* GraphQL */ `
   fragment CartFields on Cart {
     id

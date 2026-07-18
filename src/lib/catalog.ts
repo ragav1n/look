@@ -14,6 +14,7 @@ export const getAllProducts = impl.getAllProducts;
 export const getProducts = impl.getProducts;
 export const getProductByHandle = impl.getProductByHandle;
 export const getCollectionProducts = impl.getCollectionProducts;
+export const getCollections = impl.getCollections;
 export const getNewArrivals = impl.getNewArrivals;
 export const getBestSellers = impl.getBestSellers;
 export const getSaleProducts = impl.getSaleProducts;

@@ -48,6 +48,14 @@ export interface SFProduct {
   heroTagline: { value: string } | null;
 }
 
+export interface SFCollection {
+  id: string;
+  handle: string;
+  title: string;
+  image: SFImage | null;
+  products: { nodes: { featuredImage: SFImage | null }[] };
+}
+
 export interface SFCartLine {
   id: string;
   quantity: number;

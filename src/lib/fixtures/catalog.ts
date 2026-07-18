@@ -7,7 +7,7 @@
  * Do NOT scatter this data into components or treat it as the source of truth:
  * products, prices, and images live in Shopify.
  */
-import type { Product, ProductSort, ProductVariant } from "@/types";
+import type { Collection, Product, ProductSort, ProductVariant } from "@/types";
 import { DEFAULT_CURRENCY } from "../format";
 import product17 from "@/assets/product-17.jpg";
 import product18 from "@/assets/product-18.jpg";
@@ -344,6 +344,19 @@ export async function getCollectionProducts(
         ? FIXTURE_PRODUCTS.filter((p) => p.bestSeller)
         : FIXTURE_PRODUCTS;
   return set.slice(0, first);
+}
+
+/** Mirrors the handles the live store actually uses (note "bottom", singular —
+ *  the real admin value) so the Shop links exercise the same aliasing path in
+ *  dev as in production. Images borrow a representative fixture product. */
+export async function getCollections(): Promise<Collection[]> {
+  const imageOf = (slug: string) => byHandle(slug)?.images[0] ?? "";
+  return [
+    { id: "fixture:collection:dresses", handle: "dresses", title: "Dresses", image: imageOf("mustard-anarkali") },
+    { id: "fixture:collection:tops", handle: "tops", title: "Tops", image: imageOf("rose-print-kurta") },
+    { id: "fixture:collection:co-ords", handle: "co-ords", title: "Co-Ords", image: imageOf("ivory-coord-set") },
+    { id: "fixture:collection:bottom", handle: "bottom", title: "Bottom", image: imageOf("sage-coord-set") },
+  ];
 }
 
 export async function getNewArrivals(): Promise<Product[]> {

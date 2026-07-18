@@ -55,6 +55,18 @@ export interface Product {
   collectionHandles?: string[];
 }
 
+/** A Shopify collection, surfaced as a browsable category tile. */
+export interface Collection {
+  /** Shopify collection GID */
+  id: string;
+  /** Shopify collection handle — the raw admin value, e.g. "bottom" */
+  handle: string;
+  title: string;
+  /** Collection image if the admin set one, else the first product's featured
+   *  image. Empty when the collection has neither. */
+  image: string;
+}
+
 export interface Review {
   id: string;
   productId: string;

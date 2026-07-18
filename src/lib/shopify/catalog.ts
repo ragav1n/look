@@ -1,12 +1,13 @@
-import type { Product, ProductSort } from "@/types";
+import type { Collection, Product, ProductSort } from "@/types";
 import { storefront } from "./client";
 import {
   COLLECTION_PRODUCTS_QUERY,
+  COLLECTIONS_QUERY,
   PRODUCT_BY_HANDLE_QUERY,
   PRODUCTS_QUERY,
 } from "./queries";
-import { toProduct } from "./transform";
-import type { SFProduct } from "./types";
+import { toCollection, toProduct } from "./transform";
+import type { SFCollection, SFProduct } from "./types";
 
 /** Live Storefront API catalog. Product order always comes from Shopify's own
  *  sort keys (or a collection's admin-configured order) — never re-sorted here. */
@@ -56,6 +57,15 @@ export async function getCollectionProducts(
     { handle, first, sortKey },
   );
   return data.collection?.products.nodes.map(toProduct) ?? [];
+}
+
+/** Every collection in the store, in the admin's own order. Callers decide which
+ *  are browsable categories (see NON_CATEGORY_COLLECTIONS). */
+export async function getCollections(): Promise<Collection[]> {
+  const data = await storefront<{ collections: { nodes: SFCollection[] } }>(COLLECTIONS_QUERY, {
+    first: 20,
+  });
+  return data.collections.nodes.map(toCollection);
 }
 
 export async function getNewArrivals(): Promise<Product[]> {

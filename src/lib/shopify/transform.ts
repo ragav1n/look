@@ -1,5 +1,5 @@
-import type { Cart, CartLine, Money, Product, ProductVariant } from "@/types";
-import type { SFCart, SFMoney, SFProduct, SFVariant } from "./types";
+import type { Cart, CartLine, Collection, Money, Product, ProductVariant } from "@/types";
+import type { SFCart, SFCollection, SFMoney, SFProduct, SFVariant } from "./types";
 
 const money = (m: SFMoney): Money => ({
   amount: Number.parseFloat(m.amount),
@@ -118,6 +118,17 @@ export function toProduct(p: SFProduct): Product {
     newArrival: isNew,
     heroTagline: p.heroTagline?.value || undefined,
     collectionHandles: p.collections.nodes.map((c) => c.handle),
+  };
+}
+
+/** Not every collection has an image set in the admin (LOOK's "Dresses" doesn't),
+ *  so fall back to its first product's featured shot before giving up. */
+export function toCollection(c: SFCollection): Collection {
+  return {
+    id: c.id,
+    handle: c.handle,
+    title: c.title,
+    image: c.image?.url ?? c.products.nodes[0]?.featuredImage?.url ?? "",
   };
 }
 

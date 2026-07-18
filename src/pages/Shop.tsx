@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { SlidersHorizontal, ChevronUp } from "lucide-react";
 import type { Product, ProductSort } from "@/types";
 import { getProducts } from "@/lib/catalog";
+import { canonical } from "@/lib/collections";
 import { useAsyncData } from "@/hooks/useAsyncData";
 import ProductCard, { ProductCardSkeleton } from "@/components/product/ProductCard";
 import QuickViewModal from "@/components/product/QuickViewModal";
@@ -34,23 +35,6 @@ const COL_TYPES: Record<string, string[]> = {
   tops: ["tops", "top"],
   bottoms: ["bottom", "bottoms"],
   "co-ords": ["coord set", "co-ord set", "coords", "co-ords"],
-};
-
-/** Collection handles vary ("bottom" vs "bottoms"); fold them onto one filter key. */
-const COL_ALIASES: Record<string, string> = {
-  bottom: "bottoms",
-  top: "tops",
-  dress: "dresses",
-  gown: "dresses",
-  gowns: "dresses",
-  coords: "co-ords",
-  "co-ord": "co-ords",
-  "new-arrival": "new-arrivals",
-};
-
-const canonical = (s: string) => {
-  const k = s.trim().toLowerCase();
-  return COL_ALIASES[k] ?? k;
 };
 
 /* A product belongs to a category if EITHER its Shopify collections say so, or
