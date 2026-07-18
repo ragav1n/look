@@ -304,7 +304,7 @@ function CarouselCard({ product }: { product: Product }) {
       to={`/shop/${product.slug}`}
       data-card
       aria-label={product.name}
-      className="group relative w-[320px] shrink-0 snap-start sm:w-[420px]"
+      className="group relative w-[240px] shrink-0 snap-start sm:w-[320px]"
     >
       <div className="relative aspect-[2/3] overflow-hidden rounded-[10px] border border-line bg-card shadow-[0_6px_24px_rgba(0,0,0,0.4)] transition-all duration-500 group-hover:-translate-y-1 group-hover:border-accent/40 group-hover:shadow-[0_18px_44px_rgba(225,29,42,0.18)]">
         <img
