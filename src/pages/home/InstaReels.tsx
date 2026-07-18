@@ -58,7 +58,7 @@ export default function InstaReels() {
                 className="aspect-[9/16] w-full object-cover object-top transition-transform duration-500 group-hover:scale-[1.05]"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/10" />
-              <span className="absolute top-3 right-3 flex size-[40px] items-center justify-center rounded-full bg-lavender/90 transition-transform duration-300 group-hover:scale-110">
+              <span className="absolute top-3 right-3 flex size-[40px] items-center justify-center rounded-full bg-accent-tint/90 transition-transform duration-300 group-hover:scale-110">
                 <img src={iconPlay} alt="" className="size-[18px]" />
               </span>
               <p className="absolute inset-x-4 bottom-4 text-[14px] leading-[20px] font-medium text-white">

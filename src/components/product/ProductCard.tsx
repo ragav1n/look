@@ -12,7 +12,7 @@ interface Props {
 }
 
 /* Figma card (1:5926 component): 321x492, bg #faf8ff r-11, image 294x348 r-6,
-   badge top-left, name + lavender heart circle, divider, meta left / price right */
+   badge top-left, name + accent-tint heart circle, divider, meta left / price right */
 export default function ProductCard({ product, onQuickView }: Props) {
   const { has, toggle } = useWishlist();
   const wished = has(product.id);

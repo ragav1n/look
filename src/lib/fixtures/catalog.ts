@@ -33,7 +33,7 @@ import promoImg from "@/assets/promo-img-1697.png";
 import promoM6 from "@/assets/promo-m6.jpg";
 
 const RED = { name: "Red", hex: "#B3261E" };
-const VIOLET = { name: "Violet", hex: "#4402D3" };
+const VIOLET = { name: "Violet", hex: "#6f4a6b" };
 const GREEN = { name: "Green", hex: "#3E6B4F" };
 const PINK = { name: "Pink", hex: "#E8A0B0" };
 const YELLOW = { name: "Mustard", hex: "#D9A404" };

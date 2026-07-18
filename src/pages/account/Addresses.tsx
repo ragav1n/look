@@ -76,7 +76,7 @@ export default function Addresses() {
         {list.map((a) => (
           <div key={a.id} className="rounded-card border border-line p-5">
             <div className="flex items-center justify-between">
-              <span className="rounded-full bg-lavender px-2.5 py-1 text-[12px] font-medium text-accent">
+              <span className="rounded-full bg-accent-tint px-2.5 py-1 text-[12px] font-medium text-accent">
                 {a.label}
               </span>
               {a.isDefault && <span className="text-[12px] font-medium text-muted">Default</span>}

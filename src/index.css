@@ -19,17 +19,14 @@
   /* Red is the ONLY accent — used sparingly for emphasis */
   --color-accent: #e11d2a;
   --color-accent-bright: #ff3b47;
-  --color-lavender: #2a1214; /* dark red-tinted circle backdrop (was pale violet) */
-  --color-lavender-soft: #1c0f10;
-  --color-banner-blue: #e11d2a; /* legacy name — now red */
+  --color-accent-tint: #2a1214; /* dark red-tinted circle backdrop for accent glyphs */
+  --color-accent-tint-soft: #1c0f10;
 
   /* Text — white primary, graded greys for body/secondary on dark */
   --color-body: #c9c9c9;
   --color-heading-soft: #ededed;
   --color-muted: #9a9a9a;
   --color-faint: #7f7f7f;
-  --color-footer-ink: #ffffff;
-  --color-placeholder: #8a8a8a;
   --color-sale: #ff4d52;
 
   /* Hairlines / borders on dark */
