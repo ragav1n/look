@@ -14,6 +14,14 @@ const links = [
   { to: "/about", label: "About Us" },
 ];
 
+/* The mobile panel repeats the primary nav plus the account shortcuts that sit
+   in the icon rail on desktop. */
+const menuItems = [
+  ...links.map((l) => ({ ...l, exact: l.to === "/" })),
+  { to: "/account/wishlist", label: "Wishlist", exact: false },
+  { to: "/account/profile", label: "My Account", exact: false },
+];
+
 /* Sticky top nav (h-[72px]) on the black theme — the whole site is dark, so the
    navbar is always dark. A 3-column grid keeps the logo perfectly centred
    regardless of how wide the left nav / right actions get. */
@@ -43,14 +51,32 @@ export default function Navbar() {
         <div className="flex items-center gap-4 justify-self-start">
           <button
             type="button"
-            aria-label="Open menu"
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
             aria-expanded={menuOpen}
+            aria-controls="mobile-menu"
             onClick={() => setMenuOpen((o) => !o)}
             className="flex size-9 items-center justify-center lg:hidden"
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <path d="M4 7h16M4 12h16M4 17h16" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
-            </svg>
+            {/* Burger → X. Three bars on individual transform properties so the
+                translate and the rotate can ease independently: closing plays in
+                reverse for free. */}
+            <span aria-hidden className="relative block h-4 w-[22px]">
+              <span
+                className={`absolute top-1/2 left-0 h-[2px] w-full rounded-full bg-white transition-transform duration-[380ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                  menuOpen ? "translate-y-[-1px] rotate-45" : "translate-y-[-7px] rotate-0"
+                }`}
+              />
+              <span
+                className={`absolute top-1/2 left-0 h-[2px] w-full origin-center -translate-y-[1px] rounded-full bg-white transition-all duration-200 ease-out ${
+                  menuOpen ? "scale-x-0 opacity-0" : "scale-x-100 opacity-100"
+                }`}
+              />
+              <span
+                className={`absolute top-1/2 left-0 h-[2px] w-full rounded-full bg-white transition-transform duration-[380ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                  menuOpen ? "translate-y-[-1px] -rotate-45" : "translate-y-[5px] rotate-0"
+                }`}
+              />
+            </span>
           </button>
 
           <nav className="hidden items-center gap-[31px] lg:flex" aria-label="Primary">
@@ -140,36 +166,45 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile menu panel */}
-      {menuOpen && (
-        <nav className="border-t border-line bg-black lg:hidden" aria-label="Mobile">
-          <ul className="flex flex-col px-6 py-2">
-            {links.map(({ to, label }) => (
-              <li key={to}>
+      {/* Mobile menu panel — stays mounted so it can animate *out* as well as in.
+          The 0fr→1fr grid row animates to the panel's natural height without us
+          having to measure it. `inert` keeps the collapsed panel out of the tab
+          order and off screen readers. */}
+      <div
+        id="mobile-menu"
+        inert={!menuOpen}
+        className={`grid overflow-hidden transition-[grid-template-rows,opacity] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] lg:hidden ${
+          menuOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+        }`}
+      >
+        <nav className="min-h-0" aria-label="Mobile">
+          <ul className="flex flex-col border-t border-line bg-black px-6 py-2">
+            {menuItems.map(({ to, label, exact }, i) => (
+              <li
+                key={to}
+                // Links cascade in behind the panel; on close they leave together
+                // so the panel doesn't collapse around still-moving text.
+                style={{ transitionDelay: menuOpen ? `${80 + i * 45}ms` : "0ms" }}
+                className={`transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                  menuOpen ? "translate-y-0 opacity-100" : "-translate-y-2 opacity-0"
+                }`}
+              >
                 <NavLink
                   to={to}
-                  end={to === "/"}
+                  end={exact}
                   className={({ isActive }) =>
-                    `block py-3 text-[16px] ${isActive ? "font-semibold text-accent" : "text-white/80"}`
+                    `block py-3 text-[16px] transition-colors ${
+                      isActive ? "font-semibold text-accent" : "text-white/80 hover:text-white"
+                    }`
                   }
                 >
                   {label}
                 </NavLink>
               </li>
             ))}
-            <li>
-              <Link to="/account/wishlist" className="block py-3 text-[16px] text-white/80">
-                Wishlist
-              </Link>
-            </li>
-            <li>
-              <Link to="/account/profile" className="block py-3 text-[16px] text-white/80">
-                My Account
-              </Link>
-            </li>
           </ul>
         </nav>
-      )}
+      </div>
     </header>
   );
 }
