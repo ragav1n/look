@@ -19,4 +19,12 @@ export const updateProfile = impl.updateProfile;
 export const linkCart = impl.linkCart;
 export const unlinkCart = impl.unlinkCart;
 
-export type { Session } from "./types";
+export const getOrders = impl.getOrders;
+export const getOrder = impl.getOrder;
+export const getAddresses = impl.getAddresses;
+export const createAddress = impl.createAddress;
+export const updateAddress = impl.updateAddress;
+export const deleteAddress = impl.deleteAddress;
+export const setDefaultAddress = impl.setDefaultAddress;
+
+export type { OrderPage, Session } from "./types";

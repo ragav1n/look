@@ -144,27 +144,70 @@ export type OrderStatus =
   | "cancelled"
   | "returned";
 
+export interface OrderItem {
+  /** Shopify product GID. Null when Shopify no longer resolves the line. */
+  productId: string | null;
+  /** Shopify variant GID. */
+  variantId: string | null;
+  /** Resolved from `productId` via the Storefront API — the Customer Account
+   *  API exposes no handle. Absent when the product was deleted or
+   *  unpublished, in which case the item renders unlinked. */
+  productSlug?: string;
+  name: string;
+  image: string;
+  size: string;
+  color: string;
+  quantity: number;
+  price: Money;
+}
+
+/** Carrier details for a shipped order. Shopify gives no courier phone number,
+ *  so we link to the carrier's own tracking page instead. */
+export interface OrderTracking {
+  company: string | null;
+  number: string | null;
+  url: string | null;
+}
+
+/**
+ * One step of the derived order timeline. `reached` and `at` are separate on
+ * purpose: Shopify's `latestShipmentStatus` tells us a shipment is out for
+ * delivery without saying *when* it became so. Such a step is marked reached
+ * but carries no timestamp, rather than borrowing an unrelated one.
+ */
+export interface OrderStep {
+  status: OrderStatus;
+  reached: boolean;
+  at: string | null;
+}
+
+/**
+ * An order as the Customer Account API can actually describe it. Shopify has no
+ * native status timeline — `timeline` is derived from processedAt, fulfilment
+ * timestamps and latestShipmentStatus. Note there is no payment-method field
+ * anywhere on the API, so we report the payment *status* and never invent a
+ * method.
+ */
 export interface Order {
+  /** Shopify order GID — what a refetch needs. */
   id: string;
+  /** Display label, e.g. "#1001" (Shopify's `name`). */
+  number: string;
+  /** Numeric portion of the GID — the `/account/orders/:orderId` segment. */
+  reference: string;
   placedAt: string;
   status: OrderStatus;
-  items: {
-    productSlug: string;
-    variantId: string;
-    name: string;
-    image: string;
-    size: string;
-    color: string;
-    quantity: number;
-    price: number;
-  }[];
-  address: Address;
-  shippingMethod: string;
-  paymentMethod: string;
-  totals: { subtotal: number; shipping: number; taxes: number; total: number };
-  timeline: { status: OrderStatus; at: string | null }[];
-  shipmentUpdates: { at: string; text: string }[];
-  courier?: { name: string; trackingId: string; phone: string };
+  items: OrderItem[];
+  /** Null for orders that never carried a shipping address. */
+  address: Address | null;
+  totals: { subtotal: Money | null; shipping: Money; taxes: Money | null; total: Money };
+  timeline: OrderStep[];
+  tracking?: OrderTracking;
+  /** Shopify-hosted order status page — the authoritative tracking view. */
+  statusPageUrl: string;
+  /** Shopify's `paymentInformation.paymentStatus`, humanised. The API exposes
+   *  no payment *method*, so we never claim one. */
+  paymentStatus?: string;
 }
 
 /** Signed-in customer's editable profile. Mirrors the subset of Shopify's
@@ -175,18 +218,32 @@ export interface UserProfile {
   phone: string;
 }
 
+/**
+ * A saved delivery address. Shaped to round-trip through Shopify's
+ * `CustomerAddress`: reads give both a display `province` and a `zoneCode`,
+ * but writes accept only the code, so both are carried. There is no Shopify
+ * equivalent of a "Home"/"Work" label, so we don't offer one.
+ */
 export interface Address {
+  /** Shopify CustomerAddress GID. */
   id: string;
-  label: string;
   name: string;
   line1: string;
   line2?: string;
   city: string;
+  /** Display name of the state, from Shopify's `province`. */
   state: string;
+  /** ISO subdivision code, e.g. "KA" — required on every write. */
+  zoneCode: string;
+  /** Shopify's `zip`. */
   pincode: string;
   phone: string;
   isDefault?: boolean;
 }
+
+/** The address form's draft. `isDefault` is set through its own mutation, and
+ *  the id is server-assigned, so neither is part of the input. */
+export type AddressInput = Omit<Address, "id" | "isDefault">;
 
 export interface WalletTransaction {
   id: string;
