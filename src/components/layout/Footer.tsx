@@ -35,8 +35,8 @@ function InstagramGlyph({ className = "" }: { className?: string }) {
 /* Footer — black theme, white text.
    Shop links carry the canonical filter key (not Shopify's raw handle) so the
    Shop sidebar highlights the matching category on arrival.
-   "Terms of Service" still points at /support: LOOK hasn't supplied terms copy,
-   and inventing binding terms for a live store isn't ours to do. */
+   Terms of Service now has brand-supplied copy at /terms (added 2026-07-19);
+   it previously fell back to /support. */
 const columns = [
   {
     heading: "Shop",
@@ -53,7 +53,7 @@ const columns = [
     links: [
       { label: "Privacy Policy", to: "/privacy" },
       { label: "Return / Exchange Policy", to: "/returns" },
-      { label: "Terms of Service", to: "/support" },
+      { label: "Terms of Service", to: "/terms" },
       { label: "Shipping Policy", to: "/shipping" },
     ],
   },

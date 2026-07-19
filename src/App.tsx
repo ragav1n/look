@@ -11,6 +11,7 @@ import About from "./pages/About";
 import Privacy from "./pages/Privacy";
 import Returns from "./pages/Returns";
 import Shipping from "./pages/Shipping";
+import Terms from "./pages/Terms";
 import Shop from "./pages/Shop";
 import ProductDetail from "./pages/ProductDetail";
 import Cart from "./pages/Cart";
@@ -35,6 +36,7 @@ const router = createBrowserRouter([
       { path: "/privacy", element: <Privacy /> },
       { path: "/returns", element: <Returns /> },
       { path: "/shipping", element: <Shipping /> },
+      { path: "/terms", element: <Terms /> },
       { path: "/shop", element: <Shop /> },
       { path: "/shop/:slug", element: <ProductDetail /> },
       { path: "/cart", element: <Cart /> },
