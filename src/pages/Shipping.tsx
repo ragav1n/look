@@ -1,36 +1,72 @@
 import PolicyPage, { type PolicySection } from "@/components/layout/PolicyPage";
 
-/* Shipping Policy.
-   Sourced from LOOK's existing shipping/COD FAQ answers (src/data/faqs.ts) and
-   the Privacy page's Partial COD terms. Deliberately NOT invented: shipping
-   charges, free-shipping thresholds, courier names, international delivery,
-   guaranteed delivery dates. Those need the brand's own numbers. */
+/* Shipping Policy — brand-supplied copy, entered verbatim (2026-07-19).
+   Do NOT reword or restructure: the wording is the brand's own. This REPLACED
+   an earlier version inferred from the FAQ answers, which invented delivery
+   coverage wording and carried a Partial COD section this document doesn't
+   have — COD is covered on the Terms page instead. The Contact Us block is
+   PolicyPage's shared sign-off, not part of the supplied text. */
 const sections: PolicySection[] = [
+  {
+    heading: "Order Confirmation",
+    body: [
+      "Once your order has been successfully placed, you will receive an order confirmation at the email address provided during checkout. As your order progresses, important updates such as order processing, dispatch, and shipping information will also be shared via email.",
+      "For an even better shopping experience, we recommend creating a LOOK account. Your account allows you to conveniently track your order status, view shipping progress, access your order history, and manage your purchases all in one place.",
+    ],
+  },
   {
     heading: "Order Processing",
     body: [
-      "Orders are usually processed within 3–6 business days. Processing covers the time we take to prepare, quality-check, and pack your order before it is handed to our delivery partner — it does not include the time the courier takes to reach you.",
-      "Customised and made-to-measure pieces are created individually and may take longer to prepare. If your order includes one, we will let you know what to expect.",
+      "Every order is carefully reviewed, quality checked, and packed before dispatch.",
+      "Orders are typically processed and dispatched within 3–6 business days from the date of order confirmation. Business days exclude Sundays and public holidays.",
+      "For customized or made-to-order garments, processing times may vary depending on the complexity of the design. If additional time is required, our team will keep you informed.",
     ],
   },
   {
-    heading: "Delivery Coverage",
+    heading: "Shipping & Delivery Timeline",
     body: [
-      "We deliver to most locations across India through our trusted delivery partners. Delivery timelines vary depending on where you are — metro addresses typically arrive sooner than remote ones.",
-      "If you are unsure whether we currently deliver to your pin code, message us before ordering and we will check for you.",
+      "Once your order has been dispatched, the estimated delivery time depends on your shipping location and the courier partner servicing your area. Delivery timelines may vary across different cities and states.",
+      "We work with reliable logistics partners to ensure your order reaches you as quickly and safely as possible.",
+      "While we always aim to dispatch orders within our standard processing period, there may occasionally be situations beyond our control that affect dispatch or delivery schedules.",
+      "These may include seasonal demand, festive shopping periods, public holidays, unforeseen operational circumstances, or delays within the courier network.",
+      "Regardless of the situation, our team remains committed to preparing and dispatching every order at the earliest possible opportunity while keeping quality our highest priority.",
     ],
   },
   {
-    heading: "Payment & Partial COD",
+    heading: "Shipping Charges",
     body: [
-      "Cash on Delivery is available on selected products through our Partial COD option. To confirm a Partial COD order, 50% of the product value is paid in advance, and the remaining 50% is paid in cash when your order is delivered. This helps us prepare and dispatch orders efficiently.",
-      "All online payments are processed through secure payment gateways. LOOK never stores your card details, UPI PIN, CVV, or banking passwords.",
+      "Shipping charges are calculated automatically during checkout based on factors such as your delivery location, package weight, and the selected shipping method.",
+      "The applicable shipping charges will be displayed before you complete your payment.",
+      "Please note that shipping charges are non-refundable, including in cases where an order is exchanged, cancelled (where applicable), or returned. We encourage customers to review our Return & Exchange Policy before placing an order.",
     ],
   },
   {
-    heading: "Tracking Your Order",
+    heading: "Express Delivery",
     body: [
-      "Once your order has been dispatched, we will share tracking details with you on the contact number or email address provided at checkout. If your order seems delayed, or tracking hasn't updated in a while, contact us and we will follow it up with the courier on your behalf.",
+      "If you require your order urgently, you may contact our Customer Support Team before placing your order to check the availability of Express Delivery.",
+      "Where available, express shipping can be arranged at an additional shipping cost depending on the delivery location and product availability.",
+    ],
+  },
+  {
+    heading: "Shipping Address",
+    body: [
+      "Customers are responsible for providing a complete and accurate shipping address, including the correct recipient name, phone number, and PIN code.",
+      "Please review your shipping details carefully before completing your purchase.",
+      "LOOK cannot be held responsible for delays, failed deliveries, additional shipping charges, or orders delivered to an incorrect address due to inaccurate or incomplete information provided by the customer.",
+      "If you notice an error in your shipping address after placing an order, please contact us immediately. We will do our best to assist you if your order has not yet been dispatched.",
+    ],
+  },
+  {
+    heading: "Failed Delivery Attempts",
+    body: [
+      "If a delivery attempt is unsuccessful due to an incorrect address, recipient unavailability, refusal to accept the parcel, or failure to respond to the courier partner, the shipment may be returned to LOOK.",
+      "Any additional shipping charges incurred for re-dispatching the order will be the responsibility of the customer.",
+    ],
+  },
+  {
+    heading: "Policy Updates",
+    body: [
+      "LOOK reserves the right to modify or update this Shipping Policy at any time without prior notice. Any revisions will become effective immediately upon being published on our website. We encourage customers to review this policy before placing an order to stay informed of any updates.",
     ],
   },
 ];
@@ -40,7 +76,7 @@ export default function Shipping() {
     <PolicyPage
       title="Shipping Policy"
       lastUpdated="19 July 2026"
-      intro="Everything we make is packed and sent with care. This page explains how long we take to prepare an order, where we deliver, and how payment works — including our Partial Cash on Delivery option. If your order is time-sensitive, message us before placing it and we will tell you honestly whether we can make it."
+      intro="At LOOK, we are committed to delivering your order safely, efficiently, and with the care it deserves. Every garment is carefully inspected, packed, and prepared before it leaves our studio to ensure it reaches you in perfect condition. Please read our Shipping Policy to understand how your order will be processed and delivered."
       sections={sections}
       contactIntro="If you have a question about delivery to your area, a pending order, or tracking that hasn't updated, please reach out. Our team is always here to assist you."
     />
