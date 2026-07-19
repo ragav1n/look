@@ -7,15 +7,15 @@ import PolicyPage, { type PolicySection } from "@/components/layout/PolicyPage";
    have — COD is covered on the Terms page instead. The Contact Us block is
    PolicyPage's shared sign-off, not part of the supplied text.
 
-   DEVIATION under "Shipping Charges" — this wording is NOT the client's, it
-   was drafted here 2026-07-19 to their instruction and is pending their
-   sign-off. The supplied text made shipping charges non-refundable
-   unconditionally, which contradicted the Return & Exchange Policy's promise
-   that LOOK bears the cost when it ships the wrong or a defective product.
-   The client's stated intent: brand's fault (wrong/damaged, once verified) =>
-   LOOK pays; customer-driven (size exchange, change of mind, mistaken order)
-   => neither shipping nor product price is refunded. Replace wholesale if
-   they send their own wording. */
+   DEVIATION under "Shipping Charges" — this wording is NOT from the supplied
+   document. It was drafted here 2026-07-19 to the client's instruction and
+   APPROVED by them the same day, so treat it as settled copy under the same
+   read-only rule as the rest of the page. The supplied text made shipping
+   charges non-refundable unconditionally, which contradicted the Return &
+   Exchange Policy's promise that LOOK bears the cost when it ships the wrong
+   or a defective product. The rule it encodes: brand's fault (wrong/damaged,
+   once verified) => LOOK pays; customer-driven (size exchange, change of
+   mind, mistaken order) => neither shipping nor product price is refunded. */
 const sections: PolicySection[] = [
   {
     heading: "Order Confirmation",
