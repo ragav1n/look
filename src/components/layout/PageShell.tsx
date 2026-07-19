@@ -3,6 +3,7 @@ import { Outlet, ScrollRestoration, useLocation, useNavigationType } from "react
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import ChatWidget from "@/components/chat/ChatWidget";
+import NewsletterPopup from "@/components/NewsletterPopup";
 
 /* The whole site follows the black theme, so the navbar is always dark. */
 export default function PageShell() {
@@ -34,6 +35,7 @@ export default function PageShell() {
       </div>
       <Footer />
       <ChatWidget />
+      <NewsletterPopup />
       <ScrollRestoration />
     </div>
   );
