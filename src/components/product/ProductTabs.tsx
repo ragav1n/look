@@ -23,7 +23,7 @@ export default function ProductTabs({ product, reviews }: { product: Product; re
 
   const onKeyDown = (e: KeyboardEvent, index: number) => {
     const last = tabs.length - 1;
-    let next = index;
+    let next: number;
     if (e.key === "ArrowRight") next = index === last ? 0 : index + 1;
     else if (e.key === "ArrowLeft") next = index === 0 ? last : index - 1;
     else if (e.key === "Home") next = 0;
