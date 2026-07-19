@@ -62,18 +62,20 @@ const router = createBrowserRouter([
 
 export default function App() {
   return (
-    // ToastProvider wraps CartProvider because the cart reports its failures
-    // through toasts.
+    // Order matters: ToastProvider is outermost so UserProvider (session errors)
+    // and CartProvider (mutation failures) can both report through toasts;
+    // UserProvider sits above CartProvider because the cart links itself to the
+    // signed-in customer for account-aware checkout.
     <ErrorBoundary>
-      <UserProvider>
-        <ToastProvider>
+      <ToastProvider>
+        <UserProvider>
           <CartProvider>
             <WishlistProvider>
               <RouterProvider router={router} />
             </WishlistProvider>
           </CartProvider>
-        </ToastProvider>
-      </UserProvider>
+        </UserProvider>
+      </ToastProvider>
     </ErrorBoundary>
   );
 }

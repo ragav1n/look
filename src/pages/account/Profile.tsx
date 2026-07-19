@@ -10,11 +10,19 @@ export default function Profile() {
   const [email, setEmail] = useState(user?.email ?? "");
   const [phone, setPhone] = useState(user?.phone ?? "");
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateProfile({ name, email, phone });
-    setSaved(true);
+    setSaving(true);
+    try {
+      await updateProfile({ name, email, phone });
+      setSaved(true);
+    } catch {
+      /* the provider raises a toast on failure */
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -62,9 +70,10 @@ export default function Profile() {
         <div className="flex items-center gap-4">
           <button
             type="submit"
-            className="h-[48px] cursor-pointer rounded-btn bg-white px-7 text-[15px] font-medium text-black transition-opacity hover:opacity-85"
+            disabled={saving}
+            className="h-[48px] cursor-pointer rounded-btn bg-white px-7 text-[15px] font-medium text-black transition-opacity hover:opacity-85 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Save changes
+            {saving ? "Saving…" : "Save changes"}
           </button>
           {saved && (
             <span className="text-[14px] text-accent" role="status">

@@ -13,12 +13,26 @@ const nav = [
   { to: "/account/support", label: "Help & Support", end: true },
 ];
 
-/* Account shell (Figma sidebar screens). Mock-auth guarded — redirects to
-   /login when signed out. Nested account pages render in the Outlet. */
+/* Account shell (Figma sidebar screens). Auth-guarded via the Customer Account
+   API session — redirects to /login when signed out. Nested pages render in the
+   Outlet. */
 export default function AccountLayout() {
-  const { user, isAuthenticated, logout } = useUser();
+  const { user, ready, isAuthenticated, logout } = useUser();
   const navigate = useNavigate();
   const location = useLocation();
+
+  /* The session resolves asynchronously. Until it does, hold — redirecting on
+     the initial `!isAuthenticated` would bounce every logged-in hard refresh to
+     /login before the session check finishes. */
+  if (!ready) {
+    return (
+      <div className="mx-auto flex w-full max-w-[1200px] items-center justify-center px-6 py-24">
+        <p className="text-[15px] text-muted" role="status">
+          Loading your account…
+        </p>
+      </div>
+    );
+  }
 
   /* Carry where they were headed, so signing in returns them there instead of
      dumping everyone on Profile. */
