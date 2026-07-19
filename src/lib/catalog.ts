@@ -18,5 +18,6 @@ export const getCollections = impl.getCollections;
 export const getNewArrivals = impl.getNewArrivals;
 export const getBestSellers = impl.getBestSellers;
 export const getSaleProducts = impl.getSaleProducts;
+export const getProductHandles = impl.getProductHandles;
 
 export { isShopifyConfigured };

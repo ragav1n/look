@@ -4,6 +4,7 @@ import {
   COLLECTION_PRODUCTS_QUERY,
   COLLECTIONS_QUERY,
   PRODUCT_BY_HANDLE_QUERY,
+  PRODUCT_HANDLES_QUERY,
   PRODUCTS_QUERY,
 } from "./queries";
 import { toCollection, toProduct } from "./transform";
@@ -89,4 +90,34 @@ export async function getBestSellers(): Promise<Product[]> {
 export async function getSaleProducts(): Promise<Product[]> {
   const all = await getAllProducts();
   return all.filter((p) => p.mrp != null && p.mrp > p.price);
+}
+
+/**
+ * Map Shopify product GIDs to their handles.
+ *
+ * Order line items carry a `productId` but no handle — the Customer Account API
+ * simply doesn't expose one — so linking an ordered item back to its product
+ * page needs this second lookup against the Storefront API.
+ *
+ * Resolves to `{}` rather than throwing: a failed lookup should cost the links,
+ * not the order page around them. Ids that no longer resolve (deleted or
+ * unpublished products) are absent from the result, and render unlinked.
+ */
+export async function getProductHandles(productIds: string[]): Promise<Record<string, string>> {
+  const ids = [...new Set(productIds.filter(Boolean))];
+  if (ids.length === 0) return {};
+
+  try {
+    const data = await storefront<{ nodes: ({ id: string; handle?: string } | null)[] }>(
+      PRODUCT_HANDLES_QUERY,
+      { ids },
+    );
+    return Object.fromEntries(
+      data.nodes
+        .filter((n): n is { id: string; handle: string } => Boolean(n?.handle))
+        .map((n) => [n.id, n.handle]),
+    );
+  } catch {
+    return {};
+  }
 }

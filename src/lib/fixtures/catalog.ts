@@ -370,3 +370,9 @@ export async function getBestSellers(): Promise<Product[]> {
 export async function getSaleProducts(): Promise<Product[]> {
   return FIXTURE_PRODUCTS.filter((p) => p.mrp != null && p.mrp > p.price);
 }
+
+/** Fixture orders already carry their slugs, so there is nothing to resolve.
+ *  Present only to satisfy the catalog data layer's shape. */
+export async function getProductHandles(): Promise<Record<string, string>> {
+  return {};
+}

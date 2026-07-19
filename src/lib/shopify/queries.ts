@@ -162,3 +162,17 @@ export const CART_LINES_REMOVE_MUTATION = /* GraphQL */ `
     }
   }
 `;
+
+/** Resolve product GIDs to handles. Order line items from the Customer Account
+ *  API carry a productId but no handle, so this is how an ordered item finds
+ *  its way back to a product page. */
+export const PRODUCT_HANDLES_QUERY = /* GraphQL */ `
+  query ProductHandles($ids: [ID!]!) {
+    nodes(ids: $ids) {
+      ... on Product {
+        id
+        handle
+      }
+    }
+  }
+`;
