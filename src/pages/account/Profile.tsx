@@ -1,22 +1,44 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useUser } from "@/context/UserProvider";
 
 const inputCls =
   "h-[48px] w-full rounded-btn border border-line bg-surface px-4 text-[15px] text-white outline-none transition-colors focus:border-accent";
 
+/* Email and phone live on the customer's Shopify identity, not on anything we
+   own: CustomerUpdateInput accepts firstName/lastName and nothing else, so an
+   editable field for either would silently discard whatever was typed. They're
+   shown read-only instead. */
+const readonlyCls =
+  "flex h-[48px] items-center rounded-btn border border-line bg-surface/40 px-4 text-[15px] text-muted";
+
+function ReadOnlyField({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <span className="text-[14px] font-medium text-heading-soft">{label}</span>
+      <p className={readonlyCls}>{value || "Not set"}</p>
+    </div>
+  );
+}
+
 export default function Profile() {
   const { user, updateProfile } = useUser();
-  const [name, setName] = useState(user?.name ?? "");
-  const [email, setEmail] = useState(user?.email ?? "");
-  const [phone, setPhone] = useState(user?.phone ?? "");
+  const serverName = user?.name ?? "";
+  const [name, setName] = useState(serverName);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  /* Track the server's value, so a save that normalises the name (or a session
+     refresh) is reflected. Keyed on the server string, so it never clobbers
+     mid-typing — local edits don't change `serverName`. */
+  useEffect(() => {
+    setName(serverName);
+  }, [serverName]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     try {
-      await updateProfile({ name, email, phone });
+      await updateProfile({ name });
       setSaved(true);
     } catch {
       /* the provider raises a toast on failure */
@@ -36,36 +58,28 @@ export default function Profile() {
           <input
             className={inputCls}
             value={name}
+            autoComplete="name"
+            placeholder="Your name"
             onChange={(e) => {
               setName(e.target.value);
               setSaved(false);
             }}
           />
+          {/* Signing in with an emailed code never asks for a name, so it comes
+              back empty on a first login. Say so, rather than leaving a blank
+              box that looks like it failed to load. */}
+          {!serverName && (
+            <span className="text-[13px] text-muted">
+              Signing in with an email code doesn&apos;t collect a name — add yours here.
+            </span>
+          )}
         </label>
-        <label className="flex flex-col gap-1.5">
-          <span className="text-[14px] font-medium text-heading-soft">Email</span>
-          <input
-            type="email"
-            className={inputCls}
-            value={email}
-            onChange={(e) => {
-              setEmail(e.target.value);
-              setSaved(false);
-            }}
-          />
-        </label>
-        <label className="flex flex-col gap-1.5">
-          <span className="text-[14px] font-medium text-heading-soft">Phone</span>
-          <input
-            type="tel"
-            className={inputCls}
-            value={phone}
-            onChange={(e) => {
-              setPhone(e.target.value);
-              setSaved(false);
-            }}
-          />
-        </label>
+
+        <ReadOnlyField label="Email" value={user?.email ?? ""} />
+        <ReadOnlyField label="Phone" value={user?.phone ?? ""} />
+        <p className="-mt-2 text-[13px] text-muted">
+          Your email and phone come from your Shopify sign-in and can&apos;t be edited here.
+        </p>
 
         <div className="flex items-center gap-4">
           <button

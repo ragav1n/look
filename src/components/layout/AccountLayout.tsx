@@ -42,9 +42,18 @@ export default function AccountLayout() {
     <div className="mx-auto w-full max-w-[1200px] px-6 py-10">
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[240px_1fr] lg:gap-12">
         <aside className="h-fit">
+          {/* A customer who signed in with an email code has no name on record
+              until they set one, so the name line would otherwise render as an
+              empty gap. Fall back to leading with the email. */}
           <div className="rounded-card bg-card p-5">
-            <p className="text-[16px] font-medium text-white">{user?.name}</p>
-            <p className="mt-0.5 truncate text-[13px] text-muted">{user?.email}</p>
+            {user?.name ? (
+              <>
+                <p className="text-[16px] font-medium text-white">{user.name}</p>
+                <p className="mt-0.5 truncate text-[13px] text-muted">{user.email}</p>
+              </>
+            ) : (
+              <p className="truncate text-[15px] font-medium text-white">{user?.email}</p>
+            )}
           </div>
           <nav className="mt-4 flex flex-col" aria-label="Account">
             {nav.map(({ to, label, end }) => (
