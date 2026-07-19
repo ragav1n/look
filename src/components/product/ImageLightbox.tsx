@@ -105,9 +105,10 @@ export default function ImageLightbox({ images, alt, index, open, onIndex, onClo
           </button>
         )}
         <img
+          key={index}
           src={images[index]}
           alt={`${alt} — image ${index + 1}`}
-          className="max-h-full max-w-full object-contain"
+          className="animate-gallery-fade max-h-full max-w-full object-contain"
         />
         {count > 1 && (
           <button

@@ -35,7 +35,12 @@ export default function ImageGallery({ images, alt }: { images: string[]; alt: s
             aria-label="Open image viewer"
             className="block w-full cursor-zoom-in"
           >
-            <img src={main} alt={alt} className="aspect-[4/5] w-full object-cover object-top" />
+            <img
+              key={active}
+              src={main}
+              alt={alt}
+              className="animate-gallery-fade aspect-[4/5] w-full object-cover object-top"
+            />
           </button>
         )}
         {many && (

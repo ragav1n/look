@@ -241,6 +241,23 @@ body {
   animation: tab-panel-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+/* PDP gallery — the main image and the lightbox image crossfade (with a whisper
+   of scale) when the shopper steps through images, so it eases in instead of
+   popping. Keyed on the image index so it replays on every change. */
+@keyframes gallery-fade {
+  from {
+    opacity: 0;
+    transform: scale(1.012);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.animate-gallery-fade {
+  animation: gallery-fade 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 /* Toasts — rise into the bottom-right stack. Matches the modal panel easing so
    transient messages feel like part of the same surface language. */
 @keyframes toast-in {
@@ -278,7 +295,8 @@ body {
   .animate-auth-image,
   .animate-auth-panel,
   .animate-tab-panel,
-  .animate-toast {
+  .animate-toast,
+  .animate-gallery-fade {
     animation: none;
     opacity: 1;
   }
