@@ -50,6 +50,7 @@ export default function StaggeredCarousel({
   heading?: ReactNode;
 }) {
   const spacerRef = useRef<HTMLDivElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
   const colRefs = useRef<(HTMLDivElement | null)[]>([]);
   const copyRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [pinned, setPinned] = useState(canPin);
@@ -81,17 +82,21 @@ export default function StaggeredCarousel({
     let paused = false;
 
     const render = () => {
+      // READ phase — do every layout measurement up front. Reading offsetHeight
+      // between the transform writes below forced a synchronous reflow on each
+      // column, every frame; batching the reads removes that thrash.
       const stickyH = window.innerHeight - NAV_H;
       const total = spacer.offsetHeight - stickyH;
       if (total <= 0) return;
       // 0 when the wall locks into place, 1 when the pin lets go.
       const p = Math.min(1, Math.max(0, (NAV_H - spacer.getBoundingClientRect().top) / total));
+      const heights = copyRefs.current.map((copy) => copy?.offsetHeight ?? 0);
+
+      // WRITE phase — no reads past this point.
       for (let i = 0; i < colRefs.current.length; i++) {
         const col = colRefs.current[i];
-        const copy = copyRefs.current[i];
-        if (!col || !copy) continue;
-        const h = copy.offsetHeight;
-        if (h <= 0) continue;
+        const h = heights[i];
+        if (!col || h <= 0) continue;
         // Scroll-driven travel + the auto-scroll drift, both scaled per column.
         const raw = (p * TRAVEL + auto) * SPEEDS[i] + PHASES[i] * h;
         // Wrap into [0, h) then sit in [-h, 0) so a copy always covers the mask.
@@ -123,22 +128,31 @@ export default function StaggeredCarousel({
     });
     io.observe(spacer);
 
-    // Hold still while the reader is hovering or tabbing through a card.
+    /* Hold still only while the pointer is actually over a card. Binding this to
+       the spacer paused the drift whenever the cursor rested anywhere in the
+       300vh pinned band — i.e. most of the screen — so the advertised
+       self-drift never ran for a reader whose cursor sat mid-viewport. Keyboard
+       focus (tabbing through a card's link) still pauses via focusin/out. */
+    const grid = gridRef.current;
+    const onPointerMove = (e: PointerEvent) => {
+      paused = Boolean((e.target as Element | null)?.closest("[data-stagger-card]"));
+    };
+    const onPointerLeave = () => (paused = false);
     const pause = () => (paused = true);
     const resume = () => (paused = false);
-    spacer.addEventListener("pointerenter", pause);
-    spacer.addEventListener("pointerleave", resume);
-    spacer.addEventListener("focusin", pause);
-    spacer.addEventListener("focusout", resume);
+    grid?.addEventListener("pointermove", onPointerMove);
+    grid?.addEventListener("pointerleave", onPointerLeave);
+    grid?.addEventListener("focusin", pause);
+    grid?.addEventListener("focusout", resume);
 
     render();
     return () => {
       io.disconnect();
       stop();
-      spacer.removeEventListener("pointerenter", pause);
-      spacer.removeEventListener("pointerleave", resume);
-      spacer.removeEventListener("focusin", pause);
-      spacer.removeEventListener("focusout", resume);
+      grid?.removeEventListener("pointermove", onPointerMove);
+      grid?.removeEventListener("pointerleave", onPointerLeave);
+      grid?.removeEventListener("focusin", pause);
+      grid?.removeEventListener("focusout", resume);
     };
   }, [pinned, products.length]);
 
@@ -147,7 +161,10 @@ export default function StaggeredCarousel({
   products.forEach((p, i) => columns[i % cols].push(p));
 
   const grid = (
-    <div className="grid grid-cols-2 items-start gap-4 sm:gap-5 lg:grid-cols-3 lg:gap-6">
+    <div
+      ref={gridRef}
+      className="grid grid-cols-2 items-start gap-4 sm:gap-5 lg:grid-cols-3 lg:gap-6"
+    >
       {columns.map((col, i) => (
         <div
           key={i}
@@ -219,6 +236,7 @@ function StaggeredCard({ product }: { product: Product }) {
     <Link
       to={`/shop/${product.slug}`}
       aria-label={product.name}
+      data-stagger-card
       className="group relative block overflow-hidden rounded-[10px] border border-line bg-card shadow-[0_6px_24px_rgba(0,0,0,0.4)] transition-all duration-500 select-none hover:-translate-y-1 hover:border-accent/40 hover:shadow-[0_18px_44px_rgba(225,29,42,0.18)]"
     >
       <div className="relative aspect-[3/4] overflow-hidden">
