@@ -122,12 +122,20 @@ export default function Shop() {
 
   const hasFilters = Boolean(col) || stock.length > 0;
 
+  /* Arriving from a footer/home category link should announce the category —
+     landing on "All Products" after clicking "Dresses" reads like the filter
+     didn't take. Falls back to the raw key for a collection that has a link
+     but no sidebar entry yet. */
+  const colLabel = col
+    ? (CATEGORY_FILTERS.find((f) => f.key === canonical(col))?.label ?? col)
+    : "";
+
   return (
     <div className="mx-auto w-full max-w-[1338px] px-6 py-12 min-[1400px]:px-0">
       <div className="text-center">
         <p className="text-[12px] tracking-[0.08em] text-accent uppercase">Shop</p>
         <h1 className="mt-2 font-display text-[35px] leading-[47px] font-medium text-white">
-          {query ? `Results for “${query}”` : "All Products"}
+          {query ? `Results for “${query}”` : colLabel || "All Products"}
         </h1>
         {query ? (
           <button
