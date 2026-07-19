@@ -10,8 +10,10 @@ import {
 } from "react";
 import type { AddToCartInput, Cart } from "@/types";
 import { cartBackend } from "@/lib/cart";
+import { linkCart, unlinkCart } from "@/lib/customer";
 import { emptyCart } from "@/lib/shopify/transform";
 import { useToast } from "./ToastContext";
+import { useUser } from "./UserProvider";
 
 /**
  * Thin React wrapper over the cart data layer (live Shopify or dev fixture).
@@ -43,6 +45,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
   const [busyLines, setBusyLines] = useState<string[]>([]);
   const { push } = useToast();
+  const { ready: userReady, isAuthenticated } = useUser();
 
   /* Bumped by every mutation that lands. Hydrate captures the value it started
      with and bails if it changed, so a slow hydrate can't overwrite the result
@@ -108,6 +111,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
       active = false;
     };
   }, [push]);
+
+  /* Attach the signed-in customer to the Shopify cart so hosted checkout is
+     account-aware; clear it on logout. The token stays server-side — this only
+     asks the BFF to run the buyerIdentity mutation. Best-effort: a failure never
+     blocks the cart (the fixture backend no-ops entirely). The ref keeps a guest
+     who never signed in from firing a pointless unlink on every mount. */
+  const wasAuthedRef = useRef(false);
+  useEffect(() => {
+    if (!userReady || !cart.id) return;
+    if (isAuthenticated) void linkCart(cart.id);
+    else if (wasAuthedRef.current) void unlinkCart(cart.id);
+    wasAuthedRef.current = isAuthenticated;
+  }, [userReady, isAuthenticated, cart.id]);
 
   const value = useMemo<CartContextValue>(
     () => ({
