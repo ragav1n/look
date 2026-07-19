@@ -7,6 +7,11 @@ interface ImportMetaEnv {
   readonly VITE_SHOPIFY_STOREFRONT_TOKEN?: string;
   /** Storefront API version, e.g. "2025-01". Optional — defaults in client.ts */
   readonly VITE_SHOPIFY_API_VERSION?: string;
+  /**
+   * "true" turns on real Customer Account API auth via the /api BFF. Unset (the
+   * default) uses the dev fixture auth so the account UI works with no backend.
+   */
+  readonly VITE_CUSTOMER_AUTH_ENABLED?: string;
 }
 
 interface ImportMeta {

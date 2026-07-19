@@ -1,0 +1,17 @@
+{
+  "//": "The BFF functions are Node, not browser. Kept separate from the app's DOM-oriented tsconfig (which only includes `src`). Vercel compiles these at deploy; this file gives editors + a standalone `tsc -p api` the right lib/module settings.",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "types": ["node"],
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true
+  },
+  "include": ["."]
+}
