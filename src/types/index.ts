@@ -167,6 +167,14 @@ export interface Order {
   courier?: { name: string; trackingId: string; phone: string };
 }
 
+/** Signed-in customer's editable profile. Mirrors the subset of Shopify's
+ *  Customer Account API `customer` we surface (name/email/phone). */
+export interface UserProfile {
+  name: string;
+  email: string;
+  phone: string;
+}
+
 export interface Address {
   id: string;
   label: string;
