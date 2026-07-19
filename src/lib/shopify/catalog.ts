@@ -63,7 +63,8 @@ export async function getCollectionProducts(
  *  are browsable categories (see NON_CATEGORY_COLLECTIONS). */
 export async function getCollections(): Promise<Collection[]> {
   const data = await storefront<{ collections: { nodes: SFCollection[] } }>(COLLECTIONS_QUERY, {
-    first: 20,
+    // Past this the admin silently loses category tiles with no error.
+    first: 100,
   });
   return data.collections.nodes.map(toCollection);
 }

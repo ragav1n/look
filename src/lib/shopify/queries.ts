@@ -18,9 +18,13 @@ export const PRODUCT_FRAGMENT = /* GraphQL */ `
     featuredImage { url altText }
     images(first: 8) { nodes { url altText } }
     options { name values }
-    collections(first: 10) { nodes { handle } }
+    collections(first: 50) { nodes { handle } }
     heroTagline: metafield(namespace: "custom", key: "hero_tagline") { value }
-    variants(first: 50) {
+    # 250 is the Storefront maximum. At 50, the unbounded "options" field still
+    # rendered the full size/colour grid while "variants" was truncated, so
+    # valid combinations resolved to undefined and the product could not be
+    # bought — 9 sizes x 6 colours = 54 is reachable with this size scale.
+    variants(first: 250) {
       nodes {
         id
         title

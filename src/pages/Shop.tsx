@@ -49,7 +49,11 @@ const matchesCol = (p: Product, col: string) => {
   if (p.collectionHandles?.some((h) => canonical(h) === key)) return true;
 
   const types = COL_TYPES[key];
-  if (!types) return true;
+  /* Unknown key (a collection created in the admin that has no type mapping).
+     Falling through to `true` here matched EVERY product, so a new "Festive"
+     tile showed the whole catalogue. The type fallback only makes sense for
+     products carrying no collection data at all — i.e. fixture mode. */
+  if (!types) return !p.collectionHandles?.length;
 
   // Live products carry productType in both fields; fixtures split them.
   const fields = [p.category, p.group].map((v) => v.trim().toLowerCase());
@@ -62,7 +66,13 @@ const isInStock = (p: Product) => p.variants.some((v) => v.availableForSale);
    (searchParams) so views are shareable and back/forward works. */
 export default function Shop() {
   const [params, setParams] = useSearchParams();
-  const sort = (params.get("sort") as ProductSort) || "featured";
+  /* Validate rather than cast: an unknown ?sort= used to reach SORT_MAP as
+     undefined, throw while destructuring, and render "0 products / no products
+     found" — an outage dressed up as an empty catalogue. */
+  const sortParam = params.get("sort");
+  const sort: ProductSort = SORTS.some((s) => s.value === sortParam)
+    ? (sortParam as ProductSort)
+    : "featured";
   const col = params.get("col") || "";
   const stock = (params.get("stock") || "").split(",").filter(Boolean);
   const query = (params.get("q") || "").trim();
@@ -78,6 +88,23 @@ export default function Shop() {
         const next = new URLSearchParams(prev);
         if (!value || (key === "sort" && value === "featured")) next.delete(key);
         else next.set(key, value);
+        return next;
+      },
+      { replace: true },
+    );
+  };
+
+  /* Must be ONE navigation. React Router's functional updater is not queued the
+     way useState's is — it hands you `new URLSearchParams(searchParams)` built
+     from the CURRENT render, so two setParam calls in one handler both read the
+     same pre-click snapshot and the second navigate() wins. Clearing col then
+     stock used to leave the category still applied. */
+  const clearFilters = () => {
+    setParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.delete("col");
+        next.delete("stock");
         return next;
       },
       { replace: true },
@@ -210,10 +237,7 @@ export default function Shop() {
             {hasFilters && (
               <button
                 type="button"
-                onClick={() => {
-                  setParam("col", "");
-                  setParam("stock", "");
-                }}
+                onClick={clearFilters}
                 className="mt-4 text-[14px] text-accent underline-offset-4 hover:underline"
               >
                 Clear all filters
