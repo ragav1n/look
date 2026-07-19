@@ -1,13 +1,11 @@
-import { useState } from "react";
 import Reveal from "@/components/ui/Reveal";
+import NewsletterForm from "@/components/NewsletterForm";
 
-/* "LOOK Community" newsletter band — now on the black theme: a dark card with
-   soft red accent glows and white text. Marketing capture only (no backend);
-   wire it to your email platform (Klaviyo / Shopify customer) later. */
+/* "LOOK Community" newsletter band on the black theme: a dark card with soft red
+   accent glows and white text. The capture form itself lives in NewsletterForm,
+   shared with the timed popup; submitting marks the email SUBSCRIBED on Shopify
+   via /api/newsletter/subscribe. */
 export default function SignupBanner() {
-  const [email, setEmail] = useState("");
-  const [done, setDone] = useState(false);
-
   return (
     <section className="py-[80px]" aria-labelledby="signup-heading">
       <div className="mx-auto w-full max-w-[1338px] px-6 min-[1400px]:px-0">
@@ -31,35 +29,7 @@ export default function SignupBanner() {
               your inbox.
             </p>
 
-            {done ? (
-              <p className="mt-7 text-[16px] font-medium text-white" role="status">
-                Thanks — you&rsquo;re on the list ✨
-              </p>
-            ) : (
-              <form
-                className="mx-auto mt-7 flex max-w-[480px] flex-col gap-3 sm:flex-row"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  setDone(true);
-                }}
-              >
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email"
-                  aria-label="Email address"
-                  className="h-[50px] flex-1 rounded-btn border border-white/15 bg-black px-5 text-[15px] text-white outline-none placeholder:text-muted focus:border-accent"
-                />
-                <button
-                  type="submit"
-                  className="h-[50px] shrink-0 cursor-pointer rounded-btn bg-accent px-7 text-[15px] font-medium text-white transition-all hover:scale-[1.03] hover:bg-accent-bright"
-                >
-                  Subscribe
-                </button>
-              </form>
-            )}
+            <NewsletterForm />
           </div>
         </Reveal>
       </div>
