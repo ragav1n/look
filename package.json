@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:bff": "vercel dev",
+    "dev:bff": "npx vercel dev",
     "build": "tsc --noEmit && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
@@ -32,7 +32,6 @@
     "tailwindcss": "^4.1.7",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.64.0",
-    "vercel": "^41.0.0",
     "vite": "^6.3.5"
   }
 }
