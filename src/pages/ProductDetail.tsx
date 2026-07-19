@@ -5,6 +5,7 @@ import type { Product } from "@/types";
 import { getProductByHandle, getBestSellers } from "@/lib/catalog";
 import { formatPrice } from "@/lib/format";
 import { useAsyncData } from "@/hooks/useAsyncData";
+import LoadError from "@/components/ui/LoadError";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
 import { reviewsFor } from "@/data/reviews";
@@ -31,9 +32,23 @@ const trustItems = [
 
 export default function ProductDetail() {
   const { slug = "" } = useParams();
-  const { data: product, loading } = useAsyncData(() => getProductByHandle(slug), [slug]);
+  const { data: product, loading, error, reload } = useAsyncData(
+    () => getProductByHandle(slug),
+    [slug],
+  );
 
   if (loading) return <PdpSkeleton />;
+  /* A fetch failure is not the same as "this product doesn't exist" — telling
+     someone their bookmarked product is gone when the store is merely
+     unreachable is a lie they can't recover from. */
+  if (error)
+    return (
+      <LoadError
+        title="We couldn't load this product"
+        message="Something went wrong reaching the store. The product is probably still there."
+        onRetry={reload}
+      />
+    );
   if (!product) return <NotFound />;
 
   return <PdpContent key={product.slug} product={product} />;

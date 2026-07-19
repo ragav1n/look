@@ -1,13 +1,16 @@
-import { NavLink, Navigate, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useUser } from "@/context/UserProvider";
 
+/* `end` only where a parent path would otherwise over-match. Orders must NOT
+   use it, or viewing /account/orders/LK-24817 leaves no sidebar item active
+   and the reader loses their place in the account section. */
 const nav = [
-  { to: "/account/profile", label: "Profile" },
-  { to: "/account/orders", label: "Orders" },
-  { to: "/account/wishlist", label: "Wishlist" },
-  { to: "/account/addresses", label: "Addresses" },
-  { to: "/account/wallet", label: "Wallet" },
-  { to: "/account/support", label: "Help & Support" },
+  { to: "/account/profile", label: "Profile", end: true },
+  { to: "/account/orders", label: "Orders", end: false },
+  { to: "/account/wishlist", label: "Wishlist", end: true },
+  { to: "/account/addresses", label: "Addresses", end: true },
+  { to: "/account/wallet", label: "Wallet", end: true },
+  { to: "/account/support", label: "Help & Support", end: true },
 ];
 
 /* Account shell (Figma sidebar screens). Mock-auth guarded — redirects to
@@ -15,8 +18,11 @@ const nav = [
 export default function AccountLayout() {
   const { user, isAuthenticated, logout } = useUser();
   const navigate = useNavigate();
+  const location = useLocation();
 
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  /* Carry where they were headed, so signing in returns them there instead of
+     dumping everyone on Profile. */
+  if (!isAuthenticated) return <Navigate to="/login" replace state={{ from: location }} />;
 
   return (
     <div className="mx-auto w-full max-w-[1200px] px-6 py-10">
@@ -27,11 +33,11 @@ export default function AccountLayout() {
             <p className="mt-0.5 truncate text-[13px] text-muted">{user?.email}</p>
           </div>
           <nav className="mt-4 flex flex-col" aria-label="Account">
-            {nav.map(({ to, label }) => (
+            {nav.map(({ to, label, end }) => (
               <NavLink
                 key={to}
                 to={to}
-                end
+                end={end}
                 className={({ isActive }) =>
                   `rounded-btn px-4 py-3 text-[15px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 ${
                     isActive

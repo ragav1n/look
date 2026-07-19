@@ -7,6 +7,7 @@ import { canonical } from "@/lib/collections";
 import { useAsyncData } from "@/hooks/useAsyncData";
 import ProductCard, { ProductCardSkeleton } from "@/components/product/ProductCard";
 import QuickViewModal from "@/components/product/QuickViewModal";
+import LoadError from "@/components/ui/LoadError";
 
 const SORTS: { value: ProductSort; label: string }[] = [
   { value: "featured", label: "Featured" },
@@ -79,7 +80,7 @@ export default function Shop() {
   const [quickView, setQuickView] = useState<Product | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
-  const { data, loading } = useAsyncData(() => getProducts({ sort }), [sort]);
+  const { data, loading, error, reload } = useAsyncData(() => getProducts({ sort }), [sort]);
   const products = data ?? [];
 
   const setParam = (key: string, value: string) => {
@@ -273,23 +274,35 @@ export default function Shop() {
             </div>
           </div>
 
-          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-[15px]">
-            {loading
-              ? Array.from({ length: 6 }).map((_, i) => <ProductCardSkeleton key={i} />)
-              : visible.map((p) => (
-                  <ProductCard key={p.id} product={p} onQuickView={setQuickView} />
-                ))}
-          </div>
+          {/* An outage must not read as "no results" — that blames the
+              shopper's filters for the shop being unreachable. */}
+          {error ? (
+            <LoadError
+              title="We couldn't load the collection"
+              message="Something went wrong reaching the store, so we can't show products right now."
+              onRetry={reload}
+            />
+          ) : (
+            <>
+              <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-[15px]">
+                {loading
+                  ? Array.from({ length: 6 }).map((_, i) => <ProductCardSkeleton key={i} />)
+                  : visible.map((p) => (
+                      <ProductCard key={p.id} product={p} onQuickView={setQuickView} />
+                    ))}
+              </div>
 
-          {!loading && visible.length === 0 && (
-            <div className="py-20 text-center">
-              <p className="text-[18px] font-medium text-white">No products found</p>
-              <p className="mt-1 text-[14px] text-body">
-                {query
-                  ? "Try a different search term or filter."
-                  : "Try a different filter combination."}
-              </p>
-            </div>
+              {!loading && visible.length === 0 && (
+                <div className="py-20 text-center">
+                  <p className="text-[18px] font-medium text-white">No products found</p>
+                  <p className="mt-1 text-[14px] text-body">
+                    {query
+                      ? "Try a different search term or filter."
+                      : "Try a different filter combination."}
+                  </p>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

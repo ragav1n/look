@@ -1,11 +1,17 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useUser } from "@/context/UserProvider";
 import AuthShell, { AuthField, GoogleButton, authInputClass } from "./AuthShell";
 
 export default function Signup() {
   const { signup, login } = useUser();
   const navigate = useNavigate();
+  const location = useLocation();
+  /* AccountLayout stashes where the visitor was headed before the guard
+     bounced them here. Without this, someone who clicked Wishlist while signed
+     out lands on Profile, and a bookmarked order link is lost entirely. */
+  const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname;
+  const destination = from ?? "/account/profile";
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -14,7 +20,7 @@ export default function Signup() {
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     signup(name, email, phone);
-    navigate("/account/profile");
+    navigate(destination, { replace: true });
   };
 
   return (
@@ -96,7 +102,7 @@ export default function Signup() {
         label="Sign up with Google"
         onClick={() => {
           login("guest@look.in", "Guest");
-          navigate("/account/profile");
+          navigate(destination, { replace: true });
         }}
       />
     </AuthShell>

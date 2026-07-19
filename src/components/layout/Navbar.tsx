@@ -27,18 +27,27 @@ const menuItems = [
    regardless of how wide the left nav / right actions get. */
 export default function Navbar() {
   const navigate = useNavigate();
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
   const { itemCount } = useCart();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
 
   // close the mobile menu whenever the route changes
   useEffect(() => setMenuOpen(false), [pathname]);
 
+  /* Mirror the URL into the box. It used to be write-only local state, so
+     Shop's "Clear search" left the stale term sitting in the navbar, and a
+     shared /shop?q=gown link showed an empty box beside filtered results. */
+  useEffect(() => {
+    setQuery(new URLSearchParams(search).get("q") ?? "");
+  }, [search]);
+
   const submitSearch = (e: FormEvent) => {
     e.preventDefault();
     const q = query.trim();
     navigate(q ? `/shop?q=${encodeURIComponent(q)}` : "/shop");
+    setSearchOpen(false);
   };
 
   const iconClass =
@@ -142,8 +151,10 @@ export default function Navbar() {
           <div className="flex items-center gap-5 sm:gap-6">
             <button
               type="button"
-              onClick={() => navigate("/shop")}
+              onClick={() => setSearchOpen((o) => !o)}
               aria-label="Search"
+              aria-expanded={searchOpen}
+              aria-controls="mobile-search"
               className="grid place-items-center text-white md:hidden"
             >
               <Search className="size-6" strokeWidth={1.8} />
@@ -163,6 +174,43 @@ export default function Navbar() {
               )}
             </Link>
           </div>
+        </div>
+      </div>
+
+      {/* Mobile search row. The desktop form is `hidden md:flex`, so below md the
+          magnifier used to just navigate to /shop — leaving no field anywhere on
+          the page and making search unreachable on a phone. Same 0fr→1fr grid
+          animation as the menu panel. */}
+      <div
+        id="mobile-search"
+        inert={!searchOpen}
+        className={`grid overflow-hidden transition-[grid-template-rows,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] md:hidden ${
+          searchOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+        }`}
+      >
+        <div className="min-h-0">
+          <form
+            onSubmit={submitSearch}
+            role="search"
+            className="flex items-center gap-2 border-t border-line bg-black px-6 py-3"
+          >
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search for products"
+              aria-label="Search for products"
+              autoFocus={searchOpen}
+              className="h-[42px] min-w-0 flex-1 rounded-full border border-white/25 bg-transparent px-[22px] text-[15px] text-white outline-none transition-colors placeholder:text-white/50 focus:border-white/70"
+            />
+            <button
+              type="submit"
+              aria-label="Search"
+              className="grid size-10 shrink-0 place-items-center rounded-full text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+            >
+              <Search className="size-5" strokeWidth={1.8} />
+            </button>
+          </form>
         </div>
       </div>
 

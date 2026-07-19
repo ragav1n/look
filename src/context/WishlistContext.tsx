@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useMemo, type ReactNode } from "react";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 interface WishlistContextValue {
@@ -11,17 +11,28 @@ interface WishlistContextValue {
 const WishlistContext = createContext<WishlistContextValue | null>(null);
 
 export function WishlistProvider({ children }: { children: ReactNode }) {
-  const [ids, setIds] = useLocalStorage<string[]>("look.wishlist", []);
+  const [stored, setIds] = useLocalStorage<string[]>("look.wishlist", []);
+
+  /* useLocalStorage's try/catch covers a parse failure but not "parsed fine,
+     wrong type". A non-array here — a schema change, a stray write — made
+     ids.includes() throw during render of every ProductCard, blanking Home and
+     Shop entirely. Normalise on read; writes always store an array. */
+  const ids = useMemo(() => (Array.isArray(stored) ? stored : []), [stored]);
+  const update = useCallback(
+    (fn: (prev: string[]) => string[]) =>
+      setIds((prev) => fn(Array.isArray(prev) ? prev : [])),
+    [setIds],
+  );
 
   const value = useMemo<WishlistContextValue>(
     () => ({
       ids,
       has: (id) => ids.includes(id),
       toggle: (id) =>
-        setIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])),
-      remove: (id) => setIds((prev) => prev.filter((x) => x !== id)),
+        update((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])),
+      remove: (id) => update((prev) => prev.filter((x) => x !== id)),
     }),
-    [ids, setIds],
+    [ids, update],
   );
 
   return <WishlistContext.Provider value={value}>{children}</WishlistContext.Provider>;

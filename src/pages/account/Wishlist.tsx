@@ -6,10 +6,11 @@ import { useAsyncData } from "@/hooks/useAsyncData";
 import { useWishlist } from "@/context/WishlistContext";
 import ProductCard, { ProductCardSkeleton } from "@/components/product/ProductCard";
 import QuickViewModal from "@/components/product/QuickViewModal";
+import LoadError from "@/components/ui/LoadError";
 
 export default function Wishlist() {
   const { ids } = useWishlist();
-  const { data, loading } = useAsyncData(() => getAllProducts(), []);
+  const { data, loading, error, reload } = useAsyncData(() => getAllProducts(), []);
   const [quickView, setQuickView] = useState<Product | null>(null);
 
   const items = (data ?? []).filter((p) => ids.includes(p.id));
@@ -19,7 +20,15 @@ export default function Wishlist() {
       <h1 className="font-display text-[26px] font-medium text-white">My Wishlist</h1>
       <p className="mt-1 text-[15px] text-body">Pieces you’ve saved for later.</p>
 
-      {loading ? (
+      {/* Don't tell someone their saved pieces are gone because the catalog
+          request failed. */}
+      {error ? (
+        <LoadError
+          title="We couldn't load your wishlist"
+          message="Something went wrong reaching the store. Your saved pieces are safe."
+          onRetry={reload}
+        />
+      ) : loading ? (
         <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-[15px]">
           {Array.from({ length: 3 }).map((_, i) => (
             <ProductCardSkeleton key={i} />
