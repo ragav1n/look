@@ -33,6 +33,7 @@ export const PRODUCT_FRAGMENT = /* GraphQL */ `
         availableForSale
         quantityAvailable
         price { amount currencyCode }
+        compareAtPrice { amount currencyCode }
         selectedOptions { name value }
       }
     }

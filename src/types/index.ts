@@ -18,6 +18,9 @@ export interface ProductVariant {
   color: string;
   availableForSale: boolean;
   price: Money;
+  /** Shopify's per-variant compare-at ("was") price. Only a real markdown when
+   *  it exceeds `price`; undefined when the variant isn't on sale. */
+  compareAtPrice?: Money;
 }
 
 export interface Product {

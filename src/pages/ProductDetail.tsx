@@ -85,10 +85,18 @@ function PdpContent({ product }: { product: Product }) {
   const canAdd = Boolean(variant?.availableForSale);
   const wished = has(product.id);
   const reviews = reviewsFor(product.id);
-  const discount =
-    product.mrp && product.mrp > product.price
-      ? Math.round(((product.mrp - product.price) / product.mrp) * 100)
-      : 0;
+
+  /* Price follows the chosen size once one is picked; until then we show the
+     product's lowest variant price (Shopify's minVariantPrice) as a "from"
+     figure. mrp/discount track the same variant so a per-size markdown stays
+     internally consistent. */
+  const unitPrice = variant?.price.amount ?? product.price;
+  const variantMrp =
+    variant?.compareAtPrice && variant.compareAtPrice.amount > variant.price.amount
+      ? variant.compareAtPrice.amount
+      : undefined;
+  const mrp = variant ? variantMrp : product.mrp;
+  const discount = mrp && mrp > unitPrice ? Math.round(((mrp - unitPrice) / mrp) * 100) : 0;
 
   /* Resolves false when the add failed — CartContext has already raised a
      toast, so the only job here is to not show success UI on top of it. */
@@ -162,11 +170,11 @@ function PdpContent({ product }: { product: Product }) {
 
           <div className="mt-4 flex items-end gap-3">
             <span className="text-[30px] leading-none font-medium text-white">
-              {formatPrice(product.price, product.currencyCode)}
+              {formatPrice(unitPrice, product.currencyCode)}
             </span>
-            {product.mrp && (
+            {mrp && (
               <span className="text-[18px] leading-none text-muted line-through">
-                {formatPrice(product.mrp, product.currencyCode)}
+                {formatPrice(mrp, product.currencyCode)}
               </span>
             )}
             {discount > 0 && (

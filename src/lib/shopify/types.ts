@@ -22,6 +22,7 @@ export interface SFVariant {
   availableForSale: boolean;
   quantityAvailable: number | null;
   price: SFMoney;
+  compareAtPrice: SFMoney | null;
   selectedOptions: SFSelectedOption[];
 }
 

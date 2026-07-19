@@ -76,6 +76,7 @@ export function toProduct(p: SFProduct): Product {
     color: optionValue(v, "Color") || optionValue(v, "Colour"),
     availableForSale: v.availableForSale,
     price: money(v.price),
+    compareAtPrice: v.compareAtPrice ? money(v.compareAtPrice) : undefined,
   }));
 
   const images = (
