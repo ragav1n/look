@@ -7,8 +7,11 @@
  * Do NOT scatter this data into components or treat it as the source of truth:
  * products, prices, and images live in Shopify.
  */
-import type { Collection, Product, ProductSort, ProductVariant } from "@/types";
+import type { Collection, Product, ProductSort, ProductVariant, Reel } from "@/types";
 import { DEFAULT_CURRENCY } from "../format";
+import { site } from "@/config/site";
+import heroModel1 from "@/assets/hero-model-1.jpg";
+import heroModel2 from "@/assets/hero-model-2.jpg";
 import product17 from "@/assets/product-17.jpg";
 import product18 from "@/assets/product-18.jpg";
 import product19 from "@/assets/product-19.jpg";
@@ -356,6 +359,18 @@ export async function getCollections(): Promise<Collection[]> {
     { id: "fixture:collection:tops", handle: "tops", title: "Tops", image: imageOf("rose-print-kurta") },
     { id: "fixture:collection:co-ords", handle: "co-ords", title: "Co-Ords", image: imageOf("ivory-coord-set") },
     { id: "fixture:collection:bottom", handle: "bottom", title: "Bottom", image: imageOf("sage-coord-set") },
+  ];
+}
+
+/** Sample reels so the "Straight From Our Reels" section stays styleable in dev.
+ *  Dev-only: live cards come from the `reel` metaobject, and the section hides
+ *  when the store has none. All sample links point at the profile. */
+export async function getReels(): Promise<Reel[]> {
+  return [
+    { id: "fixture:reel:1", image: heroModel1, imageAlt: "", caption: "Festive fits, styled 3 ways", link: site.instagram },
+    { id: "fixture:reel:2", image: kurtaFloral2, imageAlt: "", caption: "Thread-work close-up", link: site.instagram },
+    { id: "fixture:reel:3", image: heroModel2, imageAlt: "", caption: "New drop: try-on haul", link: site.instagram },
+    { id: "fixture:reel:4", image: promoM6, imageAlt: "", caption: "Short kurta, long day", link: site.instagram },
   ];
 }
 

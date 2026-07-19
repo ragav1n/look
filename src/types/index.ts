@@ -72,6 +72,19 @@ export interface Collection {
   image: string;
 }
 
+/** A homepage "Straight From Our Reels" card. Shopify: the `reel` metaobject —
+ *  the store admin owns the cover image, caption and Instagram post link. */
+export interface Reel {
+  id: string;
+  /** Uploaded cover image (Shopify CDN URL) — reels can't hotlink IG thumbnails. */
+  image: string;
+  imageAlt: string;
+  /** Optional card caption; "" when the admin left it blank. */
+  caption: string;
+  /** The specific Instagram post/reel this card links out to. */
+  link: string;
+}
+
 export interface Review {
   id: string;
   productId: string;

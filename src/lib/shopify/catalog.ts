@@ -1,4 +1,4 @@
-import type { Collection, Product, ProductSort } from "@/types";
+import type { Collection, Product, ProductSort, Reel } from "@/types";
 import { storefront } from "./client";
 import {
   COLLECTION_PRODUCTS_QUERY,
@@ -6,9 +6,10 @@ import {
   PRODUCT_BY_HANDLE_QUERY,
   PRODUCT_HANDLES_QUERY,
   PRODUCTS_QUERY,
+  REELS_QUERY,
 } from "./queries";
-import { toCollection, toProduct } from "./transform";
-import type { SFCollection, SFProduct } from "./types";
+import { toCollection, toProduct, toReel } from "./transform";
+import type { SFCollection, SFProduct, SFReel } from "./types";
 
 /** Live Storefront API catalog. Product order always comes from Shopify's own
  *  sort keys (or a collection's admin-configured order) — never re-sorted here. */
@@ -68,6 +69,18 @@ export async function getCollections(): Promise<Collection[]> {
     first: 100,
   });
   return data.collections.nodes.map(toCollection);
+}
+
+/** Homepage reel cards from the `reel` metaobject, ordered by the admin's
+ *  `position` field (entries without one fall to the end, keeping API order).
+ *  Incomplete entries (no image/link) are dropped. */
+export async function getReels(first = 12): Promise<Reel[]> {
+  const data = await storefront<{ metaobjects: { nodes: SFReel[] } }>(REELS_QUERY, { first });
+  return data.metaobjects.nodes
+    .map((n) => ({ n, pos: Number.parseInt(n.position?.value ?? "", 10) }))
+    .sort((a, b) => (Number.isNaN(a.pos) ? Infinity : a.pos) - (Number.isNaN(b.pos) ? Infinity : b.pos))
+    .map(({ n }) => toReel(n))
+    .filter((r): r is Reel => r !== null);
 }
 
 export async function getNewArrivals(): Promise<Product[]> {

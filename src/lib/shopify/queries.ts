@@ -177,3 +177,26 @@ export const PRODUCT_HANDLES_QUERY = /* GraphQL */ `
     }
   }
 `;
+
+/** Homepage "Straight From Our Reels" cards. Sourced from the `reel` metaobject
+ *  so the store admin owns each card's image, caption and Instagram post link.
+ *  The definition must have Storefront access enabled or this query errors (the
+ *  section then simply hides). `image` is a file_reference resolving to a
+ *  MediaImage — the project's first such reference. */
+export const REELS_QUERY = /* GraphQL */ `
+  query Reels($first: Int!) {
+    metaobjects(type: "reel", first: $first) {
+      nodes {
+        id
+        image: field(key: "image") {
+          reference {
+            ... on MediaImage { image { url altText } }
+          }
+        }
+        caption: field(key: "caption") { value }
+        link: field(key: "link") { value }
+        position: field(key: "position") { value }
+      }
+    }
+  }
+`;

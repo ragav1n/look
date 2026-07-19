@@ -57,6 +57,16 @@ export interface SFCollection {
   products: { nodes: { featuredImage: SFImage | null }[] };
 }
 
+/** A `reel` metaobject node. Each field is queried with an alias, so it comes
+ *  back as a `MetaobjectField` (`{ value }`, plus `reference` for the file). */
+export interface SFReel {
+  id: string;
+  image: { reference: { image: SFImage } | null } | null;
+  caption: { value: string | null } | null;
+  link: { value: string | null } | null;
+  position: { value: string | null } | null;
+}
+
 export interface SFCartLine {
   id: string;
   quantity: number;

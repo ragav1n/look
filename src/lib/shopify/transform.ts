@@ -1,5 +1,5 @@
-import type { Cart, CartLine, Collection, Money, Product, ProductVariant } from "@/types";
-import type { SFCart, SFCollection, SFMoney, SFProduct, SFVariant } from "./types";
+import type { Cart, CartLine, Collection, Money, Product, ProductVariant, Reel } from "@/types";
+import type { SFCart, SFCollection, SFMoney, SFProduct, SFReel, SFVariant } from "./types";
 
 const money = (m: SFMoney): Money => ({
   amount: Number.parseFloat(m.amount),
@@ -133,6 +133,21 @@ export function toCollection(c: SFCollection): Collection {
     handle: c.handle,
     title: c.title,
     image: c.image?.url ?? c.products.nodes[0]?.featuredImage?.url ?? "",
+  };
+}
+
+/** Map a `reel` metaobject node. Returns null for an entry missing its image or
+ *  link — a half-filled card is skipped rather than rendered broken. */
+export function toReel(r: SFReel): Reel | null {
+  const img = r.image?.reference?.image;
+  const link = r.link?.value?.trim();
+  if (!img?.url || !link) return null;
+  return {
+    id: r.id,
+    image: img.url,
+    imageAlt: img.altText ?? "",
+    caption: r.caption?.value?.trim() ?? "",
+    link,
   };
 }
 
