@@ -16,7 +16,7 @@ export default function Login() {
   return (
     <AuthShell
       title="Sign in to LOOK"
-      subtitle="No password needed — Shopify emails you a one-time code."
+      subtitle="No password needed — we email you a one-time code."
       footer={<>New to LOOK? Continue above — your account is created in the same step.</>}
     >
       {failed && (
@@ -28,10 +28,10 @@ export default function Login() {
         </p>
       )}
 
-      <LaunchButton label="Continue with Shopify" onClick={() => login(from)} />
+      <LaunchButton label="Continue with LOOK" onClick={() => login(from)} />
 
       <p className="mt-4 text-center text-[13px] text-muted">
-        You’ll be taken to Shopify’s secure sign-in and returned right here.
+        You’ll confirm your email with a secure one-time code, then land right back here.
       </p>
     </AuthShell>
   );
