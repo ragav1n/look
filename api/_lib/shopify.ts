@@ -10,7 +10,11 @@
 
 const env = (k: string) => process.env[k]?.trim() || "";
 
-const shopDomain = env("SHOPIFY_SHOP_DOMAIN")
+/* The shop domain and Storefront token are PUBLIC values the browser bundle
+   already carries, so rather than duplicating them under a server-only name we
+   fall back to the VITE_ ones (Vercel exposes every project env var to
+   functions). A server-only override is still honoured if you set one. */
+const shopDomain = (env("SHOPIFY_SHOP_DOMAIN") || env("VITE_SHOPIFY_STORE_DOMAIN"))
   .replace(/^https?:\/\//, "")
   .replace(/\/+$/, "");
 /** Numeric shop id from the Headless channel's "Application endpoints" panel.
@@ -26,7 +30,7 @@ export const config = {
   apiVersion,
   clientId: env("SHOPIFY_CUSTOMER_CLIENT_ID"),
   clientSecret: env("SHOPIFY_CUSTOMER_CLIENT_SECRET"),
-  storefrontToken: env("SHOPIFY_STOREFRONT_TOKEN"),
+  storefrontToken: env("SHOPIFY_STOREFRONT_TOKEN") || env("VITE_SHOPIFY_STOREFRONT_TOKEN"),
   appOrigin,
   cookieSecret: env("COOKIE_SECRET") || "dev-insecure-cookie-secret-change-me",
   secureCookies: appOrigin.startsWith("https"),
