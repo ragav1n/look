@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { Address } from "@/types";
 import { addresses as seedAddresses } from "@/lib/fixtures/account";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 const inputCls =
   "h-[46px] w-full rounded-btn border border-line bg-surface px-4 text-[14px] text-white outline-none transition-colors focus:border-accent";
@@ -17,15 +18,47 @@ const blank = (): Omit<Address, "id"> => ({
 });
 
 export default function Addresses() {
-  const [list, setList] = useState<Address[]>(seedAddresses);
+  /* Persisted, so an address added here survives leaving the page — the account
+     Outlet is remounted on every route change (PageShell keys it on the path),
+     which used to discard page-local state while Profile edits (via
+     UserProvider) persisted, an inconsistency within the same section. */
+  const [stored, setStored] = useLocalStorage<Address[]>("look.addresses", seedAddresses);
+  const list = Array.isArray(stored) ? stored : seedAddresses;
+  const setList = (fn: (prev: Address[]) => Address[]) =>
+    setStored((prev) => fn(Array.isArray(prev) ? prev : seedAddresses));
+
   const [adding, setAdding] = useState(false);
+  // null while adding a new address; an id while editing an existing one.
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState(blank());
 
-  const add = (e: React.FormEvent) => {
-    e.preventDefault();
-    setList((prev) => [...prev, { ...draft, id: `addr-${Date.now()}` }]);
+  const startAdd = () => {
     setDraft(blank());
+    setEditingId(null);
+    setAdding(true);
+  };
+
+  const startEdit = (a: Address) => {
+    const { id: _id, ...rest } = a;
+    setDraft(rest);
+    setEditingId(a.id);
+    setAdding(true);
+  };
+
+  const closeForm = () => {
     setAdding(false);
+    setEditingId(null);
+    setDraft(blank());
+  };
+
+  const save = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editingId) {
+      setList((prev) => prev.map((a) => (a.id === editingId ? { ...a, ...draft } : a)));
+    } else {
+      setList((prev) => [...prev, { ...draft, id: `addr-${Date.now()}` }]);
+    }
+    closeForm();
   };
 
   const remove = (id: string) => setList((prev) => prev.filter((a) => a.id !== id));
@@ -41,7 +74,7 @@ export default function Addresses() {
         {!adding && (
           <button
             type="button"
-            onClick={() => setAdding(true)}
+            onClick={startAdd}
             className="h-[44px] cursor-pointer rounded-btn bg-white px-5 text-[14px] font-medium text-black transition-opacity hover:opacity-85"
           >
             + Add address
@@ -50,7 +83,7 @@ export default function Addresses() {
       </div>
 
       {adding && (
-        <form onSubmit={add} className="mt-6 rounded-card border border-line p-6">
+        <form onSubmit={save} className="mt-6 rounded-card border border-line p-6">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <input className={inputCls} placeholder="Full name" required value={draft.name} onChange={(e) => set("name", e.target.value)} />
             <input className={inputCls} placeholder="Phone" required value={draft.phone} onChange={(e) => set("phone", e.target.value)} />
@@ -63,9 +96,9 @@ export default function Addresses() {
           </div>
           <div className="mt-4 flex gap-3">
             <button type="submit" className="h-[44px] cursor-pointer rounded-btn bg-white px-6 text-[14px] font-medium text-black hover:opacity-85">
-              Save address
+              {editingId ? "Save changes" : "Save address"}
             </button>
-            <button type="button" onClick={() => setAdding(false)} className="h-[44px] cursor-pointer rounded-btn border border-line px-6 text-[14px] font-medium text-body hover:text-white">
+            <button type="button" onClick={closeForm} className="h-[44px] cursor-pointer rounded-btn border border-line px-6 text-[14px] font-medium text-body hover:text-white">
               Cancel
             </button>
           </div>
@@ -92,7 +125,11 @@ export default function Addresses() {
               {a.phone}
             </p>
             <div className="mt-4 flex gap-4 text-[13px]">
-              <button type="button" className="cursor-pointer font-medium text-accent hover:underline">
+              <button
+                type="button"
+                onClick={() => startEdit(a)}
+                className="cursor-pointer font-medium text-accent hover:underline"
+              >
                 Edit
               </button>
               <button
