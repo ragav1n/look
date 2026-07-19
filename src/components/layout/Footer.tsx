@@ -33,9 +33,10 @@ function InstagramGlyph({ className = "" }: { className?: string }) {
 }
 
 /* Footer — black theme, white text.
-   Link routes: LOOK's catalog doesn't have dedicated Dresses/Bottoms/Shipping
-   pages yet, so those point at the closest existing route (Shop with a filter,
-   or Contact) until brand pages/collections are added. */
+   Shop links carry the canonical filter key (not Shopify's raw handle) so the
+   Shop sidebar highlights the matching category on arrival.
+   "Terms of Service" still points at /support: LOOK hasn't supplied terms copy,
+   and inventing binding terms for a live store isn't ours to do. */
 const columns = [
   {
     heading: "Shop",
@@ -51,9 +52,9 @@ const columns = [
     heading: "Legal",
     links: [
       { label: "Privacy Policy", to: "/privacy" },
-      { label: "Return / Exchange Policy", to: "/support" },
+      { label: "Return / Exchange Policy", to: "/returns" },
       { label: "Terms of Service", to: "/support" },
-      { label: "Shipping Policy", to: "/support" },
+      { label: "Shipping Policy", to: "/shipping" },
     ],
   },
   {
@@ -64,6 +65,26 @@ const columns = [
     ],
   },
 ];
+
+/* Footer link: accent rule sweeps out from the left on hover/focus, the label
+   eases across to meet it, and a click compresses it briefly so the press is
+   acknowledged before the route transition takes over. */
+function FooterLink({ to, label }: { to: string; label: string }) {
+  return (
+    <Link
+      to={to}
+      className="group/link inline-flex items-center gap-0 text-[15px] leading-[22px] text-white/80 transition-colors duration-300 hover:text-accent focus-visible:text-accent focus-visible:outline-none active:scale-[0.97] motion-reduce:active:scale-100"
+    >
+      <span
+        aria-hidden
+        className="mr-0 h-[1.5px] w-0 bg-accent transition-all duration-300 ease-out group-hover/link:mr-2 group-hover/link:w-4 group-focus-visible/link:mr-2 group-focus-visible/link:w-4 motion-reduce:transition-none"
+      />
+      <span className="transition-transform duration-300 ease-out motion-reduce:transition-none">
+        {label}
+      </span>
+    </Link>
+  );
+}
 
 export default function Footer() {
   return (
@@ -128,12 +149,7 @@ export default function Footer() {
             <ul className="mt-4 flex flex-col gap-2.5">
               {links.map(({ label, to }) => (
                 <li key={label}>
-                  <Link
-                    to={to}
-                    className="text-[15px] leading-[22px] text-white/80 transition-colors hover:text-accent"
-                  >
-                    {label}
-                  </Link>
+                  <FooterLink to={to} label={label} />
                 </li>
               ))}
             </ul>

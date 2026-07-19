@@ -7,6 +7,8 @@ import AccountLayout from "./components/layout/AccountLayout";
 import Home from "./pages/Home";
 import About from "./pages/About";
 import Privacy from "./pages/Privacy";
+import Returns from "./pages/Returns";
+import Shipping from "./pages/Shipping";
 import Shop from "./pages/Shop";
 import ProductDetail from "./pages/ProductDetail";
 import Cart from "./pages/Cart";
@@ -29,6 +31,8 @@ const router = createBrowserRouter([
       { path: "/", element: <Home /> },
       { path: "/about", element: <About /> },
       { path: "/privacy", element: <Privacy /> },
+      { path: "/returns", element: <Returns /> },
+      { path: "/shipping", element: <Shipping /> },
       { path: "/shop", element: <Shop /> },
       { path: "/shop/:slug", element: <ProductDetail /> },
       { path: "/cart", element: <Cart /> },
