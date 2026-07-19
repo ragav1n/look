@@ -31,6 +31,19 @@ export const config = {
   clientId: env("SHOPIFY_CUSTOMER_CLIENT_ID"),
   clientSecret: env("SHOPIFY_CUSTOMER_CLIENT_SECRET"),
   storefrontToken: env("SHOPIFY_STOREFRONT_TOKEN") || env("VITE_SHOPIFY_STOREFRONT_TOKEN"),
+  /* Admin API access — SERVER-ONLY, never VITE_-prefixed. Can create/update
+     customers, so it must never reach the browser bundle. Powers the newsletter
+     subscribe endpoint. Two ways to configure it:
+       - `SHOPIFY_ADMIN_TOKEN` — a static token (`shpat_…`), if you have one.
+       - `SHOPIFY_ADMIN_CLIENT_ID` + `SHOPIFY_ADMIN_CLIENT_SECRET` — the modern
+         Dev Dashboard path: the function exchanges these for a 24h token via the
+         client_credentials grant and refreshes it automatically.
+     Unset entirely (as in dev), the subscribe endpoint 500s and the SPA falls
+     back to its dev-success path. */
+  adminToken: env("SHOPIFY_ADMIN_TOKEN"),
+  adminClientId: env("SHOPIFY_ADMIN_CLIENT_ID"),
+  adminClientSecret: env("SHOPIFY_ADMIN_CLIENT_SECRET"),
+  adminApiVersion: env("SHOPIFY_ADMIN_API_VERSION") || "2025-07",
   appOrigin,
   cookieSecret: env("COOKIE_SECRET") || "dev-insecure-cookie-secret-change-me",
   secureCookies: appOrigin.startsWith("https"),
@@ -115,3 +128,65 @@ export async function resolveEndpoints(): Promise<Endpoints> {
 
 export const storefrontGraphqlUrl = () =>
   `https://${shopDomain}/api/${config.storefrontApiVersion}/graphql.json`;
+
+export const adminGraphqlUrl = () =>
+  `https://${shopDomain}/admin/api/${config.adminApiVersion}/graphql.json`;
+
+/** True when the Admin API can be reached — either a static token or a
+ *  client-credentials pair is configured. */
+export const isAdminConfigured = (): boolean =>
+  Boolean(config.adminToken || (config.adminClientId && config.adminClientSecret));
+
+/* Cached client-credentials token, per function instance. Shopify's grant
+   returns a ~24h token; we refresh a minute early to avoid using a stale one. */
+let adminTokenCache: { token: string; expiresAt: number } | null = null;
+
+/** Resolve an Admin API access token. Prefers a static `SHOPIFY_ADMIN_TOKEN`;
+ *  otherwise exchanges the Dev Dashboard client id/secret via the
+ *  client_credentials grant and caches the result until shortly before expiry. */
+async function getAdminAccessToken(): Promise<string> {
+  if (config.adminToken) return config.adminToken;
+  if (!config.adminClientId || !config.adminClientSecret) {
+    throw new Error("Admin API is not configured (need SHOPIFY_ADMIN_TOKEN or client id/secret).");
+  }
+  const now = Date.now();
+  if (adminTokenCache && adminTokenCache.expiresAt > now) return adminTokenCache.token;
+
+  const res = await fetch(`https://${shopDomain}/admin/oauth/access_token`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify({
+      grant_type: "client_credentials",
+      client_id: config.adminClientId,
+      client_secret: config.adminClientSecret,
+    }),
+  });
+  if (!res.ok) {
+    throw new Error(`Admin token exchange failed: HTTP ${res.status} ${await res.text()}`);
+  }
+  const json = (await res.json()) as { access_token?: string; expires_in?: number };
+  if (!json.access_token) throw new Error("Admin token exchange returned no access_token.");
+  adminTokenCache = {
+    token: json.access_token,
+    expiresAt: now + (json.expires_in ?? 86_400) * 1000 - 60_000,
+  };
+  return json.access_token;
+}
+
+/** Run an Admin GraphQL operation with the server-only admin token. Returns the
+ *  raw fetch Response so callers can read `data`/`userErrors` and status. */
+export async function adminGraphql(
+  query: string,
+  variables?: Record<string, unknown>,
+): Promise<Response> {
+  const token = await getAdminAccessToken();
+  return fetch(adminGraphqlUrl(), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      "X-Shopify-Access-Token": token,
+    },
+    body: JSON.stringify({ query, variables }),
+  });
+}
