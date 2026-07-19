@@ -65,17 +65,19 @@ export function QuantityStepper({
   value,
   onChange,
   max = 10,
+  disabled = false,
 }: {
   value: number;
   onChange: (qty: number) => void;
   max?: number;
+  disabled?: boolean;
 }) {
   return (
     <div className="flex h-[48px] w-[112px] items-center justify-between rounded-btn border border-muted px-3">
       <button
         type="button"
         aria-label="Decrease quantity"
-        disabled={value <= 1}
+        disabled={disabled || value <= 1}
         onClick={() => onChange(value - 1)}
         className="flex size-8 cursor-pointer items-center justify-center disabled:opacity-40"
       >
@@ -87,7 +89,7 @@ export function QuantityStepper({
       <button
         type="button"
         aria-label="Increase quantity"
-        disabled={value >= max}
+        disabled={disabled || value >= max}
         onClick={() => onChange(value + 1)}
         className="flex size-8 cursor-pointer items-center justify-center disabled:opacity-40"
       >

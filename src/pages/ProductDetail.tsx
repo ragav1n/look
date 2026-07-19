@@ -75,9 +75,11 @@ function PdpContent({ product }: { product: Product }) {
       ? Math.round(((product.mrp - product.price) / product.mrp) * 100)
       : 0;
 
+  /* Resolves false when the add failed — CartContext has already raised a
+     toast, so the only job here is to not show success UI on top of it. */
   const addToCart = async () => {
-    if (!variant) return;
-    await add({
+    if (!variant) return false;
+    return add({
       variantId: variant.id,
       quantity: qty,
       productSlug: product.slug,
@@ -93,8 +95,7 @@ function PdpContent({ product }: { product: Product }) {
     if (!variant) return;
     setBusy(true);
     try {
-      await addToCart();
-      setAdded(true);
+      if (await addToCart()) setAdded(true);
     } finally {
       setBusy(false);
     }
@@ -104,8 +105,8 @@ function PdpContent({ product }: { product: Product }) {
     if (!variant) return;
     setBusy(true);
     try {
-      await addToCart();
-      navigate("/cart");
+      // Don't send them to a cart that doesn't have the item in it.
+      if (await addToCart()) navigate("/cart");
     } finally {
       setBusy(false);
     }

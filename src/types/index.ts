@@ -117,6 +117,10 @@ export interface Cart {
   totalQuantity: number;
   lines: CartLine[];
   cost: CartCost;
+  /** A recoverable problem Shopify reported alongside an otherwise-successful
+   *  mutation — e.g. a line clamped to available stock. The cart is valid; this
+   *  just explains why it may not match what was asked for. */
+  notice?: string;
 }
 
 /** Payload the UI sends to add a variant. Only `variantId`/`quantity` reach

@@ -42,19 +42,26 @@ export default function QuickViewModal({ product, onClose }: Props) {
   }, [added]);
 
   const hasColorOpt = (product?.colors.length ?? 0) > 0;
-  const variant =
-    product && size && (color || !hasColorOpt)
-      ? product.variants.find(
-          (v) => v.size === size && (hasColorOpt ? v.color === color : true),
-        )
-      : undefined;
+  const hasSizeOpt = (product?.sizes.length ?? 0) > 0;
+  /* Same rule as the PDP: a product with no Size option (Shopify gives it a
+     single "Default Title" variant) has nothing to select, so resolve straight
+     to that variant — otherwise `size` stays null and Add to Cart can never
+     enable, leaving an empty Size row and a dead button. */
+  const variant = !product
+    ? undefined
+    : !hasSizeOpt
+      ? product.variants[0]
+      : size && (color || !hasColorOpt)
+        ? product.variants.find((v) => v.size === size && (hasColorOpt ? v.color === color : true))
+        : undefined;
   const canAdd = Boolean(variant?.availableForSale);
 
   const handleAdd = async () => {
     if (!product || !variant) return;
     setBusy(true);
     try {
-      await add({
+      // Failures surface as a toast from CartContext; only confirm on success.
+      const ok = await add({
         variantId: variant.id,
         quantity: qty,
         productSlug: product.slug,
@@ -64,7 +71,7 @@ export default function QuickViewModal({ product, onClose }: Props) {
         color: variant.color,
         unitPrice: variant.price,
       });
-      setAdded(true);
+      if (ok) setAdded(true);
     } finally {
       setBusy(false);
     }
@@ -146,17 +153,19 @@ export default function QuickViewModal({ product, onClose }: Props) {
               </div>
             )}
 
-            <div className="flex flex-col gap-2">
-              <p className="text-[16px] font-medium text-white">Size</p>
-              <SizeChips
-                sizes={product.sizes}
-                value={size ?? ""}
-                onChange={(s) => {
-                  setSize(s);
-                  setAdded(false);
-                }}
-              />
-            </div>
+            {hasSizeOpt && (
+              <div className="flex flex-col gap-2">
+                <p className="text-[16px] font-medium text-white">Size</p>
+                <SizeChips
+                  sizes={product.sizes}
+                  value={size ?? ""}
+                  onChange={(s) => {
+                    setSize(s);
+                    setAdded(false);
+                  }}
+                />
+              </div>
+            )}
 
             <div className="flex items-center gap-5">
               <QuantityStepper value={qty} onChange={setQty} />
@@ -164,11 +173,11 @@ export default function QuickViewModal({ product, onClose }: Props) {
                 {busy ? "Adding…" : added ? "Added to cart ✓" : "ADD TO CART"}
               </Button>
             </div>
-            {size && (color || !hasColorOpt) && !variant ? (
+            {hasSizeOpt && size && (color || !hasColorOpt) && !variant ? (
               <p className="text-[13px] text-sale">That combination is unavailable.</p>
             ) : hasColorOpt && !color ? (
               <p className="text-[13px] text-muted">Select a colour and size to add to cart.</p>
-            ) : !size ? (
+            ) : hasSizeOpt && !size ? (
               <p className="text-[13px] text-muted">Select a size to add to cart.</p>
             ) : null}
             <Link

@@ -6,7 +6,7 @@ import Skeleton from "@/components/ui/Skeleton";
 import iconCart from "@/assets/icon-cart.svg";
 
 export default function Cart() {
-  const { cart, ready, updateQty, remove, clear } = useCart();
+  const { cart, ready, busyLines, updateQty, remove, clear } = useCart();
 
   if (!ready) return <CartSkeleton />;
   if (cart.lines.length === 0) return <EmptyCart />;
@@ -60,10 +60,11 @@ export default function Cart() {
                     />
                     <button
                       type="button"
+                      disabled={busyLines.includes(line.id)}
                       onClick={() => remove(line.id)}
-                      className="cursor-pointer text-[13px] text-muted underline-offset-2 hover:text-sale hover:underline"
+                      className="cursor-pointer text-[13px] text-muted underline-offset-2 hover:text-sale hover:underline disabled:cursor-default disabled:opacity-50"
                     >
-                      Remove
+                      {busyLines.includes(line.id) ? "Removing…" : "Remove"}
                     </button>
                   </div>
                 </div>
