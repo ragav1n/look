@@ -2,6 +2,8 @@ import { createBrowserRouter, Navigate, RouterProvider } from "react-router-dom"
 import { CartProvider } from "./context/CartContext";
 import { WishlistProvider } from "./context/WishlistContext";
 import { UserProvider } from "./context/UserProvider";
+import { ToastProvider } from "./context/ToastContext";
+import ErrorBoundary from "./components/ErrorBoundary";
 import PageShell from "./components/layout/PageShell";
 import AccountLayout from "./components/layout/AccountLayout";
 import Home from "./pages/Home";
@@ -60,12 +62,18 @@ const router = createBrowserRouter([
 
 export default function App() {
   return (
-    <UserProvider>
-      <CartProvider>
-        <WishlistProvider>
-          <RouterProvider router={router} />
-        </WishlistProvider>
-      </CartProvider>
-    </UserProvider>
+    // ToastProvider wraps CartProvider because the cart reports its failures
+    // through toasts.
+    <ErrorBoundary>
+      <UserProvider>
+        <ToastProvider>
+          <CartProvider>
+            <WishlistProvider>
+              <RouterProvider router={router} />
+            </WishlistProvider>
+          </CartProvider>
+        </ToastProvider>
+      </UserProvider>
+    </ErrorBoundary>
   );
 }
