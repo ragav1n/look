@@ -51,11 +51,12 @@ export default function PriceDrop() {
                     className="group flex flex-col"
                   >
                     <div className="relative overflow-hidden rounded-card border border-white/5 bg-card">
+                      {/* Media may still be processing on a freshly-added product. */}
                       <img
-                        src={p.images[0]}
+                        src={p.images[0] ?? ""}
                         alt={p.name}
                         loading="lazy"
-                        className="aspect-[3/4] w-full object-cover object-top transition-transform duration-700 ease-out group-hover:scale-[1.05]"
+                        className="aspect-[3/4] w-full bg-surface object-cover object-top transition-transform duration-700 ease-out group-hover:scale-[1.05]"
                       />
                       {percent > 0 && (
                         <span className="absolute top-3 left-3 rounded-full bg-accent px-2.5 py-1 font-ui text-[11px] font-semibold tracking-[0.02em] text-white">

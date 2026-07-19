@@ -220,7 +220,9 @@ function PdpContent({ product }: { product: Product }) {
 
           {/* Add to cart + wishlist */}
           <div className="mt-7 flex flex-wrap items-center gap-4">
-            <QuantityStepper value={qty} onChange={setQty} />
+            {/* Don't let someone pick 10 under a "Only 3 left in stock" line and
+                then hit a silent rejection at checkout. */}
+            <QuantityStepper value={qty} onChange={setQty} max={Math.min(10, product.stockLeft ?? 10)} />
             <Button className="min-w-[200px] flex-1" disabled={!canAdd || busy} onClick={handleAdd}>
               {busy ? "Adding…" : added ? "Added to cart ✓" : "ADD TO CART"}
             </Button>

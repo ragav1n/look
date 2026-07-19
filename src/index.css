@@ -99,6 +99,12 @@ body {
   transition:
     opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1),
     transform 0.75s cubic-bezier(0.22, 1, 0.36, 1);
+}
+/* Only hint the compositor while the element is still hidden and therefore
+   about to animate. Left on unconditionally, ~30 reveal elements per page were
+   each held as a composited layer for the life of the page, long after their
+   0.75s transition finished. */
+[data-reveal][data-shown="false"] {
   will-change: opacity, transform;
 }
 [data-reveal="up"] {

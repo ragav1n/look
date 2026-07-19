@@ -219,7 +219,7 @@ function StaggeredCard({ product }: { product: Product }) {
     <Link
       to={`/shop/${product.slug}`}
       aria-label={product.name}
-      className="group relative block overflow-hidden rounded-[10px] border border-line bg-card shadow-[0_6px_24px_rgba(0,0,0,0.4)] transition-all duration-500 hover:-translate-y-1 hover:border-accent/40 hover:shadow-[0_18px_44px_rgba(225,29,42,0.18)]"
+      className="group relative block overflow-hidden rounded-[10px] border border-line bg-card shadow-[0_6px_24px_rgba(0,0,0,0.4)] transition-all duration-500 select-none hover:-translate-y-1 hover:border-accent/40 hover:shadow-[0_18px_44px_rgba(225,29,42,0.18)]"
     >
       <div className="relative aspect-[3/4] overflow-hidden">
         <img

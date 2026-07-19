@@ -24,6 +24,14 @@ export default function Hero() {
   // A product whose media is still processing would render an empty slide.
   const slides = (data ?? []).filter((p) => p.images[0]);
   const [slide, setSlide] = useState(0);
+  // Bumped on manual selection to restart the autoplay window from the tap, so
+  // the interval doesn't fire ~instantly after and yank the slide off the one
+  // the user just chose.
+  const [interaction, setInteraction] = useState(0);
+  const selectSlide = (i: number) => {
+    setSlide(i);
+    setInteraction((n) => n + 1);
+  };
 
   // Collection length isn't known on first render, so clamp when it arrives.
   useEffect(() => setSlide(0), [slides.length]);
@@ -32,7 +40,7 @@ export default function Hero() {
     if (slides.length < 2) return;
     const t = setInterval(() => setSlide((s) => (s + 1) % slides.length), SLIDE_MS);
     return () => clearInterval(t);
-  }, [slides.length]);
+  }, [slides.length, interaction]);
 
   const current = slides[slide];
 
@@ -129,7 +137,7 @@ export default function Hero() {
                 type="button"
                 aria-label={`Show ${p.name}`}
                 aria-current={i === slide}
-                onClick={() => setSlide(i)}
+                onClick={() => selectSlide(i)}
                 className={`h-[7px] cursor-pointer rounded-full transition-all duration-500 ${
                   i === slide ? "w-[26px] bg-white" : "w-[7px] bg-white/40 hover:bg-white/70"
                 }`}

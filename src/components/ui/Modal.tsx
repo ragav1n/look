@@ -11,6 +11,8 @@ interface Props {
 
 export default function Modal({ open, onClose, label, children, maxWidth = "max-w-[820px]" }: Props) {
   const ref = useRef<HTMLDivElement>(null);
+  // Whether the current click started on the backdrop (see the close handler).
+  const backdropDownRef = useRef(false);
 
   // Focus management: lock scroll, move focus into the dialog on open, and
   // restore it to the trigger on close. Keyed on `open` only so an unstable
@@ -63,10 +65,20 @@ export default function Modal({ open, onClose, label, children, maxWidth = "max-
 
   if (!open) return null;
 
+  /* Close only on a click that both starts AND ends on the backdrop. A `click`
+     fires on the nearest common ancestor of mousedown and mouseup, so a drag
+     that begins inside the panel (selecting the description, the size chart)
+     and releases on the dark area used to dispatch click on the backdrop and
+     close the dialog, discarding the user's selection. Guard on mousedown. */
   return createPortal(
     <div
       className="animate-modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-      onClick={onClose}
+      onMouseDown={(e) => {
+        backdropDownRef.current = e.target === e.currentTarget;
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget && backdropDownRef.current) onClose();
+      }}
     >
       <div
         ref={ref}
@@ -74,7 +86,6 @@ export default function Modal({ open, onClose, label, children, maxWidth = "max-
         aria-modal="true"
         aria-label={label}
         tabIndex={-1}
-        onClick={(e) => e.stopPropagation()}
         className={`animate-modal-panel relative max-h-[90vh] w-full ${maxWidth} overflow-y-auto rounded-card border border-line bg-surface shadow-[0px_24px_60px_rgba(0,0,0,0.6)] outline-none`}
       >
         {children}

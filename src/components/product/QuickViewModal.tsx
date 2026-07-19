@@ -91,11 +91,16 @@ export default function QuickViewModal({ product, onClose }: Props) {
           </button>
 
           <div>
-            <img
-              src={product.images[0]}
-              alt={product.name}
-              className="aspect-[294/348] w-full rounded-img object-cover object-top"
-            />
+            {/* A Shopify product can exist before its media finishes processing. */}
+            {product.images[0] ? (
+              <img
+                src={product.images[0]}
+                alt={product.name}
+                className="aspect-[294/348] w-full rounded-img object-cover object-top"
+              />
+            ) : (
+              <div className="aspect-[294/348] w-full rounded-img bg-surface" />
+            )}
             {product.images.length > 1 && (
               <div className="mt-3 flex gap-2">
                 {product.images.slice(1, 5).map((src) => (
@@ -168,7 +173,7 @@ export default function QuickViewModal({ product, onClose }: Props) {
             )}
 
             <div className="flex items-center gap-5">
-              <QuantityStepper value={qty} onChange={setQty} />
+              <QuantityStepper value={qty} onChange={setQty} max={Math.min(10, product.stockLeft ?? 10)} />
               <Button className="flex-1" disabled={!canAdd || busy} onClick={handleAdd}>
                 {busy ? "Adding…" : added ? "Added to cart ✓" : "ADD TO CART"}
               </Button>
