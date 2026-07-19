@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { getCollectionProducts } from "@/lib/catalog";
 import { useAsyncData } from "@/hooks/useAsyncData";
 
@@ -32,6 +32,7 @@ export default function Hero() {
     setSlide(i);
     setInteraction((n) => n + 1);
   };
+  const step = (delta: number) => selectSlide((slide + delta + slides.length) % slides.length);
 
   // Collection length isn't known on first render, so clamp when it arrives.
   useEffect(() => setSlide(0), [slides.length]);
@@ -87,6 +88,29 @@ export default function Hero() {
           aria-label={`Shop the ${current.name}`}
           className="absolute inset-0 z-10"
         />
+      )}
+
+      {/* prev/next — sit above the whole-photo link so they stay clickable.
+          The background media crossfades on change, so this eases, not pops. */}
+      {slides.length > 1 && (
+        <>
+          <button
+            type="button"
+            onClick={() => step(-1)}
+            aria-label="Previous slide"
+            className="absolute top-1/2 left-3 z-20 flex size-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/25 text-white backdrop-blur-sm transition-colors hover:bg-black/45 lg:left-6"
+          >
+            <ChevronLeft className="size-6" />
+          </button>
+          <button
+            type="button"
+            onClick={() => step(1)}
+            aria-label="Next slide"
+            className="absolute top-1/2 right-3 z-20 flex size-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/25 text-white backdrop-blur-sm transition-colors hover:bg-black/45 lg:right-6"
+          >
+            <ChevronRight className="size-6" />
+          </button>
+        </>
       )}
 
       {/* content sits in the lower portion of the hero */}
