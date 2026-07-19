@@ -8,8 +8,10 @@ const inputCls =
    own: CustomerUpdateInput accepts firstName/lastName and nothing else, so an
    editable field for either would silently discard whatever was typed. They're
    shown read-only instead. */
+/* Deliberately borderless and flatter than `inputCls` — a bordered box at the
+   same height reads as an editable field and invites a click that does nothing. */
 const readonlyCls =
-  "flex h-[48px] items-center rounded-btn border border-line bg-surface/40 px-4 text-[15px] text-muted";
+  "flex h-[48px] items-center rounded-btn bg-white/[0.04] px-4 text-[15px] text-muted";
 
 function ReadOnlyField({ label, value }: { label: string; value: string }) {
   return (
@@ -34,11 +36,17 @@ export default function Profile() {
     setName(serverName);
   }, [serverName]);
 
+  /* Nothing to write when the field is blank or matches what's already stored —
+     a blank submit would otherwise push firstName:"" lastName:"" to Shopify. */
+  const trimmed = name.trim();
+  const dirty = trimmed.length > 0 && trimmed !== serverName;
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!dirty || saving) return;
     setSaving(true);
     try {
-      await updateProfile({ name });
+      await updateProfile({ name: trimmed });
       setSaved(true);
     } catch {
       /* the provider raises a toast on failure */
@@ -84,7 +92,7 @@ export default function Profile() {
         <div className="flex items-center gap-4">
           <button
             type="submit"
-            disabled={saving}
+            disabled={saving || !dirty}
             className="h-[48px] cursor-pointer rounded-btn bg-white px-7 text-[15px] font-medium text-black transition-opacity hover:opacity-85 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {saving ? "Saving…" : "Save changes"}

@@ -71,6 +71,11 @@ interface UpdateResult {
       userErrors?: { message: string }[];
     };
   };
+  /** Top-level GraphQL errors (bad query shape, missing scope) — distinct from
+   *  userErrors, which are per-field validation failures. */
+  errors?: { message: string }[];
+  /** The BFF's own error envelope, e.g. `{error:"unauthenticated"}` on a 401. */
+  error?: string;
 }
 
 export async function updateProfile(patch: Partial<UserProfile>): Promise<UserProfile> {
@@ -82,11 +87,22 @@ export async function updateProfile(patch: Partial<UserProfile>): Promise<UserPr
   }
 
   const res = await api("/api/customer/graphql", jsonInit({ query: CUSTOMER_UPDATE, variables: { input } }));
-  const json = (await res.json()) as UpdateResult;
+  const json = (await res.json().catch(() => ({}))) as UpdateResult;
+
+  if (res.status === 401) throw new Error("Your session expired. Please sign in again.");
+
   const errs = json.data?.customerUpdate?.userErrors;
   if (errs?.length) throw new Error(errs.map((e) => e.message).join("; "));
+
   const c = json.data?.customerUpdate?.customer;
-  if (!c) throw new Error("We couldn't save your profile. Please try again.");
+  if (!c) {
+    /* Surface what actually went wrong rather than a blanket retry message —
+       a rejected mutation shape or a missing write scope is otherwise invisible. */
+    const detail = json.errors?.map((e) => e.message).join("; ") || json.error;
+    throw new Error(
+      detail ? `We couldn't save your profile: ${detail}` : "We couldn't save your profile. Please try again.",
+    );
+  }
   return {
     name: [c.firstName, c.lastName].filter(Boolean).join(" "),
     email: c.emailAddress?.emailAddress ?? patch.email ?? "",
