@@ -9,7 +9,7 @@ const nav = [
   { to: "/account/orders", label: "Orders", end: false },
   { to: "/account/wishlist", label: "Wishlist", end: true },
   { to: "/account/addresses", label: "Addresses", end: true },
-  { to: "/account/wallet", label: "Wallet", end: true },
+  /* Wallet deliberately omitted — the page is unrouted, see App.tsx. */
   { to: "/account/support", label: "Help & Support", end: true },
 ];
 

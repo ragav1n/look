@@ -23,7 +23,9 @@ import Orders from "./pages/account/Orders";
 import OrderDetail from "./pages/account/OrderDetail";
 import Wishlist from "./pages/account/Wishlist";
 import Addresses from "./pages/account/Addresses";
-import Wallet from "./pages/account/Wallet";
+/* Wallet is intentionally NOT routed — see the note on the account children
+   below. `src/pages/account/Wallet.tsx` is kept, not deleted, so re-enabling
+   is this import plus one route line. */
 import Help from "./pages/account/Help";
 import NotFound from "./pages/NotFound";
 
@@ -51,7 +53,13 @@ const router = createBrowserRouter([
           { path: "orders/:orderId", element: <OrderDetail /> },
           { path: "wishlist", element: <Wishlist /> },
           { path: "addresses", element: <Addresses /> },
-          { path: "wallet", element: <Wallet /> },
+          /* No `wallet` route on purpose (2026-07-19). The page showed a
+             hardcoded ₹450 balance and 320 reward points to every signed-in
+             customer, captioned "Auto-applied at checkout" — a promise
+             nothing could keep. Shopify CAN back the balance half via
+             Customer.storeCreditAccounts, but reward points have no native
+             equivalent, so it stays hidden until the client wants store
+             credit. Unrouted, so /account/wallet falls through to NotFound. */
           { path: "support", element: <Help /> },
         ],
       },
