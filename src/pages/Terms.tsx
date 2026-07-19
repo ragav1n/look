@@ -5,7 +5,15 @@ import PolicyPage, { type PolicySection } from "@/components/layout/PolicyPage";
    and the wording is the brand's own. "Our Commitment" is the document's
    closing sign-off, so it renders through PolicyPage's `closing` card rather
    than as a numbered section. The Contact Us block is PolicyPage's shared
-   sign-off, not part of the supplied text. */
+   sign-off, not part of the supplied text.
+
+   ONE deliberate deviation from the supplied document, removed on the client's
+   instruction 2026-07-19: under "Returns, Exchanges & Cancellations" the
+   sentence "Orders may only be cancelled before they are dispatched." used to
+   open the final paragraph. It granted a cancellation right that the "Order
+   Confirmation" clause above denies (no cancellation once an order enters
+   production, customization, or dispatch). This is NOT a transcription slip —
+   do not restore it. */
 const sections: PolicySection[] = [
   {
     heading: "Acceptance of Terms",
@@ -67,7 +75,7 @@ const sections: PolicySection[] = [
       "Returns and exchanges are accepted only in accordance with our Return & Exchange Policy.",
       "To qualify for a return or exchange, products must be unused, unwashed, undamaged, and returned with all original tags and packaging intact.",
       "Customized garments, altered products, intimate wear (if applicable), gift cards, and items purchased during final sale or clearance promotions may not be eligible for return or exchange unless received in a damaged or incorrect condition.",
-      "Orders may only be cancelled before they are dispatched. Once an order has been shipped, cancellation requests cannot be accepted.",
+      "Once an order has been shipped, cancellation requests cannot be accepted.",
     ],
   },
   {
