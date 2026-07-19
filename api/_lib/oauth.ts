@@ -39,8 +39,13 @@ export function buildAuthorizeUrl(
   return url.toString();
 }
 
-function basicAuth(): string {
-  return "Basic " + Buffer.from(`${config.clientId}:${config.clientSecret}`).toString("base64");
+/* Confidential client → authenticate with the secret (client_secret_basic, the
+   method Shopify advertises). Public client → no secret exists; PKCE alone
+   proves the exchange, so we send no auth header. */
+function authHeaders(): Record<string, string> {
+  if (!config.clientSecret) return {};
+  const creds = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString("base64");
+  return { Authorization: `Basic ${creds}` };
 }
 
 interface RawToken {
@@ -58,7 +63,7 @@ async function postToken(endpoints: Endpoints, body: URLSearchParams, priorRefre
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
       Accept: "application/json",
-      Authorization: basicAuth(),
+      ...authHeaders(),
     },
     body,
   });

@@ -13,11 +13,16 @@ const env = (k: string) => process.env[k]?.trim() || "";
 const shopDomain = env("SHOPIFY_SHOP_DOMAIN")
   .replace(/^https?:\/\//, "")
   .replace(/\/+$/, "");
-const apiVersion = env("SHOPIFY_CUSTOMER_API_VERSION") || "2025-01";
+/** Numeric shop id from the Headless channel's "Application endpoints" panel.
+ *  New customer accounts serve auth from shopify.com/authentication/{shopId},
+ *  so without this the templated fallbacks below point at the wrong host. */
+const shopId = env("SHOPIFY_SHOP_ID");
+const apiVersion = env("SHOPIFY_CUSTOMER_API_VERSION") || "2026-07";
 const appOrigin = (env("APP_ORIGIN") || "http://localhost:3000").replace(/\/+$/, "");
 
 export const config = {
   shopDomain,
+  shopId,
   apiVersion,
   clientId: env("SHOPIFY_CUSTOMER_CLIENT_ID"),
   clientSecret: env("SHOPIFY_CUSTOMER_CLIENT_SECRET"),
@@ -25,8 +30,10 @@ export const config = {
   appOrigin,
   cookieSecret: env("COOKIE_SECRET") || "dev-insecure-cookie-secret-change-me",
   secureCookies: appOrigin.startsWith("https"),
-  /** OAuth scopes: OpenID identity + full Customer Account GraphQL access. */
-  scope: env("SHOPIFY_CUSTOMER_SCOPE") || "openid email https://api.customers.com/auth/customer.graphql",
+  /** OAuth scopes. Must come from the store's `scopes_supported` — check
+   *  /.well-known/openid-configuration; the URL-style customer.graphql scope is
+   *  NOT accepted by new customer accounts. */
+  scope: env("SHOPIFY_CUSTOMER_SCOPE") || "openid email customer-account-api:full",
   redirectUri: `${appOrigin}/api/auth/callback`,
   storefrontApiVersion: env("VITE_SHOPIFY_API_VERSION") || "2025-01",
 };
@@ -34,11 +41,13 @@ export const config = {
 /** Throw a descriptive error if the pieces the BFF needs aren't configured.
  *  Handlers catch this and return a 500 with the message. */
 export function assertConfig(): void {
+  /* The secret is deliberately NOT required: a Public client authenticates with
+     PKCE alone. Confidential is preferred (the store advertises
+     client_secret_basic), but we shouldn't hard-fail without one. */
   const missing = (
     [
       ["SHOPIFY_SHOP_DOMAIN", config.shopDomain],
       ["SHOPIFY_CUSTOMER_CLIENT_ID", config.clientId],
-      ["SHOPIFY_CUSTOMER_CLIENT_SECRET", config.clientSecret],
     ] as const
   )
     .filter(([, v]) => !v)
@@ -55,12 +64,20 @@ export interface Endpoints {
   graphql: string;
 }
 
+/* Fallbacks for when discovery is unreachable. With SHOPIFY_SHOP_ID set these
+   match what the Headless channel shows verbatim; without it we can only guess
+   the legacy shop-domain shape, which new customer accounts do NOT use. */
 function templates(): Endpoints {
+  const auth = shopId
+    ? `https://shopify.com/authentication/${shopId}`
+    : `https://${shopDomain}/authentication`;
   return {
-    authorize: `https://${shopDomain}/authentication/oauth/authorize`,
-    token: `https://${shopDomain}/authentication/oauth/token`,
-    logout: `https://${shopDomain}/authentication/logout`,
-    graphql: `https://${shopDomain}/customer/api/${apiVersion}/graphql`,
+    authorize: `${auth}/oauth/authorize`,
+    token: `${auth}/oauth/token`,
+    logout: `${auth}/logout`,
+    graphql: shopId
+      ? `https://shopify.com/${shopId}/account/customer/api/${apiVersion}/graphql`
+      : `https://${shopDomain}/customer/api/${apiVersion}/graphql`,
   };
 }
 
