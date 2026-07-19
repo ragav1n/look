@@ -116,14 +116,8 @@ export default function Hero() {
       {/* content sits in the lower portion of the hero */}
       <div className="pointer-events-none relative z-20 mx-auto flex h-full w-full max-w-[1512px] flex-col justify-end px-6 pb-14 lg:px-[87px] lg:pb-[72px]">
         <div className="max-w-[760px]">
-          {/* Text shadows rather than a heavier scrim: they keep the copy legible
-              over a bright frame without dimming the photograph. */}
-          <p className="animate-fade-up max-w-[540px] text-[15px] leading-[24px] text-white/90 [text-shadow:0_1px_14px_rgba(0,0,0,0.75)] lg:text-[17px]">
-            Kurta sets and coord sets, thoughtfully crafted with premium fabric and inclusive
-            tailoring — made to make every woman feel extraordinary.
-          </p>
           <div
-            className="animate-fade-up mt-7 flex flex-wrap items-center gap-4"
+            className="animate-fade-up flex flex-wrap items-center gap-4"
             style={{ animationDelay: "0.14s" }}
           >
             <Link
