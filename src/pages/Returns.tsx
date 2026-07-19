@@ -7,11 +7,15 @@ import PolicyPage, { type PolicySection } from "@/components/layout/PolicyPage";
    no refund, exchange only. The Contact Us block is PolicyPage's shared
    sign-off, not part of the supplied text.
 
-   ONE deliberate deviation from the supplied document, on the client's
-   instruction 2026-07-19: under "Wrong Product Received" the supplied text
-   read "right after u receive from our delivery"; "u" is now "you". Nothing
-   else in that sentence was touched — the trailing phrase still reads oddly,
-   which is the brand's wording, not a transcription slip. */
+   Deliberate deviations from the supplied document, all on the client's
+   instruction 2026-07-19 — none are transcription slips, do not "restore":
+     1. "Wrong Product Received": "right after u receive" -> "you". Nothing
+        else in that sentence changed; the trailing phrase still reads oddly,
+        which is the brand's wording.
+     2. Terminal full stops added to the intro's second line and to the last
+        line of "Express Delivery", both of which ended bare.
+   The "No Refund Policy" bullets are deliberately left unpunctuated: all
+   seven are fragments and the list is internally consistent. */
 const sections: PolicySection[] = [
   {
     heading: "Our Policy",
@@ -124,7 +128,7 @@ const sections: PolicySection[] = [
     heading: "Express Delivery",
     body: [
       "If you require your order urgently, please contact our Customer Support Team before placing your order.",
-      "Where available, Express Delivery can be arranged at an additional shipping cost, depending on your location and product availability",
+      "Where available, Express Delivery can be arranged at an additional shipping cost, depending on your location and product availability.",
     ],
   },
   {
@@ -144,7 +148,7 @@ export default function Returns() {
       lastUpdated="19 July 2026"
       intro={[
         "At LOOK, every garment is thoughtfully designed and carefully inspected before it reaches you. We are committed to delivering premium quality and ensuring your shopping experience is smooth and transparent. We kindly request that you read our Return & Exchange Policy carefully before placing your order.",
-        "By placing an order with LOOK, you acknowledge and agree to the terms outlined below",
+        "By placing an order with LOOK, you acknowledge and agree to the terms outlined below.",
       ]}
       sections={sections}
       contactIntro="If you have a question about an exchange, or about an order that hasn't arrived as expected, please get in touch. Our team is always here to assist you."
