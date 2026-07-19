@@ -13,8 +13,10 @@ import { formatPrice } from "@/lib/format";
      (instant, no animation). Because the neighbouring copy is pixel-identical,
      the jump is invisible — so arrows / drag / auto-advance can run forever
      without ever hitting an edge.
-   - Smooth moves (arrows, dots, auto-advance) use scrollBy/scrollTo; the
-     recenter jump sets scrollLeft directly (instant).
+   - Smooth moves (arrows, dots, auto-advance) glide via scrollTo toward an
+     accumulated absolute target; the recenter jump sets scrollLeft directly
+     (instant). Because an instant scroll ABORTS an in-flight smooth one, the
+     jump is held until the glide settles — see `glidingRef` below.
 
    Also: pointer drag-to-scroll on desktop with a click-guard, gentle
    auto-advance that pauses on hover/focus/drag, and a product → styled-shot
@@ -22,6 +24,9 @@ import { formatPrice } from "@/lib/format";
 
 const AUTO_MS = 3800;
 const COPIES = 3;
+/* Ceiling for how long we wait for a programmatic smooth scroll to settle.
+   `scrollend` ends the wait early where it's supported; this is the fallback. */
+const GLIDE_MS = 800;
 
 export default function ExecutiveImpactCarousel({ products }: { products: Product[] }) {
   const trackRef = useRef<HTMLDivElement>(null);
@@ -35,6 +40,24 @@ export default function ExecutiveImpactCarousel({ products }: { products: Produc
   const draggingRef = useRef(false);
   const movedRef = useRef(false);
   const readyRef = useRef(false);
+  /* True while a programmatic smooth scroll (arrow, dot, auto-advance) is in
+     flight. `recenter()` assigns `scrollLeft`, and per CSSOM-View an instant
+     scroll ABORTS an ongoing smooth scroll — so recentering mid-glide killed
+     the animation partway and snap-mandatory then yanked the track to the
+     nearest card. That abrupt stop is what read as flicker. Hold the jump
+     until the glide settles, then do it once. */
+  const glidingRef = useRef(false);
+  const settleRef = useRef<number | undefined>(undefined);
+  /* Scroll origin of an active drag. It lives in a ref so `recenter` can shift
+     it by the same delta it jumps — otherwise the next pointermove recomputes
+     from the stale origin, undoes the jump, and the track oscillates. */
+  const dragStartLeftRef = useRef(0);
+  const rafRef = useRef<number | undefined>(undefined);
+  /* Where the in-flight glide is headed. `scrollBy` is relative to the CURRENT
+     position, so a second click mid-animation measured from wherever the track
+     happened to be — four fast clicks advanced barely one step. Accumulating an
+     absolute target and re-aiming at it makes each click count. */
+  const targetRef = useRef<number | null>(null);
 
   const items = loop
     ? Array.from({ length: COPIES }).flatMap((_, c) =>
@@ -65,9 +88,30 @@ export default function ExecutiveImpactCarousel({ products }: { products: Produc
     let x = el.scrollLeft;
     while (x < w * 0.5) x += w;
     while (x >= w * 1.5) x -= w;
-    if (Math.abs(x - el.scrollLeft) > 0.5) el.scrollLeft = x;
+    const delta = x - el.scrollLeft;
+    if (Math.abs(delta) > 0.5) {
+      el.scrollLeft = x;
+      if (draggingRef.current) dragStartLeftRef.current += delta;
+      if (targetRef.current !== null) targetRef.current += delta;
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loop, products.length]);
+
+  // A glide has finished (or timed out) — now it's safe to jump copies.
+  const endGlide = useCallback(() => {
+    window.clearTimeout(settleRef.current);
+    settleRef.current = undefined;
+    if (!glidingRef.current) return;
+    glidingRef.current = false;
+    targetRef.current = null;
+    recenter();
+  }, [recenter]);
+
+  const beginGlide = useCallback(() => {
+    glidingRef.current = true;
+    window.clearTimeout(settleRef.current);
+    settleRef.current = window.setTimeout(endGlide, GLIDE_MS);
+  }, [endGlide]);
 
   const updateState = useCallback(() => {
     const el = trackRef.current;
@@ -96,8 +140,19 @@ export default function ExecutiveImpactCarousel({ products }: { products: Produc
       if (!el) return;
       const amount = stepAmount(el);
       if (loop) {
-        recenter(); // stay parked in the middle copy before every move
-        el.scrollBy({ left: amount * dir, behavior: "smooth" });
+        // Park in the middle copy before starting a NEW glide. If one is
+        // already running, leave the position alone — recentering now would
+        // abort it mid-animation, which is the flicker we're fixing.
+        if (!glidingRef.current) recenter();
+        /* Stack onto the pending target so rapid clicks accumulate. Never
+           write `scrollLeft` here to keep the target in range: an instant
+           scroll fires `scrollend`, which would tear down the glide state
+           mid-burst and drop the accumulated distance. The outer copies give
+           several steps of headroom, and `endGlide` re-parks afterwards. */
+        const to = ((glidingRef.current ? targetRef.current : null) ?? el.scrollLeft) + amount * dir;
+        targetRef.current = to;
+        beginGlide();
+        el.scrollTo({ left: to, behavior: "smooth" });
         return;
       }
       const max = el.scrollWidth - el.clientWidth;
@@ -105,7 +160,7 @@ export default function ExecutiveImpactCarousel({ products }: { products: Produc
       else if (dir < 0 && el.scrollLeft <= 8) el.scrollTo({ left: max, behavior: "smooth" });
       else el.scrollBy({ left: amount * dir, behavior: "smooth" });
     },
-    [loop, recenter],
+    [loop, recenter, beginGlide],
   );
 
   const goToPage = (i: number) => {
@@ -117,7 +172,9 @@ export default function ExecutiveImpactCarousel({ products }: { products: Produc
       // Pick the copy whose page `i` sits closest to where we are now, so a dot
       // tap only ever glides a short distance (never a whole copy backwards).
       const base = Math.round((el.scrollLeft - i * amt) / w) * w;
-      el.scrollTo({ left: base + i * amt, behavior: "smooth" });
+      targetRef.current = base + i * amt;
+      beginGlide();
+      el.scrollTo({ left: targetRef.current, behavior: "smooth" });
     } else {
       const max = el.scrollWidth - el.clientWidth;
       el.scrollTo({ left: Math.min(i * amt, max), behavior: "smooth" });
@@ -147,16 +204,27 @@ export default function ExecutiveImpactCarousel({ products }: { products: Produc
     if (!el) return;
     updateState();
     const onScroll = () => {
-      if (readyRef.current) recenter();
-      updateState();
+      if (readyRef.current && !glidingRef.current) recenter();
+      // `updateState` measures cards, so it forces layout. Coalesce to one read
+      // per frame — a scroll burst was thrashing layout and stuttering the glide.
+      if (rafRef.current === undefined) {
+        rafRef.current = requestAnimationFrame(() => {
+          rafRef.current = undefined;
+          updateState();
+        });
+      }
     };
     el.addEventListener("scroll", onScroll, { passive: true });
+    el.addEventListener("scrollend", endGlide);
     window.addEventListener("resize", updateState);
     return () => {
       el.removeEventListener("scroll", onScroll);
+      el.removeEventListener("scrollend", endGlide);
       window.removeEventListener("resize", updateState);
+      if (rafRef.current !== undefined) cancelAnimationFrame(rafRef.current);
+      window.clearTimeout(settleRef.current);
     };
-  }, [updateState, recenter]);
+  }, [updateState, recenter, endGlide]);
 
   // Auto-advance, paused on hover / focus / active drag.
   useEffect(() => {
@@ -189,21 +257,25 @@ export default function ExecutiveImpactCarousel({ products }: { products: Produc
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     let startX = 0;
-    let startLeft = 0;
 
     const onDown = (e: PointerEvent) => {
       if (e.pointerType === "touch") return;
       draggingRef.current = true;
       movedRef.current = false;
       startX = e.clientX;
-      startLeft = el.scrollLeft;
+      dragStartLeftRef.current = el.scrollLeft;
+      // The drag takes over from any in-flight glide (its own scrollLeft writes
+      // would abort that animation anyway), so stop treating one as pending.
+      glidingRef.current = false;
+      targetRef.current = null;
+      window.clearTimeout(settleRef.current);
       el.classList.add("cursor-grabbing");
     };
     const onMove = (e: PointerEvent) => {
       if (!draggingRef.current) return;
       const dx = e.clientX - startX;
       if (Math.abs(dx) > 5) movedRef.current = true;
-      el.scrollLeft = startLeft - dx;
+      el.scrollLeft = dragStartLeftRef.current - dx;
     };
     const onUp = () => {
       if (!draggingRef.current) return;
