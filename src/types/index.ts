@@ -43,7 +43,12 @@ export interface Product {
   rating: number;
   reviewCount: number;
   stockLeft?: number;
+  /** Plain-text description (Shopify `description`). Used for previews/meta. */
   description: string;
+  /** Rich HTML description (Shopify `descriptionHtml`) — tables, lists, etc.
+   *  When set, the PDP renders this instead of `description` + `details`.
+   *  Absent for the dev fixture catalog, which uses the plain-text pair. */
+  descriptionHtml?: string;
   details: { title: string; body: string[] };
   bestSeller?: boolean;
   newArrival?: boolean;

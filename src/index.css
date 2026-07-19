@@ -283,6 +283,97 @@ body {
   display: none;
 }
 
+/* Rich product description (Shopify `descriptionHtml`) — styles the admin's raw
+   HTML (tables, lists, headings) for the black theme. Shopify's rich-text editor
+   emits unstyled markup, so without this a <table> renders as browser-default
+   light-on-dark with no borders. Scoped to .product-prose so it never leaks. */
+.product-prose {
+  color: var(--color-body);
+  font-size: 15px;
+  line-height: 25px;
+  overflow-wrap: break-word;
+}
+.product-prose > * + * {
+  margin-top: 14px;
+}
+.product-prose h1,
+.product-prose h2,
+.product-prose h3,
+.product-prose h4 {
+  color: #fff;
+  font-weight: 500;
+  line-height: 1.35;
+}
+.product-prose h1 {
+  font-size: 20px;
+}
+.product-prose h2 {
+  font-size: 18px;
+}
+.product-prose h3,
+.product-prose h4 {
+  font-size: 17px;
+}
+.product-prose h1:not(:first-child),
+.product-prose h2:not(:first-child),
+.product-prose h3:not(:first-child),
+.product-prose h4:not(:first-child) {
+  margin-top: 24px;
+}
+.product-prose strong,
+.product-prose b {
+  color: var(--color-heading-soft);
+  font-weight: 600;
+}
+.product-prose a {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.product-prose ul,
+.product-prose ol {
+  padding-left: 1.25rem;
+}
+.product-prose ul {
+  list-style: disc;
+}
+.product-prose ol {
+  list-style: decimal;
+}
+.product-prose li {
+  margin-top: 6px;
+}
+/* Tables — the common shape for spec/feature sheets. Collapsed hairline borders
+   and a subtle header/zebra fill in the theme's greys keep it legible on black. */
+.product-prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  line-height: 22px;
+}
+.product-prose th,
+.product-prose td {
+  border: 1px solid var(--color-line);
+  padding: 10px 14px;
+  text-align: left;
+  vertical-align: top;
+}
+.product-prose thead th,
+.product-prose th {
+  color: #fff;
+  font-weight: 600;
+  background: var(--color-surface);
+}
+.product-prose tbody tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.02);
+}
+/* Shopify tables carry no <thead>; the label column is the first cell of each
+   row, so bold it like a header for the Feature / Details pattern. */
+.product-prose tbody td:first-child {
+  color: var(--color-heading-soft);
+  font-weight: 600;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-kenburns,
   .animate-fade-up,

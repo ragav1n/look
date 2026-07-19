@@ -113,7 +113,11 @@ export function toProduct(p: SFProduct): Product {
     reviewCount: 0,
     stockLeft: lowStock,
     description: p.description,
-    details: { title: "Product Details", body: p.description ? [p.description] : [] },
+    // The store admin authors one rich description in Shopify (tables, lists).
+    // Render that HTML directly; the old `details` split was a plain-text copy
+    // of the same field, which duplicated the whole block on the PDP.
+    descriptionHtml: p.descriptionHtml || undefined,
+    details: { title: "Product Details", body: [] },
     bestSeller: p.tags.some((t) => t.toLowerCase() === "best-seller"),
     newArrival: isNew,
     heroTagline: p.heroTagline?.value || undefined,

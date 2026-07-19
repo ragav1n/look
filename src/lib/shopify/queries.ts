@@ -6,6 +6,7 @@ export const PRODUCT_FRAGMENT = /* GraphQL */ `
     handle
     title
     description
+    descriptionHtml
     productType
     tags
     createdAt

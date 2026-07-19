@@ -79,17 +79,29 @@ export default function ProductTabs({ product, reviews }: { product: Product; re
            the page and yanking the section below it up on every tab switch */
         className="animate-tab-panel min-h-[240px] pt-6 focus-visible:outline-none"
       >
-        {active === "description" && (
-          <>
-            <p className="text-[15px] leading-[25px] text-body">{product.description}</p>
-            <h3 className="mt-6 text-[17px] font-medium text-white">{product.details.title}</h3>
-            {product.details.body.map((p, i) => (
-              <p key={i} className="mt-3 text-[15px] leading-[25px] text-body">
-                {p}
-              </p>
-            ))}
-          </>
-        )}
+        {active === "description" &&
+          /* Live products carry a rich HTML description (tables, lists) authored
+             in Shopify — render it as-is via .product-prose, which styles the
+             markup for the black theme. The dev fixtures have no HTML, so they
+             fall back to the plain-text description + details paragraphs.
+             descriptionHtml is store-admin authored and Storefront-API
+             sanitised, so dangerouslySetInnerHTML is safe here. */
+          (product.descriptionHtml ? (
+            <div
+              className="product-prose"
+              dangerouslySetInnerHTML={{ __html: product.descriptionHtml }}
+            />
+          ) : (
+            <>
+              <p className="text-[15px] leading-[25px] text-body">{product.description}</p>
+              <h3 className="mt-6 text-[17px] font-medium text-white">{product.details.title}</h3>
+              {product.details.body.map((p, i) => (
+                <p key={i} className="mt-3 text-[15px] leading-[25px] text-body">
+                  {p}
+                </p>
+              ))}
+            </>
+          ))}
 
         {active === "reviews" && (
           <div className="flex flex-col gap-6">

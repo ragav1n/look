@@ -30,6 +30,7 @@ export interface SFProduct {
   handle: string;
   title: string;
   description: string;
+  descriptionHtml: string;
   productType: string;
   tags: string[];
   createdAt: string;
