@@ -5,7 +5,17 @@ import PolicyPage, { type PolicySection } from "@/components/layout/PolicyPage";
    an earlier version inferred from the FAQ answers, which invented delivery
    coverage wording and carried a Partial COD section this document doesn't
    have — COD is covered on the Terms page instead. The Contact Us block is
-   PolicyPage's shared sign-off, not part of the supplied text. */
+   PolicyPage's shared sign-off, not part of the supplied text.
+
+   DEVIATION under "Shipping Charges" — this wording is NOT the client's, it
+   was drafted here 2026-07-19 to their instruction and is pending their
+   sign-off. The supplied text made shipping charges non-refundable
+   unconditionally, which contradicted the Return & Exchange Policy's promise
+   that LOOK bears the cost when it ships the wrong or a defective product.
+   The client's stated intent: brand's fault (wrong/damaged, once verified) =>
+   LOOK pays; customer-driven (size exchange, change of mind, mistaken order)
+   => neither shipping nor product price is refunded. Replace wholesale if
+   they send their own wording. */
 const sections: PolicySection[] = [
   {
     heading: "Order Confirmation",
@@ -37,7 +47,8 @@ const sections: PolicySection[] = [
     body: [
       "Shipping charges are calculated automatically during checkout based on factors such as your delivery location, package weight, and the selected shipping method.",
       "The applicable shipping charges will be displayed before you complete your payment.",
-      "Please note that shipping charges are non-refundable, including in cases where an order is exchanged, cancelled (where applicable), or returned. We encourage customers to review our Return & Exchange Policy before placing an order.",
+      "Please note that shipping charges are non-refundable, including in cases where an order is exchanged, cancelled (where applicable), or returned. This applies to customer-initiated requests such as size exchanges, change of mind, or an order placed in error, where the product price is also non-refundable.",
+      "The only exception is where the exchange arises from an error on our part — such as a wrong, damaged, or defective product. In those cases, once the issue has been verified, LOOK will bear the applicable shipping charges. We encourage customers to review our Return & Exchange Policy before placing an order.",
     ],
   },
   {

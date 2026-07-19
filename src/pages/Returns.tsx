@@ -5,7 +5,13 @@ import PolicyPage, { type PolicySection } from "@/components/layout/PolicyPage";
    wording. This REPLACED an earlier version inferred from the FAQ answers,
    which wrongly implied returns were accepted — the real policy is no return,
    no refund, exchange only. The Contact Us block is PolicyPage's shared
-   sign-off, not part of the supplied text. */
+   sign-off, not part of the supplied text.
+
+   ONE deliberate deviation from the supplied document, on the client's
+   instruction 2026-07-19: under "Wrong Product Received" the supplied text
+   read "right after u receive from our delivery"; "u" is now "you". Nothing
+   else in that sentence was touched — the trailing phrase still reads oddly,
+   which is the brand's wording, not a transcription slip. */
 const sections: PolicySection[] = [
   {
     heading: "Our Policy",
@@ -44,7 +50,7 @@ const sections: PolicySection[] = [
       {
         heading: "Wrong Product Received",
         body: [
-          "If you receive a product different from the one you ordered, please contact us immediately right after u receive from our delivery.",
+          "If you receive a product different from the one you ordered, please contact us immediately right after you receive from our delivery.",
           "To process your request, you must provide:",
           {
             bullets: [
