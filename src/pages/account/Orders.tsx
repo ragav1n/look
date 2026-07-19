@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import type { OrderPage } from "@/lib/customer";
-import { getOrders } from "@/lib/customer";
+import { getOrders, type OrderPage } from "@/lib/customer";
 import { formatMoney } from "@/lib/format";
 import { useAsyncData } from "@/hooks/useAsyncData";
 import { useToast } from "@/context/ToastContext";

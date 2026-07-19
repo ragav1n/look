@@ -32,24 +32,44 @@ const OUT_FOR_DELIVERY = new Set(["OUT_FOR_DELIVERY", "ATTEMPTED_DELIVERY", "REA
 const shipmentStatuses = (o: RawOrderState): string[] =>
   (o.fulfillments ?? []).map((f) => f.latestShipmentStatus ?? "").filter(Boolean);
 
+/**
+ * Every parcel arrived — not merely one of them.
+ *
+ * A split shipment where one parcel landed and another is still in transit is
+ * not a delivered order, and calling it one hides the parcel still owed. "Out
+ * for delivery" stays deliberately optimistic by contrast: any parcel arriving
+ * today is worth surfacing.
+ */
+function allDelivered(o: RawOrderState): boolean {
+  const fulfillments = o.fulfillments ?? [];
+  if (fulfillments.length === 0) return false;
+  return fulfillments.every((f) => DELIVERED.has(f.latestShipmentStatus ?? ""));
+}
+
 export function deriveStatus(o: RawOrderState): OrderStatus {
   if (o.cancelledAt) return "cancelled";
   if (o.fulfillmentStatus === "RESTOCKED") return "returned";
 
-  const statuses = shipmentStatuses(o);
-  if (statuses.some((s) => DELIVERED.has(s))) return "delivered";
-  if (statuses.some((s) => OUT_FOR_DELIVERY.has(s))) return "out_for_delivery";
+  if (allDelivered(o)) return "delivered";
+  if (shipmentStatuses(o).some((s) => OUT_FOR_DELIVERY.has(s))) return "out_for_delivery";
 
   if ((o.fulfillments ?? []).length > 0) return "shipped";
   return "ordered";
 }
 
-/** Earliest non-null value, or null. Orders can have several fulfilments (a
- *  split shipment); the first one leaving is when the order "shipped". */
+/** Orders can have several fulfilments (a split shipment). The first parcel
+ *  leaving is when the order "shipped"; the last one arriving is when it's
+ *  delivered — so both ends are needed. */
 function earliest(values: (string | null | undefined)[]): string | null {
   const times = values.filter((v): v is string => Boolean(v));
   if (times.length === 0) return null;
   return times.reduce((a, b) => (new Date(a) <= new Date(b) ? a : b));
+}
+
+function latest(values: (string | null | undefined)[]): string | null {
+  const times = values.filter((v): v is string => Boolean(v));
+  if (times.length === 0) return null;
+  return times.reduce((a, b) => (new Date(a) >= new Date(b) ? a : b));
 }
 
 /**
@@ -74,15 +94,14 @@ export function deriveTimeline(o: RawOrderState): OrderStep[] {
   }
 
   const fulfillments = o.fulfillments ?? [];
-  const statuses = shipmentStatuses(o);
-  const isDelivered = statuses.some((s) => DELIVERED.has(s));
-  const isOut = isDelivered || statuses.some((s) => OUT_FOR_DELIVERY.has(s));
+  const isDelivered = allDelivered(o);
+  const isOut = isDelivered || shipmentStatuses(o).some((s) => OUT_FOR_DELIVERY.has(s));
 
   /* `updatedAt` is when the fulfilment record last changed, which for a
      delivered parcel is the closest thing Shopify gives to a delivery time.
      It's only used when the shipment status confirms that state — otherwise
      the step stays untimed rather than borrowing an unrelated timestamp. */
-  const lastUpdate = earliest(fulfillments.map((f) => f.updatedAt));
+  const deliveredAt = latest(fulfillments.map((f) => f.updatedAt));
 
   return [
     placed,
@@ -92,7 +111,7 @@ export function deriveTimeline(o: RawOrderState): OrderStep[] {
       at: earliest(fulfillments.map((f) => f.createdAt)),
     },
     { status: "out_for_delivery", reached: isOut, at: null },
-    { status: "delivered", reached: isDelivered, at: isDelivered ? lastUpdate : null },
+    { status: "delivered", reached: isDelivered, at: isDelivered ? deliveredAt : null },
   ];
 }
 

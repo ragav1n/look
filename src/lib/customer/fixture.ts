@@ -126,7 +126,9 @@ function writeAddresses(list: Address[]): Address[] {
 }
 
 export async function getAddresses(): Promise<Address[]> {
-  return [...readAddresses()].sort((a, b) => Number(b.isDefault) - Number(a.isDefault));
+  return [...readAddresses()].sort(
+    (a, b) => Number(b.isDefault ?? false) - Number(a.isDefault ?? false),
+  );
 }
 
 export async function createAddress(input: AddressInput): Promise<Address> {

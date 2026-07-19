@@ -380,15 +380,23 @@ export async function getAddresses(): Promise<Address[]> {
 
   const defaultId = data.customer?.defaultAddress?.id ?? null;
   const nodes = data.customer?.addresses?.nodes ?? [];
-  const list = nodes.map((n) => toAddress(n, defaultId));
+  /* Pass "" rather than null when there's no default, so every row gets a
+     definite false. Leaving them undefined made the comparator below compute
+     NaN - NaN, which leaves the sort order implementation-defined. */
+  const list = nodes.map((n) => toAddress(n, defaultId ?? ""));
   /* Default first — it's the one that matters at checkout. */
-  return list.sort((a, b) => Number(b.isDefault) - Number(a.isDefault));
+  return list.sort((a, b) => Number(b.isDefault ?? false) - Number(a.isDefault ?? false));
 }
 
+/* `defaultAddress` is deliberately not sent. Shopify promotes a customer's
+   first address to default on its own (verified live 2026-07-19 — an account's
+   first address came back as the default without us asking), and for any later
+   address the customer chooses via "Set as default". Passing an explicit false
+   would read as though we intended it never to become default. */
 export async function createAddress(input: AddressInput): Promise<Address> {
   const payload = await mutate<MutationPayload & { customerAddress?: RawAddress | null }>(
     ADDRESS_CREATE,
-    { address: toAddressInput(input), defaultAddress: false },
+    { address: toAddressInput(input) },
     "customerAddressCreate",
     "save this address",
   );
