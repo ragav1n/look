@@ -2,18 +2,20 @@ import { BadgeCheck } from "lucide-react";
 import { reviews } from "@/data/reviews";
 import RatingStars from "@/components/ui/RatingStars";
 import Reveal from "@/components/ui/Reveal";
-import a1 from "@/assets/pdp-main-24.jpg";
-import a2 from "@/assets/hero-model-1.jpg";
-import a3 from "@/assets/hero-model-2.jpg";
-import a4 from "@/assets/product-22.jpg";
-import a5 from "@/assets/product-24.jpg";
-import a6 from "@/assets/product-17.jpg";
-import a7 from "@/assets/kurta-floral-1.jpg";
+import avAnanya from "@/assets/review-ananya.jpg";
+import avShraddha from "@/assets/review-shraddha.jpg";
+import avMeera from "@/assets/review-meera.jpg";
+import avSaara from "@/assets/review-saara.jpg";
+import avDivya from "@/assets/review-divya.jpg";
+import avRitika from "@/assets/review-ritika.jpg";
+import avShobhana from "@/assets/review-shobhana.jpg";
 
-/* "LOOK's Customer Diaries" — real customer words on white note/diary cards,
+/* "LOOK's Customer Diaries": real customer words on white note/diary cards,
    each with a customer picture, laid out as a masonry note-wall on the black
-   theme (client request: white note style + customer pictures). */
-const avatars = [a1, a2, a3, a4, a5, a6, a7];
+   theme (client request: white note style + customer pictures). Avatars are
+   face crops of the catalog's own model shots, ordered to line up with the
+   `reviews` array so each note pairs with a face from that product's shoot. */
+const avatars = [avAnanya, avShraddha, avMeera, avSaara, avDivya, avRitika, avShobhana];
 
 export default function HomeReviews() {
   return (
