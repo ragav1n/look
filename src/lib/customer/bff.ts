@@ -168,6 +168,16 @@ export async function updateProfile(patch: Partial<UserProfile>): Promise<UserPr
   };
 }
 
+/* Best-effort: the server dedupes via a metafield, so a failed or repeated call
+   is harmless. Swallow everything — a welcome email must never break sign-in. */
+export async function notifyAccountWelcome(): Promise<void> {
+  try {
+    await api("/api/account/welcome", { method: "POST" });
+  } catch {
+    /* non-blocking */
+  }
+}
+
 /* Best-effort: checkout still works even if linking fails, so errors are
    swallowed rather than surfaced. */
 export async function linkCart(cartId: string): Promise<void> {

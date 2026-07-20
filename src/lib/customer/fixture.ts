@@ -76,6 +76,10 @@ export async function updateProfile(patch: Partial<UserProfile>): Promise<UserPr
   return next;
 }
 
+export async function notifyAccountWelcome(): Promise<void> {
+  /* no email backend in fixture mode */
+}
+
 export async function linkCart(): Promise<void> {
   /* no cart backend in fixture mode */
 }

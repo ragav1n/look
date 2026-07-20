@@ -25,6 +25,10 @@ export interface CustomerAuth {
   beginLogin(from?: string): void;
   logout(): Promise<void>;
   updateProfile(patch: Partial<UserProfile>): Promise<UserProfile>;
+  /** Ask the backend to send the first-sign-in welcome email. Idempotent on the
+   *  server, so calling it more than once is harmless. Best-effort — never
+   *  throws, since a missing welcome must not disrupt the session. */
+  notifyAccountWelcome(): Promise<void>;
   linkCart(cartId: string): Promise<void>;
   unlinkCart(cartId: string): Promise<void>;
 

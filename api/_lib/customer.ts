@@ -31,6 +31,38 @@ export const PROFILE_QUERY = /* GraphQL */ `
   }
 `;
 
+/** Just enough to greet someone and find them in the Admin API. Taking the id
+ *  straight off the token sidesteps the ~30–60s lag in Shopify's customer
+ *  search index, which makes an email lookup useless right after signup — the
+ *  exact moment the account welcome needs to run. */
+export const IDENTITY_QUERY = /* GraphQL */ `
+  query CustomerIdentity {
+    customer {
+      id
+      firstName
+      emailAddress { emailAddress }
+    }
+  }
+`;
+
+export interface RawIdentity {
+  id?: string | null;
+  firstName?: string | null;
+  emailAddress?: { emailAddress?: string | null } | null;
+}
+
+/**
+ * Normalise a Customer Account API id into the GID the Admin API expects.
+ * The two APIs agree on the numeric id but not always on the wrapper — ids can
+ * arrive bare, or with a `?key=` suffix — so we rebuild from the digits rather
+ * than trusting the string through.
+ */
+export function toAdminCustomerGid(raw: string): string | null {
+  const numeric = raw.split("?")[0].split("/").pop() ?? "";
+  if (!/^\d+$/.test(numeric)) return null;
+  return `gid://shopify/Customer/${numeric}`;
+}
+
 export interface RawCustomer {
   firstName?: string | null;
   lastName?: string | null;

@@ -16,6 +16,7 @@ export const getSession = impl.getSession;
 export const beginLogin = impl.beginLogin;
 export const logout = impl.logout;
 export const updateProfile = impl.updateProfile;
+export const notifyAccountWelcome = impl.notifyAccountWelcome;
 export const linkCart = impl.linkCart;
 export const unlinkCart = impl.unlinkCart;
 

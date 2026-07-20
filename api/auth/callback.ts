@@ -38,8 +38,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     const endpoints = await resolveEndpoints();
     const tokens = await exchangeCode(endpoints, code, tx.verifier);
     setTokenCookies(res, tokens);
-    res.redirect(302, `${config.appOrigin}${tx.redirect}`);
+    res.redirect(302, withWelcomeFlag(`${config.appOrigin}${tx.redirect}`));
   } catch {
     fail(res, "exchange_failed");
+  }
+}
+
+/* Mark the post-login landing so the SPA knows to offer the account welcome
+   email. It's only a hint — the endpoint's metafield guard is what actually
+   makes the send once-only, so a shared or bookmarked link carrying the flag
+   does no harm. Appended with URL so an existing query string on `tx.redirect`
+   is preserved rather than clobbered. */
+function withWelcomeFlag(target: string): string {
+  try {
+    const url = new URL(target);
+    url.searchParams.set("welcome", "1");
+    return url.toString();
+  } catch {
+    return target;
   }
 }

@@ -1,7 +1,25 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { UserProfile } from "@/types";
-import { beginLogin, getSession, logout as endSession, updateProfile as saveProfile } from "@/lib/customer";
+import {
+  beginLogin,
+  getSession,
+  logout as endSession,
+  notifyAccountWelcome,
+  updateProfile as saveProfile,
+} from "@/lib/customer";
 import { useToast } from "./ToastContext";
+
+/* The auth callback appends ?welcome=1 to the post-login landing to mark a
+   fresh sign-in. We consume it once — ask the backend to send the account
+   welcome (a no-op after the first time, guarded server-side) and strip the
+   param so a refresh or a shared URL can't re-trigger it. */
+function consumeWelcomeFlag(): boolean {
+  const url = new URL(window.location.href);
+  if (url.searchParams.get("welcome") !== "1") return false;
+  url.searchParams.delete("welcome");
+  window.history.replaceState({}, "", url.pathname + url.search + url.hash);
+  return true;
+}
 
 /**
  * Signed-in customer state. Backed by the customer-auth data layer: real Shopify
@@ -36,9 +54,15 @@ export function UserProvider({ children }: { children: ReactNode }) {
      until `ready`, so a logged-in hard refresh doesn't flash to /login. */
   useEffect(() => {
     let active = true;
+    /* Read (and clear) the flag before the async work, so it's consumed exactly
+       once regardless of how the session check resolves. */
+    const firstLogin = consumeWelcomeFlag();
     getSession()
       .then((session) => {
-        if (active) setUser(session.authenticated ? session.profile : null);
+        if (!active) return;
+        setUser(session.authenticated ? session.profile : null);
+        // Only a genuinely-authenticated arrival off the callback gets a welcome.
+        if (firstLogin && session.authenticated) void notifyAccountWelcome();
       })
       .catch(() => {
         if (active) setUser(null);
