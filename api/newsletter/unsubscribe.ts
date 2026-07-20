@@ -15,8 +15,9 @@
  */
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { findCustomerIdByEmail, setEmailConsent } from "../_lib/audience.js";
-import { firstQuery } from "../_lib/http.js";
+import { firstQuery, maskEmail } from "../_lib/http.js";
 import { palette, site } from "../_lib/email/brand.js";
+import { esc } from "../_lib/email/render.js";
 import { isAdminConfigured } from "../_lib/shopify.js";
 import { verifyUnsubscribe } from "../_lib/email/unsubscribe.js";
 
@@ -70,9 +71,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     try {
       const id = await findCustomerIdByEmail(email);
       if (id) await setEmailConsent(id, "UNSUBSCRIBED");
-      else console.warn(`[unsubscribe] no customer found for ${email}`);
+      else console.warn(`[unsubscribe] no customer found for ${maskEmail(email)}`);
     } catch (err) {
-      console.error(`[unsubscribe] failed for ${email}:`, err);
+      console.error(`[unsubscribe] failed for ${maskEmail(email)}:`, err);
     }
   }
 
@@ -84,6 +85,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     res,
     200,
     "You're unsubscribed",
-    `We won't email <strong style="color:${palette.ink};">${email.replace(/</g, "&lt;")}</strong> again. You can still shop and check your orders as usual — this only stops the newsletter.`,
+    `We won't email <strong style="color:${palette.ink};">${esc(email)}</strong> again. You can still shop and check your orders as usual — this only stops the newsletter.`,
   );
 }

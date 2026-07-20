@@ -11,6 +11,7 @@
  * ../shopify.ts.
  */
 import { site } from "./brand.js";
+import { maskEmail } from "../http.js";
 
 const env = (k: string) => process.env[k]?.trim() || "";
 
@@ -66,7 +67,9 @@ const toPayload = (e: OutgoingEmail): ResendPayload => ({
 
 function simulate(emails: OutgoingEmail[]): SendResult {
   for (const e of emails) {
-    console.log(`[email:dry] to=${e.to} subject=${JSON.stringify(e.subject)} (${e.html.length}b html)`);
+    console.log(
+      `[email:dry] to=${maskEmail(e.to)} subject=${JSON.stringify(e.subject)} (${e.html.length}b html)`,
+    );
   }
   return { sent: emails.length, failed: 0, simulated: true };
 }
@@ -89,12 +92,14 @@ export async function sendEmail(email: OutgoingEmail): Promise<boolean> {
   try {
     const res = await post("", toPayload(email));
     if (!res.ok) {
-      console.error(`[email] send failed for ${email.to}: HTTP ${res.status} ${await res.text()}`);
+      console.error(
+        `[email] send failed for ${maskEmail(email.to)}: HTTP ${res.status} ${await res.text()}`,
+      );
       return false;
     }
     return true;
   } catch (err) {
-    console.error(`[email] send threw for ${email.to}:`, err);
+    console.error(`[email] send threw for ${maskEmail(email.to)}:`, err);
     return false;
   }
 }

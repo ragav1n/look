@@ -46,8 +46,10 @@ const CUSTOMER_SEARCH = /* GraphQL */ `
  */
 export async function findCustomerIdByEmail(email: string): Promise<string | null> {
   // Quote the address so one containing "-" isn't parsed as a search operator.
+  // Escape backslash first, then the quote, so a crafted address like a\"@x.com
+  // can't break out of the quoted term (the subscribe regex permits both chars).
   const res = await adminGraphql(CUSTOMER_SEARCH, {
-    query: `email:"${email.replace(/"/g, '\\"')}"`,
+    query: `email:"${email.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`,
   });
   const json = (await res.json()) as {
     data?: { customers?: { edges?: { node: { id: string } }[] } };
