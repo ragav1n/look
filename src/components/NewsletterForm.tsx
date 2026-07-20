@@ -15,6 +15,10 @@ interface Props {
    so one set of classes works everywhere. */
 export default function NewsletterForm({ autoFocus, onSuccess }: Props) {
   const [email, setEmail] = useState("");
+  // Honeypot: kept empty by real users (it's off-screen and skipped by tab), so
+  // a non-empty value on submit flags a bot. Sent to the BFF, which silently
+  // no-ops it. See api/newsletter/subscribe.ts.
+  const [company, setCompany] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "done">("idle");
   const { push } = useToast();
 
@@ -33,7 +37,7 @@ export default function NewsletterForm({ autoFocus, onSuccess }: Props) {
         e.preventDefault();
         if (status === "loading") return;
         setStatus("loading");
-        const { ok } = await subscribeEmail(email);
+        const { ok } = await subscribeEmail(email, company);
         if (ok) {
           setStatus("done");
           onSuccess?.();
@@ -43,6 +47,18 @@ export default function NewsletterForm({ autoFocus, onSuccess }: Props) {
         }
       }}
     >
+      {/* Honeypot — visually hidden, off the tab order, not autofilled. Real
+          users never touch it; bots that fill every field give themselves away. */}
+      <input
+        type="text"
+        name="company"
+        value={company}
+        onChange={(e) => setCompany(e.target.value)}
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+        className="absolute left-[-9999px] h-0 w-0 opacity-0"
+      />
       <input
         type="email"
         required

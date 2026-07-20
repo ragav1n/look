@@ -12,14 +12,15 @@ export interface SubscribeResult {
 }
 
 /** Subscribe `email` to the LOOK newsletter. Resolves `{ ok:false }` on a real
- *  backend failure so callers can show an inline error. */
-export async function subscribeEmail(email: string): Promise<SubscribeResult> {
+ *  backend failure so callers can show an inline error. `company` is the form's
+ *  honeypot — empty for real users, forwarded so the BFF can silently drop bots. */
+export async function subscribeEmail(email: string, company = ""): Promise<SubscribeResult> {
   try {
     const res = await fetch("/api/newsletter/subscribe", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "same-origin",
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ email, company }),
     });
     const data = (await res.json().catch(() => ({}))) as SubscribeResult;
     return { ok: res.ok && data.ok !== false, already: data.already };

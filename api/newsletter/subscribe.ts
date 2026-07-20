@@ -22,7 +22,8 @@ import {
   writeFlag,
 } from "../_lib/audience.js";
 import { sendLifecycleEmail } from "../_lib/email/compose.js";
-import { isSameOrigin, methodNotAllowed } from "../_lib/http.js";
+import { isStrictSameOrigin, methodNotAllowed } from "../_lib/http.js";
+import { allow, clientIp } from "../_lib/ratelimit.js";
 import { adminGraphql, isAdminConfigured } from "../_lib/shopify.js";
 
 /* Deliberately loose — Shopify does the authoritative validation. This only
@@ -68,8 +69,26 @@ async function resubscribeExisting(email: string): Promise<boolean> {
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   if (req.method !== "POST") return methodNotAllowed(res, "POST");
-  if (!isSameOrigin(req)) {
+  // Strict: reject a missing/foreign Origin. This endpoint is unauthenticated,
+  // so it can't lean on SameSite=Lax the way the cookie-bearing POSTs do.
+  if (!isStrictSameOrigin(req)) {
     res.status(403).json({ error: "forbidden" });
+    return;
+  }
+
+  // Honeypot: a hidden field real visitors never fill. If it arrives populated,
+  // it's a bot — return a plausible success and do nothing, so we neither create
+  // a record, send an email, nor reveal that we saw the trap.
+  const honeypot = typeof req.body?.company === "string" ? req.body.company.trim() : "";
+  if (honeypot) {
+    res.status(200).json({ ok: true });
+    return;
+  }
+
+  // Best-effort throttle (per warm instance — see ratelimit.ts caveat): a burst
+  // of signups from one IP is either abuse or a bug, so cap it.
+  if (!allow(`subscribe:${clientIp(req)}`, 5, 60_000)) {
+    res.status(429).json({ ok: false, error: "rate_limited" });
     return;
   }
 
