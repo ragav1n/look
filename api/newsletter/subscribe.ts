@@ -79,7 +79,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   // Honeypot: a hidden field real visitors never fill. If it arrives populated,
   // it's a bot — return a plausible success and do nothing, so we neither create
   // a record, send an email, nor reveal that we saw the trap.
-  const honeypot = typeof req.body?.company === "string" ? req.body.company.trim() : "";
+  const honeypot = typeof req.body?.contact_reason === "string" ? req.body.contact_reason.trim() : "";
   if (honeypot) {
     res.status(200).json({ ok: true });
     return;

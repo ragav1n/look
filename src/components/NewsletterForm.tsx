@@ -17,8 +17,10 @@ export default function NewsletterForm({ autoFocus, onSuccess }: Props) {
   const [email, setEmail] = useState("");
   // Honeypot: kept empty by real users (it's off-screen and skipped by tab), so
   // a non-empty value on submit flags a bot. Sent to the BFF, which silently
-  // no-ops it. See api/newsletter/subscribe.ts.
-  const [company, setCompany] = useState("");
+  // no-ops it. See api/newsletter/subscribe.ts. The field name is deliberately
+  // NOT an autofill token (e.g. "company"/"name") so the browser can't fill it
+  // for a real user and get them wrongly dropped.
+  const [honeypot, setHoneypot] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "done">("idle");
   const { push } = useToast();
 
@@ -37,7 +39,7 @@ export default function NewsletterForm({ autoFocus, onSuccess }: Props) {
         e.preventDefault();
         if (status === "loading") return;
         setStatus("loading");
-        const { ok } = await subscribeEmail(email, company);
+        const { ok } = await subscribeEmail(email, honeypot);
         if (ok) {
           setStatus("done");
           onSuccess?.();
@@ -47,13 +49,13 @@ export default function NewsletterForm({ autoFocus, onSuccess }: Props) {
         }
       }}
     >
-      {/* Honeypot — visually hidden, off the tab order, not autofilled. Real
+      {/* Honeypot — visually hidden, off the tab order, non-autofill name. Real
           users never touch it; bots that fill every field give themselves away. */}
       <input
         type="text"
-        name="company"
-        value={company}
-        onChange={(e) => setCompany(e.target.value)}
+        name="contact_reason"
+        value={honeypot}
+        onChange={(e) => setHoneypot(e.target.value)}
         tabIndex={-1}
         autoComplete="off"
         aria-hidden="true"
