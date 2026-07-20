@@ -18,7 +18,7 @@ import Reveal from "@/components/ui/Reveal";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
 import Skeleton from "@/components/ui/Skeleton";
-import sizeChart from "@/assets/size-chart.png";
+import sizeChart from "@/assets/size-chart.jpg";
 
 /* Brand size-chart artwork (from size_chart.pdf). The "Size Chart" button on
    the PDP opens this in a modal. */
