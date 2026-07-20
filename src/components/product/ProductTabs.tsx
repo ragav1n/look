@@ -1,6 +1,7 @@
-import { useId, useRef, useState, type KeyboardEvent } from "react";
+import { useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import type { Product, Review } from "@/types";
 import RatingStars from "@/components/ui/RatingStars";
+import { sanitizeHtml } from "@/lib/sanitize";
 
 type TabKey = "description" | "reviews" | "returns";
 
@@ -14,6 +15,11 @@ export default function ProductTabs({ product, reviews }: { product: Product; re
   const [active, setActive] = useState<TabKey>("description");
   const baseId = useId();
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  // Sanitize the store-authored description HTML once per product (see below).
+  const safeDescription = useMemo(
+    () => (product.descriptionHtml ? sanitizeHtml(product.descriptionHtml) : ""),
+    [product.descriptionHtml],
+  );
 
   const tabs: { key: TabKey; label: string }[] = [
     { key: "description", label: "Description" },
@@ -81,15 +87,15 @@ export default function ProductTabs({ product, reviews }: { product: Product; re
       >
         {active === "description" &&
           /* Live products carry a rich HTML description (tables, lists) authored
-             in Shopify — render it as-is via .product-prose, which styles the
-             markup for the black theme. The dev fixtures have no HTML, so they
-             fall back to the plain-text description + details paragraphs.
-             descriptionHtml is store-admin authored and Storefront-API
-             sanitised, so dangerouslySetInnerHTML is safe here. */
-          (product.descriptionHtml ? (
+             in Shopify — render it via .product-prose, which styles the markup
+             for the black theme. It is sanitised with DOMPurify (@/lib/sanitize)
+             before injection: the Storefront API does NOT strip scripts for us,
+             and the CSP is the backstop. The dev fixtures have no HTML, so they
+             fall back to the plain-text description + details paragraphs. */
+          (safeDescription ? (
             <div
               className="product-prose"
-              dangerouslySetInnerHTML={{ __html: product.descriptionHtml }}
+              dangerouslySetInnerHTML={{ __html: safeDescription }}
             />
           ) : (
             <>

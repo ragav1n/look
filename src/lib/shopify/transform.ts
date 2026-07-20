@@ -1,4 +1,5 @@
 import type { Cart, CartLine, Collection, Money, Product, ProductVariant, Reel } from "@/types";
+import { safeHttpUrl } from "@/lib/url";
 import type { SFCart, SFCollection, SFMoney, SFProduct, SFReel, SFVariant } from "./types";
 
 const money = (m: SFMoney): Money => ({
@@ -141,7 +142,9 @@ export function toCollection(c: SFCollection): Collection {
  *  link — a half-filled card is skipped rather than rendered broken. */
 export function toReel(r: SFReel): Reel | null {
   const img = r.image?.reference?.image;
-  const link = r.link?.value?.trim();
+  // Only accept an http(s) link — a `javascript:` metaobject value must not
+  // reach the card's href. A rejected link skips the card, same as a missing one.
+  const link = safeHttpUrl(r.link?.value);
   if (!img?.url || !link) return null;
   return {
     id: r.id,

@@ -45,7 +45,7 @@ export default function InstaReels() {
             <a
               href={reel.link}
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               className="group relative block overflow-hidden rounded-card"
               aria-label={reel.caption ? `Watch on Instagram: ${reel.caption}` : "Watch on Instagram"}
             >
