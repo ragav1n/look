@@ -18,6 +18,13 @@ const SANS = "'Poppins', 'Helvetica Neue', Helvetica, Arial, sans-serif";
 const SERIF = "'Playfair Display', Georgia, 'Times New Roman', serif";
 const WIDTH = 600;
 
+/* The white wordmark, served from the SPA's public/ dir so it's a stable
+   absolute URL (email can't use bundled or inline-SVG assets). It's white on
+   transparent, which sits right on the email's black background. NOTE: this URL
+   only resolves once the site is deployed — a local send before deploy shows a
+   broken image, which is expected. */
+const LOGO_URL = "https://look.ind.in/email-logo.png";
+
 /** Cap on products shown in one drop email. Images are full-width portraits
  *  (~700px tall each), so this is a teaser, not a catalogue — the CTA carries
  *  anyone who wants the rest to /shop. */
@@ -72,7 +79,7 @@ function paragraph(text: string): string {
 }
 
 function button(label: string, url: string): string {
-  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 4px;">
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:8px auto 4px;">
   <tr><td bgcolor="${palette.accent}" style="border-radius:8px;">
     <a href="${esc(url)}" style="display:inline-block;padding:14px 32px;font-family:${SANS};font-size:13px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:#ffffff;text-decoration:none;">${esc(
       label,
@@ -147,13 +154,15 @@ export function renderEmail(opts: EmailOptions): RenderedEmail {
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="${WIDTH}" style="width:100%;max-width:${WIDTH}px;background-color:${palette.page};">
 
   <tr><td align="center" style="padding:0 32px 28px;">
-    <a href="https://look.ind.in" style="font-family:${SERIF};font-size:30px;letter-spacing:9px;color:${palette.ink};text-decoration:none;">${site.name}</a>
+    <a href="https://look.ind.in">
+      <img src="${LOGO_URL}" width="150" alt="${site.name}" style="display:block;width:150px;max-width:150px;height:auto;border:0;" />
+    </a>
   </td></tr>
 
   ${hero}
 
   ${row(
-    `<h1 style="margin:16px 0 18px;font-family:${SERIF};font-size:27px;line-height:1.3;font-weight:500;color:${palette.ink};">${esc(
+    `<h1 style="margin:16px 0 18px;font-family:${SERIF};font-size:27px;line-height:1.3;font-weight:500;text-align:center;color:${palette.ink};">${esc(
       opts.heading,
     )}</h1>`,
   )}

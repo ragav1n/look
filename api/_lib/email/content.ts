@@ -34,8 +34,8 @@ const DEFAULTS: Record<EmailKey, EmailContent> = {
     subject: `Welcome to ${site.name}`,
     heading: "You're on the list.",
     body: [
-      `Thank you for joining ${site.name}. You'll hear from us when a new drop lands — and not much in between.`,
-      "Here's a little something for your first order.",
+      `Thank you for joining ${site.name}. You'll be the first to know when a new drop lands — and we'll keep it to just that.`,
+      "Take a look at what's in the studio right now.",
     ],
     ctaLabel: "Shop new arrivals",
     ctaUrl: `${SHOP_URL}/shop`,
