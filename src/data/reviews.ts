@@ -1,6 +1,6 @@
 import type { Review } from "@/types";
 
-/* Editorial/customer reviews. Reviews are not core Shopify catalog data — in
+/* Editorial/customer reviews. Reviews are not core Shopify catalog data. In
    production these come from a reviews app (e.g. Judge.me) or a product
    metafield. `productName` is denormalised so cards need no product lookup. */
 export const reviews: Review[] = [
@@ -11,8 +11,8 @@ export const reviews: Review[] = [
     author: "Ananya",
     rating: 5,
     date: "2026-06-28",
-    title: "Absolutely stunning quality",
-    body: "The fabric feels premium and the fit is exactly as described. I wore it to a family function and got so many compliments. Worth every rupee.",
+    title: "Wore it to my cousin's engagement",
+    body: "The fit was spot on and I didn't need any alterations. The fabric is thick enough that it doesn't cling, which I'd worried about from the photos. Three people asked me where it was from.",
     verified: true,
   },
   {
@@ -22,8 +22,8 @@ export const reviews: Review[] = [
     author: "Shraddha",
     rating: 4.5,
     date: "2026-06-20",
-    title: "Beautiful colour, true to photos",
-    body: "The cherry check is rich and doesn't fade after washing. The skirt falls and twirls beautifully. Slightly long for my height but easy to alter.",
+    title: "Colour is exactly like the pictures",
+    body: "I've washed it twice now and the red check hasn't faded at all. It's a little long on me at 5'2, so I'm getting the hem taken up, but the fabric and stitching are worth that.",
     verified: true,
   },
   {
@@ -33,8 +33,8 @@ export const reviews: Review[] = [
     author: "Meera",
     rating: 4,
     date: "2026-06-11",
-    title: "Comfortable for all-day wear",
-    body: "Breathable cotton that held up through a full day out. The stitching detail around the neckline is beautifully done.",
+    title: "Comfortable, but size up",
+    body: "The cotton is really soft and the neckline detail looks prettier in person than online. I would size up though, the small was snug across my shoulders. Still happy I bought it.",
     verified: false,
   },
   {
@@ -44,8 +44,8 @@ export const reviews: Review[] = [
     author: "Saara",
     rating: 5,
     date: "2026-07-02",
-    title: "My new favourite",
-    body: "The flow of this gown is unreal. Photographs don't do the colour justice — that soft butter yellow glows in evening light.",
+    title: "The yellow is prettier in person",
+    body: "I was nervous the colour would look washed out, but it's a soft buttery yellow that photographs really well. There's a lot of movement in the skirt when you walk. Wore it to an evening party and was comfortable the whole night.",
     verified: true,
   },
   {
@@ -55,8 +55,8 @@ export const reviews: Review[] = [
     author: "Divya",
     rating: 4.5,
     date: "2026-06-15",
-    title: "Elegant detailing",
-    body: "Delicate finishing, neatly done. Sizing runs true and the co-ord pairs so easily. Shipping was quicker than expected.",
+    title: "Neat finishing, arrived early",
+    body: "The stitching on both pieces is clean and the sizing matched the chart. I've already worn the top on its own with jeans. My only wish is that it came with a lining, but it's easy to layer under.",
     verified: true,
   },
   {
@@ -66,8 +66,8 @@ export const reviews: Review[] = [
     author: "Ritika",
     rating: 5,
     date: "2026-05-30",
-    title: "Perfect for a summer wedding",
-    body: "Wore this to a daytime reception and felt incredible. The gingham catches the light beautifully and the fit was flawless.",
+    title: "Ideal for a daytime function",
+    body: "I wore it to an afternoon reception and it was perfect for the heat, light and airy but still dressy enough. The gingham reads almost neutral, so it worked with both my gold and silver jewellery. Fit true to size.",
     verified: true,
   },
   {
@@ -77,8 +77,8 @@ export const reviews: Review[] = [
     author: "Shobhana",
     rating: 5,
     date: "2026-07-08",
-    title: "Twirls beautifully",
-    body: "Ordered this for a brunch and it was perfect — flowy, comfortable, and the colour is even richer in person. Got compliments all evening.",
+    title: "So much twirl in it",
+    body: "I bought it for a friend's brunch and ended up wearing it twice that week. The marigold is bright without being loud, and the full skirt actually moves when you walk. It's comfortable to sit in too.",
     verified: true,
   },
 ];
