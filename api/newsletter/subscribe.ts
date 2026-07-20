@@ -1,13 +1,27 @@
 /**
  * POST /api/newsletter/subscribe   body: { email }
- * Marks an email as SUBSCRIBED to email marketing on the Shopify store, so the
- * "Welcome new subscribers" automation (Shopify Email) picks them up.
+ * Marks an email as SUBSCRIBED to email marketing on the Shopify store and
+ * sends the welcome email.
  *
  * Uses the SERVER-ONLY Admin API token (config.adminToken) — it can create
  * customers, so it must never reach the browser. This is the newsletter twin of
  * api/cart/link.ts: same-origin guarded, best-effort, JSON in/out.
+ *
+ * We send the welcome ourselves rather than leaning on Shopify's "Welcome new
+ * subscribers" automation, which never fired for us: it triggers on an
+ * unsubscribed→subscribed *transition*, and a customer created already
+ * subscribed never emits one. That automation must stay OFF in the admin, or
+ * new subscribers would collect two welcomes.
  */
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import {
+  FLAG,
+  findCustomerIdByEmail,
+  readFlag,
+  setEmailConsent,
+  writeFlag,
+} from "../_lib/audience.js";
+import { sendLifecycleEmail } from "../_lib/email/compose.js";
 import { isSameOrigin, methodNotAllowed } from "../_lib/http.js";
 import { adminGraphql, isAdminConfigured } from "../_lib/shopify.js";
 
@@ -24,55 +38,32 @@ const CUSTOMER_CREATE = /* GraphQL */ `
   }
 `;
 
-const CUSTOMER_SEARCH = /* GraphQL */ `
-  query NewsletterFind($query: String!) {
-    customers(first: 1, query: $query) {
-      edges { node { id } }
-    }
-  }
-`;
-
-const CONSENT_UPDATE = /* GraphQL */ `
-  mutation NewsletterConsent($input: CustomerEmailMarketingConsentUpdateInput!) {
-    customerEmailMarketingConsentUpdate(input: $input) {
-      customer { id }
-      userErrors { field message }
-    }
-  }
-`;
-
 interface UserError {
   field?: string[] | null;
   message: string;
 }
 
-/** Existing customer? Flip their email consent to SUBSCRIBED. Best-effort: any
- *  failure here just means we couldn't re-subscribe someone who already exists,
- *  which is a soft outcome, not an error worth surfacing to the visitor. */
-async function resubscribeExisting(email: string): Promise<boolean> {
-  const found = await adminGraphql(CUSTOMER_SEARCH, {
-    // Quote the email so an address with a "-" isn't parsed as a search operator.
-    query: `email:"${email.replace(/"/g, '\\"')}"`,
-  });
-  const foundJson = (await found.json()) as {
-    data?: { customers?: { edges?: { node: { id: string } }[] } };
-  };
-  const id = foundJson.data?.customers?.edges?.[0]?.node.id;
-  if (!id) return false;
+/** Send the welcome once and only once, guarded by a customer metafield. The
+ *  guard is what stops someone who re-enters their address — or unsubscribes
+ *  and signs up again — from collecting a second discount code. */
+async function welcomeOnce(customerId: string, email: string): Promise<boolean> {
+  const flag = await readFlag(customerId, FLAG.newsletterWelcome);
+  if (flag?.alreadySent) return false;
+  const sent = await sendLifecycleEmail("welcome_newsletter", email);
+  if (sent) await writeFlag(customerId, FLAG.newsletterWelcome);
+  return sent;
+}
 
-  const updated = await adminGraphql(CONSENT_UPDATE, {
-    input: {
-      customerId: id,
-      emailMarketingConsent: {
-        marketingState: "SUBSCRIBED",
-        marketingOptInLevel: "SINGLE_OPT_IN",
-      },
-    },
-  });
-  const updatedJson = (await updated.json()) as {
-    data?: { customerEmailMarketingConsentUpdate?: { userErrors?: UserError[] } };
-  };
-  return (updatedJson.data?.customerEmailMarketingConsentUpdate?.userErrors ?? []).length === 0;
+/** Existing customer? Flip their email consent to SUBSCRIBED, then welcome them
+ *  if they've never been welcomed. Best-effort: any failure here just means we
+ *  couldn't re-subscribe someone who already exists, which is a soft outcome,
+ *  not an error worth surfacing to the visitor. */
+async function resubscribeExisting(email: string): Promise<boolean> {
+  const id = await findCustomerIdByEmail(email);
+  if (!id) return false;
+  const ok = await setEmailConsent(id, "SUBSCRIBED");
+  if (ok) await welcomeOnce(id, email);
+  return ok;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
@@ -106,8 +97,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       data?: { customerCreate?: { customer?: { id: string } | null; userErrors?: UserError[] } };
     };
     const userErrors = json.data?.customerCreate?.userErrors ?? [];
+    const customer = json.data?.customerCreate?.customer;
 
-    if (json.data?.customerCreate?.customer) {
+    if (customer) {
+      /* Awaited, not fired-and-forgotten: a serverless function is frozen the
+         instant it responds, so a dangling promise would be killed mid-send. */
+      await welcomeOnce(customer.id, email);
       res.status(200).json({ ok: true });
       return;
     }
@@ -119,6 +114,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       const ok = await resubscribeExisting(email);
       // Even if the consent update couldn't run, the address is on file — treat
       // the visitor's intent as satisfied rather than showing them an error.
+      // (The customer search index lags ~30–60s, so an address created moments
+      // ago genuinely won't be found here. Expected, not a bug — no retries.)
       res.status(200).json({ ok: true, already: true, resubscribed: ok });
       return;
     }
