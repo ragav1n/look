@@ -55,6 +55,18 @@ export const config = {
   storefrontApiVersion: env("VITE_SHOPIFY_API_VERSION") || "2025-01",
 };
 
+/* Fail closed on the cookie-signing secret. It signs BOTH the OAuth transient
+   cookie (CSRF/state) and every unsubscribe link, so the insecure default above
+   must never survive into a deployed environment. `secureCookies` is true on any
+   https origin — i.e. every Vercel production AND preview deploy — and false only
+   for http://localhost, so this throws exactly where it should and leaves local
+   dev alone. A thrown module-load error 500s the function: fail closed. */
+if (config.secureCookies && !env("COOKIE_SECRET")) {
+  throw new Error(
+    "COOKIE_SECRET must be set on an https deployment — refusing to sign with the insecure default.",
+  );
+}
+
 /** Throw a descriptive error if the pieces the BFF needs aren't configured.
  *  Handlers catch this and return a 500 with the message. */
 export function assertConfig(): void {

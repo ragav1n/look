@@ -17,6 +17,7 @@
  * within the scheduled hour and occasionally more than once, and a daily digest
  * absorbs that — the second run finds everything already tagged and sends zero.
  */
+import crypto from "node:crypto";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { listSubscribers } from "../_lib/audience.js";
 import { composeEmail } from "../_lib/email/compose.js";
@@ -48,10 +49,17 @@ const toEmailProduct = (p: DropProduct): EmailProduct => ({
 
 function authorized(req: VercelRequest): boolean {
   const secret = process.env.CRON_SECRET?.trim();
-  // No secret configured ⇒ allow (dev/preview). In production the var is set,
-  // so this only opens the door where there's nothing to protect.
-  if (!secret) return true;
-  return req.headers.authorization === `Bearer ${secret}`;
+  // Fail closed: with no secret configured we REFUSE, rather than expose a
+  // list-wide email blast to any anonymous GET. Vercel injects this as the
+  // cron's Bearer automatically once the var is set; local dry-runs must send
+  // it too (it's already in .env). Compared in constant time.
+  if (!secret) return false;
+  const given = Buffer.from(req.headers.authorization ?? "");
+  const expected = Buffer.from(`Bearer ${secret}`);
+  return (
+    given.length === expected.length &&
+    crypto.timingSafeEqual(new Uint8Array(given), new Uint8Array(expected))
+  );
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
