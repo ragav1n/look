@@ -27,6 +27,7 @@ import Addresses from "./pages/account/Addresses";
    below. `src/pages/account/Wallet.tsx` is kept, not deleted, so re-enabling
    is this import plus one route line. */
 import Help from "./pages/account/Help";
+import AdminCampaigns from "./pages/admin/AdminCampaigns";
 import NotFound from "./pages/NotFound";
 
 const router = createBrowserRouter([
@@ -68,6 +69,10 @@ const router = createBrowserRouter([
   },
   { path: "/login", element: <Login /> },
   { path: "/signup", element: <Signup /> },
+  /* Owner campaign console. Top-level (no storefront chrome, no customer-auth
+     coupling), deliberately unlinked from the site and robots-disallowed. Its
+     own password gate + per-send step-up live in api/admin/*. */
+  { path: "/admin", element: <AdminCampaigns /> },
 ]);
 
 export default function App() {
