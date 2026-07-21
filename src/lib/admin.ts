@@ -27,19 +27,22 @@ export interface SendOutcome {
   simulated?: boolean;
 }
 
-async function postJson(
+async function requestJson(
   url: string,
-  body: unknown,
+  method: string,
+  body?: unknown,
 ): Promise<{ ok: boolean; data: Record<string, unknown> }> {
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "same-origin",
-    body: JSON.stringify(body),
-  });
+  const init: RequestInit = { method, credentials: "same-origin" };
+  if (body !== undefined) {
+    init.headers = { "Content-Type": "application/json" };
+    init.body = JSON.stringify(body);
+  }
+  const res = await fetch(url, init);
   const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
   return { ok: res.ok, data };
 }
+
+const postJson = (url: string, body: unknown) => requestJson(url, "POST", body);
 
 const str = (v: unknown): string | undefined => (typeof v === "string" ? v : undefined);
 const num = (v: unknown): number | undefined => (typeof v === "number" ? v : undefined);
@@ -70,7 +73,7 @@ export async function checkAdminSession(): Promise<boolean> {
 
 export async function adminLogin(password: string): Promise<boolean> {
   try {
-    const { ok } = await postJson("/api/admin/login", { password });
+    const { ok } = await requestJson("/api/admin/session", "POST", { password });
     return ok;
   } catch {
     return false;
@@ -79,7 +82,7 @@ export async function adminLogin(password: string): Promise<boolean> {
 
 export async function adminLogout(): Promise<void> {
   try {
-    await postJson("/api/admin/logout", {});
+    await requestJson("/api/admin/session", "DELETE");
   } catch {
     /* best-effort */
   }
