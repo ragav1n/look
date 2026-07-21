@@ -251,39 +251,73 @@ function StatusBadge({ tone, children }: { tone: "auto" | "action"; children: Re
   );
 }
 
-/** Numbered how-it-works list, reusing the console's red circle-badge motif. */
-function StepList({ items }: { items: ReactNode[] }) {
+interface GuideStep {
+  title: string;
+  detail?: ReactNode;
+}
+
+/** Numbered how-it-works list, reusing the console's red circle-badge motif.
+ *  Each step is a bold title + a plain-language detail line — written for a
+ *  non-technical owner who wants to be told exactly what to do and where. */
+function StepList({ items }: { items: GuideStep[] }) {
   return (
-    <ol className="mt-6 space-y-4">
+    <ol className="mt-6 space-y-5">
       {items.map((item, i) => (
         <li key={i} className="flex items-start gap-3.5">
           <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border border-accent/40 text-[11px] font-medium text-accent">
             {i + 1}
           </span>
-          <span className="text-[14px] leading-[22px] text-body">{item}</span>
+          <div>
+            <p className="text-[14px] leading-[21px] font-medium text-white">{item.title}</p>
+            {item.detail && (
+              <p className="mt-1 text-[13px] leading-[20px] text-muted">{item.detail}</p>
+            )}
+          </div>
         </li>
       ))}
     </ol>
   );
 }
 
-/** An explainer tab: what the email is, whether it's automatic, the steps, an
- *  optional caveat, and a deep-link into the right Shopify page. */
+/** "Good to know" — short Q&A answering the questions a first-timer will have. */
+function GoodToKnow({ items }: { items: { q: string; a: ReactNode }[] }) {
+  return (
+    <div className="mt-7 border-t border-line pt-6">
+      <p className="text-[11px] tracking-[0.16em] text-faint uppercase">Good to know</p>
+      <dl className="mt-4 space-y-4">
+        {items.map((item, i) => (
+          <div key={i}>
+            <dt className="text-[13px] font-medium text-body">{item.q}</dt>
+            <dd className="mt-1 text-[13px] leading-[20px] text-muted">{item.a}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  );
+}
+
+/** An explainer tab: what the email is, whether it's automatic, step-by-step
+ *  instructions, an optional caveat, a short Q&A, and a deep-link into Shopify. */
 function GuideTab({
   eyebrow,
   title,
   badge,
   lead,
+  stepsLabel,
   steps,
   note,
+  goodToKnow,
   link,
 }: {
   eyebrow: string;
   title: string;
   badge: { tone: "auto" | "action"; label: string };
   lead: ReactNode;
-  steps: ReactNode[];
+  /** Small heading above the numbered steps, e.g. "How it works" / "What to do". */
+  stepsLabel: string;
+  steps: GuideStep[];
   note?: ReactNode;
+  goodToKnow?: { q: string; a: ReactNode }[];
   link?: { label: string; href: string };
 }) {
   return (
@@ -297,17 +331,20 @@ function GuideTab({
       </h2>
       <p className="mt-3 max-w-[560px] text-[14px] leading-[23px] text-body">{lead}</p>
 
+      <p className="mt-7 text-[11px] tracking-[0.16em] text-faint uppercase">{stepsLabel}</p>
       <StepList items={steps} />
 
       {note && (
-        <p className="mt-6 flex items-start gap-2.5 rounded-btn border border-line bg-white/[0.02] p-4 text-[13px] leading-[20px] text-faint">
+        <p className="mt-6 flex items-start gap-2.5 rounded-btn border border-accent/25 bg-accent-tint-soft/30 p-4 text-[13px] leading-[20px] text-body">
           <span className="mt-1.5 inline-block size-1.5 shrink-0 rounded-full bg-accent" aria-hidden />
           <span>{note}</span>
         </p>
       )}
 
+      {goodToKnow && <GoodToKnow items={goodToKnow} />}
+
       {link && (
-        <a href={link.href} target="_blank" rel="noopener noreferrer" className={`mt-6 ${secondaryBtn}`}>
+        <a href={link.href} target="_blank" rel="noopener noreferrer" className={`mt-7 ${secondaryBtn}`}>
           {link.label}
           <span aria-hidden className="ml-2">
             ↗
@@ -691,14 +728,45 @@ function Console({ onSignedOut }: { onSignedOut: () => void }) {
             <GuideTab
               eyebrow="Order confirmation"
               title="Sent automatically by Shopify"
-              badge={{ tone: "auto", label: "Automatic" }}
-              lead="When a customer pays, Shopify creates the order and emails them the confirmation with their order number and receipt. This happens on its own — you don't send anything here."
+              badge={{ tone: "auto", label: "Automatic — nothing to do" }}
+              lead="When someone buys from LOOK, Shopify emails them straight away with their order number, what they bought, and the total. You don't press send or set anything up — it happens by itself for every single order. Here's what happens behind the scenes."
+              stepsLabel="What happens"
               steps={[
-                "A shopper checks out and pays. Checkout is hosted by Shopify.",
-                "Shopify emails them the order confirmation straight away.",
-                "As you fulfil the order, Shopify also sends the shipping and delivery updates.",
+                {
+                  title: "The customer pays",
+                  detail:
+                    "They finish paying on Shopify's secure checkout page. The moment the payment goes through, the order is created.",
+                },
+                {
+                  title: "Shopify emails them the confirmation",
+                  detail:
+                    "Within seconds the customer gets an “Order confirmed” email with their order number, the items, and a receipt. You don't write or send this — Shopify does.",
+                },
+                {
+                  title: "The order shows up in your admin",
+                  detail:
+                    "It appears under Orders in your Shopify admin. That's where you go to pack it and mark it shipped.",
+                },
+                {
+                  title: "Shipping updates go out too",
+                  detail:
+                    "When you mark the order shipped and add a tracking number, Shopify automatically emails the customer that it's on the way.",
+                },
               ]}
-              note="Want to change the wording or add your logo? Edit these emails in Shopify under Settings → Notifications. Nothing on this page changes them."
+              goodToKnow={[
+                {
+                  q: "Do I need to switch anything on?",
+                  a: "No. This works out of the box for every order. There is nothing to configure.",
+                },
+                {
+                  q: "Can I change what the email says?",
+                  a: "Yes, but it's optional. In Shopify go to Settings → Notifications and edit the “Order confirmation” template. The default already looks clean.",
+                },
+                {
+                  q: "A customer says they didn't get it?",
+                  a: "Ask them to check their spam and promotions folders first. You can also re-send it: open that order in Shopify and use “Resend email”.",
+                },
+              ]}
               link={{ label: "Open Shopify notifications", href: `${SHOP_ADMIN}/settings/notifications` }}
             />
           )}
@@ -706,15 +774,47 @@ function Console({ onSignedOut }: { onSignedOut: () => void }) {
           {tab === "abandoned" && (
             <GuideTab
               eyebrow="Cart reminders"
-              title="Turn it on in Shopify, once"
-              badge={{ tone: "action", label: "One-time setup" }}
-              lead="Shopify can remind shoppers who started checkout but didn't finish. Set it up once and it runs on its own after that — including a reminder after 1 hour and again after 24 hours."
+              title="A gentle nudge, sent for you"
+              badge={{ tone: "action", label: "Set up once, then automatic" }}
+              lead="Some shoppers add a piece, start checkout, then get distracted and leave. Shopify can automatically email them a reminder to come back — once after 1 hour, and again after 24 hours. You set this up once, and after that it runs on its own forever."
+              stepsLabel="How it's set up"
               steps={[
-                "In Shopify, open Marketing → Automations.",
-                "Turn on the “Abandoned checkout” automation.",
-                "Add two reminders: one an hour after they leave, and one after 24 hours.",
+                {
+                  title: "Open Marketing → Automations in Shopify",
+                  detail:
+                    "This is where the automatic emails live. Look for the one called “Recover abandoned checkout”.",
+                },
+                {
+                  title: "It waits, then emails — twice",
+                  detail:
+                    "One hour after a shopper leaves, it sends the first reminder. If they still haven't come back after 24 hours, it sends a second, final one.",
+                },
+                {
+                  title: "It skips anyone who came back",
+                  detail:
+                    "If they finish their order in the meantime, the reminders stop automatically. No one gets a “you forgot something” email after they've already bought.",
+                },
+                {
+                  title: "Change the wording anytime",
+                  detail:
+                    "Inside the automation, click the “Send marketing email” step to edit the subject and message the shopper sees.",
+                },
               ]}
-              note="This only reaches people who reached checkout and entered their email. Someone who adds to cart and closes the tab never gives us an address, so no reminder can be sent to them — that's true on every store, not just LOOK."
+              note="This can only reach people who typed their email during checkout. If someone just adds to their cart and closes the tab without starting checkout, we never get their email address, so there's no way to remind them. That's normal for every online store, not just LOOK."
+              goodToKnow={[
+                {
+                  q: "Is it turned on right now?",
+                  a: "Yes — it's switched on. As long as the store is live, it runs by itself. (Reminders only go out once the store is open to the public.)",
+                },
+                {
+                  q: "How can I test it myself?",
+                  a: "Start a checkout on your own store, enter your email, then leave without paying. You'll get the reminder after the wait. To test faster, you can temporarily shorten the waits to a couple of minutes, then set them back to 1 hour / 24 hours.",
+                },
+                {
+                  q: "Will it annoy people with too many emails?",
+                  a: "No. It's capped at two gentle reminders per abandoned cart, and it stops the moment they buy.",
+                },
+              ]}
               link={{ label: "Open Shopify automations", href: `${SHOP_ADMIN}/marketing/automations` }}
             />
           )}
@@ -722,15 +822,46 @@ function Console({ onSignedOut }: { onSignedOut: () => void }) {
           {tab === "arrivals" && (
             <GuideTab
               eyebrow="New arrivals digest"
-              title="One email each morning, automatically"
-              badge={{ tone: "auto", label: "Automatic" }}
-              lead="Every day at 10:30 AM, LOOK emails your community any products you've published in the last 30 days. You never tag anything as “new” — publishing the product is the only trigger."
+              title="Your new pieces, emailed for you"
+              badge={{ tone: "auto", label: "Automatic — just publish" }}
+              lead="Every morning at 10:30, LOOK automatically emails your community the products you've added recently. You never mark anything as “new” and you never press send — just add the product to your store, and it goes out the next morning."
+              stepsLabel="What to do"
               steps={[
-                "Add the product in Shopify and set it Active, available on the Online Store.",
-                "The next morning's email includes it automatically, newest first.",
-                "Once it goes out, the product is marked so it's never emailed twice.",
+                {
+                  title: "Add the product in Shopify",
+                  detail: "Create it like any other product — photos, price, and sizes.",
+                },
+                {
+                  title: "Set it “Active” and on the Online Store",
+                  detail:
+                    "On the product page, set Status to “Active”, and under Publishing / Sales channels make sure “Online Store” is ticked. That's what tells LOOK the piece is ready to show off.",
+                },
+                {
+                  title: "Wait for the next morning",
+                  detail:
+                    "At 10:30 AM the next day, everyone on your list gets one email showing your new pieces, newest first.",
+                },
+                {
+                  title: "That's it — it's marked done",
+                  detail:
+                    "After the email goes out, the product is quietly marked so it's never emailed a second time.",
+                },
               ]}
-              note="To send a product again, remove its “drop-announced” tag in Shopify. To keep one out of the email, add that tag by hand before 10:30 AM."
+              note="You do NOT need to tag anything as “new”. Publishing the product is the only trigger. The email looks back over the last 30 days, so anything you publish will be included in the next morning's send."
+              goodToKnow={[
+                {
+                  q: "I added 5 products — does it send 5 emails?",
+                  a: "No. Everything new goes out in ONE email, shown newest first.",
+                },
+                {
+                  q: "I published something but don't want it emailed?",
+                  a: "Add the tag “drop-announced” to that product in Shopify before 10:30 AM, and it'll be skipped.",
+                },
+                {
+                  q: "I want to feature an older product again?",
+                  a: "Remove the “drop-announced” tag from it, and it'll go out in the next morning's email.",
+                },
+              ]}
               link={{ label: "Open Shopify products", href: `${SHOP_ADMIN}/products` }}
             />
           )}
