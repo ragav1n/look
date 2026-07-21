@@ -1,14 +1,32 @@
 /**
- * Owner campaign console (/admin). One password-gated page: compose a free-form
- * email, preview it in a sandboxed frame, send a test, then blast the newsletter
- * list. Unlinked from the storefront and robots-disallowed; the real protection
- * is the server-side session + per-send password step-up (see api/admin/*).
+ * Owner campaign console (/admin). One password-gated page with four tabs, so
+ * it's clear which shopper emails LOOK sends automatically and which the owner
+ * sends by hand:
+ *   - Campaigns      — compose/preview/test/send a free-form blast (the only
+ *                      tab that sends; reuses api/admin/campaign).
+ *   - Order emails   — explainer: Shopify sends these automatically.
+ *   - Abandoned carts— explainer: turn Shopify's automation on, once.
+ *   - New arrivals   — explainer: the daily drop digest runs on its own.
+ * The explainer tabs are pure copy + a deep-link into the right Shopify page;
+ * they add no backend (the deploy sits at the Hobby 12-function cap).
+ *
+ * Unlinked from the storefront and robots-disallowed; the real protection is the
+ * server-side session + per-send password step-up (see api/admin/*).
  *
  * Note: only works against the BFF (`npm run dev:local` or a deploy) — plain
  * `npm run dev` serves no /api routes, so the session check fails and you'll see
  * the login screen with no way through. That's expected.
  */
-import { useEffect, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+  type KeyboardEvent,
+  type ReactNode,
+} from "react";
 import consolePhoto from "@/assets/about-pearl-lace.jpg";
 import logoWhite from "@/assets/look-logo-white.png";
 import { useToast } from "@/context/ToastContext";
@@ -28,6 +46,10 @@ const secondaryBtn =
   "inline-flex h-[46px] cursor-pointer items-center justify-center rounded-btn border border-line px-6 text-[14px] font-medium text-body transition-colors hover:border-line-strong hover:text-white disabled:cursor-not-allowed disabled:opacity-50";
 const dangerBtn =
   "inline-flex h-[46px] cursor-pointer items-center justify-center rounded-btn bg-accent px-6 text-[14px] font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50";
+
+/** LOOK's Shopify admin. The explainer tabs deep-link the owner straight to the
+ *  right settings page rather than making her hunt through Shopify's menus. */
+const SHOP_ADMIN = "https://admin.shopify.com/store/look-10300";
 
 /** Small red small-caps label used across the storefront's sections. */
 function Eyebrow({ children }: { children: ReactNode }) {
@@ -209,16 +231,130 @@ function StepHeader({ n, title, desc }: { n: string; title: string; desc?: strin
 
 const cardCls = "rounded-card border border-line bg-white/[0.02] p-6 sm:p-7";
 
+/* --- Explainer-tab building blocks ---------------------------------------- */
+
+/** A small status pill. "auto" = LOOK/Shopify handles it with no action; "action"
+ *  = a one-time thing the owner sets up. Red + grey only (no other accent). */
+function StatusBadge({ tone, children }: { tone: "auto" | "action"; children: ReactNode }) {
+  const styles =
+    tone === "auto"
+      ? "border-line bg-white/[0.03] text-muted"
+      : "border-accent/40 bg-accent-tint-soft/40 text-white";
+  const dot = tone === "auto" ? "bg-muted" : "bg-accent";
+  return (
+    <span
+      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[10px] tracking-[0.16em] uppercase ${styles}`}
+    >
+      <span className={`inline-block size-1.5 rounded-full ${dot}`} aria-hidden />
+      {children}
+    </span>
+  );
+}
+
+/** Numbered how-it-works list, reusing the console's red circle-badge motif. */
+function StepList({ items }: { items: ReactNode[] }) {
+  return (
+    <ol className="mt-6 space-y-4">
+      {items.map((item, i) => (
+        <li key={i} className="flex items-start gap-3.5">
+          <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border border-accent/40 text-[11px] font-medium text-accent">
+            {i + 1}
+          </span>
+          <span className="text-[14px] leading-[22px] text-body">{item}</span>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+/** An explainer tab: what the email is, whether it's automatic, the steps, an
+ *  optional caveat, and a deep-link into the right Shopify page. */
+function GuideTab({
+  eyebrow,
+  title,
+  badge,
+  lead,
+  steps,
+  note,
+  link,
+}: {
+  eyebrow: string;
+  title: string;
+  badge: { tone: "auto" | "action"; label: string };
+  lead: ReactNode;
+  steps: ReactNode[];
+  note?: ReactNode;
+  link?: { label: string; href: string };
+}) {
+  return (
+    <section className={cardCls}>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Eyebrow>{eyebrow}</Eyebrow>
+        <StatusBadge tone={badge.tone}>{badge.label}</StatusBadge>
+      </div>
+      <h2 className="mt-3 font-display text-[24px] leading-[1.15] font-medium text-white">
+        {title}
+      </h2>
+      <p className="mt-3 max-w-[560px] text-[14px] leading-[23px] text-body">{lead}</p>
+
+      <StepList items={steps} />
+
+      {note && (
+        <p className="mt-6 flex items-start gap-2.5 rounded-btn border border-line bg-white/[0.02] p-4 text-[13px] leading-[20px] text-faint">
+          <span className="mt-1.5 inline-block size-1.5 shrink-0 rounded-full bg-accent" aria-hidden />
+          <span>{note}</span>
+        </p>
+      )}
+
+      {link && (
+        <a href={link.href} target="_blank" rel="noopener noreferrer" className={`mt-6 ${secondaryBtn}`}>
+          {link.label}
+          <span aria-hidden className="ml-2">
+            ↗
+          </span>
+        </a>
+      )}
+    </section>
+  );
+}
+
+/* --- The console ---------------------------------------------------------- */
+
+type TabKey = "campaign" | "orders" | "abandoned" | "arrivals";
+const TABS: { key: TabKey; label: string }[] = [
+  { key: "campaign", label: "Campaigns" },
+  { key: "orders", label: "Order emails" },
+  { key: "abandoned", label: "Abandoned carts" },
+  { key: "arrivals", label: "New arrivals" },
+];
+
 type Busy = null | "preview" | "test" | "send";
 
 function Console({ onSignedOut }: { onSignedOut: () => void }) {
   const { push } = useToast();
+  const [tab, setTab] = useState<TabKey>("campaign");
   const [fields, setFields] = useState<CampaignFields>(emptyFields);
   const [password, setPassword] = useState("");
   const [testEmail, setTestEmail] = useState("");
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const [busy, setBusy] = useState<Busy>(null);
   const [confirmSend, setConfirmSend] = useState(false);
+
+  // WAI-ARIA tabs: roving tabindex + arrow/Home/End nav, mirroring ProductTabs.
+  const baseId = useId();
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const onTabKey = (e: KeyboardEvent, index: number) => {
+    const last = TABS.length - 1;
+    let next: number;
+    if (e.key === "ArrowRight") next = index === last ? 0 : index + 1;
+    else if (e.key === "ArrowLeft") next = index === 0 ? last : index - 1;
+    else if (e.key === "Home") next = 0;
+    else if (e.key === "End") next = last;
+    else return;
+    e.preventDefault();
+    setTab(TABS[next].key);
+    tabRefs.current[next]?.focus();
+  };
 
   const set =
     (k: keyof CampaignFields) => (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
@@ -308,171 +444,297 @@ function Console({ onSignedOut }: { onSignedOut: () => void }) {
         <div className="relative mt-10">
           <span className="animate-glow pointer-events-none absolute -top-10 -left-8 size-52 rounded-full bg-accent/12 blur-3xl" />
           <div className="relative">
-            <Eyebrow>Broadcast</Eyebrow>
+            <Eyebrow>Community email</Eyebrow>
             <h1 className="mt-2 font-display text-[32px] leading-[1.1] font-medium text-white">
-              Send a campaign
+              Emails to your shoppers
             </h1>
-            <p className="mt-2 max-w-[520px] text-[14px] leading-[22px] text-muted">
-              Reaches every newsletter subscriber. Compose it, preview the real email, and send
-              yourself a test before it goes out.
+            <p className="mt-2 max-w-[560px] text-[14px] leading-[22px] text-muted">
+              Everything LOOK sends to customers lives here. Most of it runs on its own; the
+              Campaigns tab is the one you send by hand.
             </p>
           </div>
         </div>
 
-        {/* 01 · Compose */}
-        <section className={`mt-8 ${cardCls}`}>
-          <StepHeader n="01" title="Compose" desc="The bones of the email — required fields marked *." />
-          <div className="space-y-5">
-            <Field label="Subject *">
-              <input
-                className={inputCls}
-                value={fields.subject}
-                onChange={set("subject")}
-                placeholder="48 hours only — 20% off"
-              />
-            </Field>
-            <Field label="Heading *">
-              <input
-                className={inputCls}
-                value={fields.heading}
-                onChange={set("heading")}
-                placeholder="The weekend sale is on"
-              />
-            </Field>
-            <Field label="Message *" hint="Leave a blank line to start a new paragraph.">
-              <textarea
-                className={`${inputCls} h-auto min-h-[140px] resize-y py-3 leading-relaxed`}
-                value={fields.body}
-                onChange={set("body")}
-                placeholder="Write your message…"
-              />
-            </Field>
-            <div className="grid gap-5 sm:grid-cols-2">
-              <Field label="Button label" hint="optional">
-                <input
-                  className={inputCls}
-                  value={fields.ctaLabel}
-                  onChange={set("ctaLabel")}
-                  placeholder="Shop the sale"
+        {/* Tabs */}
+        <div
+          role="tablist"
+          aria-label="Email types"
+          className="mt-8 flex gap-1 overflow-x-auto border-b border-line"
+        >
+          {TABS.map(({ key, label }, i) => {
+            const selected = tab === key;
+            return (
+              <button
+                key={key}
+                ref={(el) => {
+                  tabRefs.current[i] = el;
+                }}
+                role="tab"
+                type="button"
+                id={`${baseId}-tab-${key}`}
+                aria-selected={selected}
+                aria-controls={`${baseId}-panel-${key}`}
+                tabIndex={selected ? 0 : -1}
+                onClick={() => setTab(key)}
+                onKeyDown={(e) => onTabKey(e, i)}
+                className={`relative -mb-px cursor-pointer px-4 py-3 text-[14px] font-medium whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 ${
+                  selected ? "text-white" : "text-muted hover:text-white"
+                }`}
+              >
+                {label}
+                <span
+                  aria-hidden
+                  className={`absolute inset-x-0 -bottom-px h-[2px] origin-center rounded-full bg-accent transition-transform duration-300 ease-out ${
+                    selected ? "scale-x-100" : "scale-x-0"
+                  }`}
                 />
-              </Field>
-              <Field label="Button link" hint="optional">
-                <input
-                  className={inputCls}
-                  value={fields.ctaUrl}
-                  onChange={set("ctaUrl")}
-                  placeholder="https://look.ind.in/shop"
-                />
-              </Field>
-            </div>
-            <div className="grid gap-5 sm:grid-cols-2">
-              <Field label="Hero image URL" hint="optional">
-                <input
-                  className={inputCls}
-                  value={fields.imageUrl}
-                  onChange={set("imageUrl")}
-                  placeholder="https://…"
-                />
-              </Field>
-              <Field label="Discount code" hint="optional">
-                <input
-                  className={inputCls}
-                  value={fields.discountCode}
-                  onChange={set("discountCode")}
-                  placeholder="WEEKEND20"
-                />
-              </Field>
-            </div>
-          </div>
-        </section>
+              </button>
+            );
+          })}
+        </div>
 
-        {/* 02 · Preview */}
-        <section className={`mt-6 ${cardCls}`}>
-          <StepHeader n="02" title="Preview" desc="See exactly what lands in the inbox." />
-          <button onClick={doPreview} disabled={!ready || busy !== null} className={secondaryBtn}>
-            {busy === "preview" ? "Rendering…" : previewHtml ? "Refresh preview" : "Render preview"}
-          </button>
-          {previewHtml && (
-            <iframe
-              /* Sandboxed with no allow-* tokens: the email is static, this just
-                 denies it scripts/forms/same-origin as defence-in-depth. */
-              sandbox=""
-              srcDoc={previewHtml}
-              title="Email preview"
-              className="mt-5 h-[560px] w-full rounded-card border border-line bg-white"
+        {/* Active panel — re-keyed so it fades/rises in on tab change */}
+        <div
+          key={tab}
+          role="tabpanel"
+          id={`${baseId}-panel-${tab}`}
+          aria-labelledby={`${baseId}-tab-${tab}`}
+          tabIndex={0}
+          className="animate-tab-panel mt-8 focus-visible:outline-none"
+        >
+          {tab === "campaign" && (
+            <>
+              <p className="max-w-[560px] text-[14px] leading-[23px] text-body">
+                Announce a sale, a new drop, or any news to everyone on your newsletter list.
+                Preview the real email and send yourself a test before it goes out. Using a
+                discount code? Create it in Shopify first, then type the same code below so it
+                shows in the email.
+              </p>
+
+              {/* 01 · Compose */}
+              <section className={`mt-6 ${cardCls}`}>
+                <StepHeader
+                  n="01"
+                  title="Compose"
+                  desc="The bones of the email — required fields marked *."
+                />
+                <div className="space-y-5">
+                  <Field label="Subject *">
+                    <input
+                      className={inputCls}
+                      value={fields.subject}
+                      onChange={set("subject")}
+                      placeholder="48 hours only — 20% off"
+                    />
+                  </Field>
+                  <Field label="Heading *">
+                    <input
+                      className={inputCls}
+                      value={fields.heading}
+                      onChange={set("heading")}
+                      placeholder="The weekend sale is on"
+                    />
+                  </Field>
+                  <Field label="Message *" hint="Leave a blank line to start a new paragraph.">
+                    <textarea
+                      className={`${inputCls} h-auto min-h-[140px] resize-y py-3 leading-relaxed`}
+                      value={fields.body}
+                      onChange={set("body")}
+                      placeholder="Write your message…"
+                    />
+                  </Field>
+                  <div className="grid gap-5 sm:grid-cols-2">
+                    <Field label="Button label" hint="optional">
+                      <input
+                        className={inputCls}
+                        value={fields.ctaLabel}
+                        onChange={set("ctaLabel")}
+                        placeholder="Shop the sale"
+                      />
+                    </Field>
+                    <Field label="Button link" hint="optional">
+                      <input
+                        className={inputCls}
+                        value={fields.ctaUrl}
+                        onChange={set("ctaUrl")}
+                        placeholder="https://look.ind.in/shop"
+                      />
+                    </Field>
+                  </div>
+                  <div className="grid gap-5 sm:grid-cols-2">
+                    <Field label="Hero image URL" hint="optional">
+                      <input
+                        className={inputCls}
+                        value={fields.imageUrl}
+                        onChange={set("imageUrl")}
+                        placeholder="https://…"
+                      />
+                    </Field>
+                    <Field label="Discount code" hint="optional">
+                      <input
+                        className={inputCls}
+                        value={fields.discountCode}
+                        onChange={set("discountCode")}
+                        placeholder="WEEKEND20"
+                      />
+                    </Field>
+                  </div>
+                </div>
+              </section>
+
+              {/* 02 · Preview */}
+              <section className={`mt-6 ${cardCls}`}>
+                <StepHeader n="02" title="Preview" desc="See exactly what lands in the inbox." />
+                <button
+                  onClick={doPreview}
+                  disabled={!ready || busy !== null}
+                  className={secondaryBtn}
+                >
+                  {busy === "preview"
+                    ? "Rendering…"
+                    : previewHtml
+                      ? "Refresh preview"
+                      : "Render preview"}
+                </button>
+                {previewHtml && (
+                  <iframe
+                    /* Sandboxed with no allow-* tokens: the email is static, this just
+                       denies it scripts/forms/same-origin as defence-in-depth. */
+                    sandbox=""
+                    srcDoc={previewHtml}
+                    title="Email preview"
+                    className="mt-5 h-[560px] w-full rounded-card border border-line bg-white"
+                  />
+                )}
+              </section>
+
+              {/* 03 · Send */}
+              <section className={`mt-6 ${cardCls}`}>
+                <StepHeader
+                  n="03"
+                  title="Send"
+                  desc="Your password is required for every send — test or live."
+                />
+
+                <label className="mb-1.5 block text-[13px] font-medium text-body" htmlFor="stepup">
+                  Admin password
+                </label>
+                <input
+                  id="stepup"
+                  type="password"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className={inputCls}
+                />
+
+                <div className="mt-5">
+                  <label
+                    className="mb-1.5 block text-[13px] font-medium text-body"
+                    htmlFor="test-email"
+                  >
+                    Send yourself a test
+                  </label>
+                  <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+                    <input
+                      id="test-email"
+                      type="email"
+                      value={testEmail}
+                      onChange={(e) => setTestEmail(e.target.value)}
+                      placeholder="you@look.ind.in"
+                      className={inputCls}
+                    />
+                    <button onClick={doTest} disabled={busy !== null} className={secondaryBtn}>
+                      {busy === "test" ? "Sending…" : "Send test"}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mt-6 border-t border-line pt-6">
+                  {!confirmSend ? (
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                      <button
+                        onClick={doSend}
+                        disabled={!ready || busy !== null}
+                        className={dangerBtn}
+                      >
+                        Send to all subscribers
+                      </button>
+                      <span className="text-[12px] text-faint">This emails your entire list.</span>
+                    </div>
+                  ) : (
+                    <div className="rounded-btn border border-accent/30 bg-accent-tint-soft/40 p-4">
+                      <p className="text-[13px] font-medium text-white">Send to everyone now?</p>
+                      <p className="mt-0.5 text-[12px] text-sale">
+                        This emails your entire subscriber list and can't be undone.
+                      </p>
+                      <div className="mt-3 flex flex-wrap items-center gap-3">
+                        <button onClick={doSend} disabled={busy !== null} className={dangerBtn}>
+                          {busy === "send" ? "Sending…" : "Yes — send now"}
+                        </button>
+                        <button
+                          onClick={() => setConfirmSend(false)}
+                          disabled={busy !== null}
+                          className="text-[13px] text-muted transition-colors hover:text-white"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </section>
+            </>
+          )}
+
+          {tab === "orders" && (
+            <GuideTab
+              eyebrow="Order confirmation"
+              title="Sent automatically by Shopify"
+              badge={{ tone: "auto", label: "Automatic" }}
+              lead="When a customer pays, Shopify creates the order and emails them the confirmation with their order number and receipt. This happens on its own — you don't send anything here."
+              steps={[
+                "A shopper checks out and pays. Checkout is hosted by Shopify.",
+                "Shopify emails them the order confirmation straight away.",
+                "As you fulfil the order, Shopify also sends the shipping and delivery updates.",
+              ]}
+              note="Want to change the wording or add your logo? Edit these emails in Shopify under Settings → Notifications. Nothing on this page changes them."
+              link={{ label: "Open Shopify notifications", href: `${SHOP_ADMIN}/settings/notifications` }}
             />
           )}
-        </section>
 
-        {/* 03 · Send */}
-        <section className={`mt-6 ${cardCls}`}>
-          <StepHeader
-            n="03"
-            title="Send"
-            desc="Your password is required for every send — test or live."
-          />
+          {tab === "abandoned" && (
+            <GuideTab
+              eyebrow="Cart reminders"
+              title="Turn it on in Shopify, once"
+              badge={{ tone: "action", label: "One-time setup" }}
+              lead="Shopify can remind shoppers who started checkout but didn't finish. Set it up once and it runs on its own after that — including a reminder after 1 hour and again after 24 hours."
+              steps={[
+                "In Shopify, open Marketing → Automations.",
+                "Turn on the “Abandoned checkout” automation.",
+                "Add two reminders: one an hour after they leave, and one after 24 hours.",
+              ]}
+              note="This only reaches people who reached checkout and entered their email. Someone who adds to cart and closes the tab never gives us an address, so no reminder can be sent to them — that's true on every store, not just LOOK."
+              link={{ label: "Open Shopify automations", href: `${SHOP_ADMIN}/marketing/automations` }}
+            />
+          )}
 
-          <label className="mb-1.5 block text-[13px] font-medium text-body" htmlFor="stepup">
-            Admin password
-          </label>
-          <input
-            id="stepup"
-            type="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className={inputCls}
-          />
-
-          <div className="mt-5">
-            <label className="mb-1.5 block text-[13px] font-medium text-body" htmlFor="test-email">
-              Send yourself a test
-            </label>
-            <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
-              <input
-                id="test-email"
-                type="email"
-                value={testEmail}
-                onChange={(e) => setTestEmail(e.target.value)}
-                placeholder="you@look.ind.in"
-                className={inputCls}
-              />
-              <button onClick={doTest} disabled={busy !== null} className={secondaryBtn}>
-                {busy === "test" ? "Sending…" : "Send test"}
-              </button>
-            </div>
-          </div>
-
-          <div className="mt-6 border-t border-line pt-6">
-            {!confirmSend ? (
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                <button onClick={doSend} disabled={!ready || busy !== null} className={dangerBtn}>
-                  Send to all subscribers
-                </button>
-                <span className="text-[12px] text-faint">This emails your entire list.</span>
-              </div>
-            ) : (
-              <div className="rounded-btn border border-accent/30 bg-accent-tint-soft/40 p-4">
-                <p className="text-[13px] font-medium text-white">Send to everyone now?</p>
-                <p className="mt-0.5 text-[12px] text-sale">
-                  This emails your entire subscriber list and can't be undone.
-                </p>
-                <div className="mt-3 flex flex-wrap items-center gap-3">
-                  <button onClick={doSend} disabled={busy !== null} className={dangerBtn}>
-                    {busy === "send" ? "Sending…" : "Yes — send now"}
-                  </button>
-                  <button
-                    onClick={() => setConfirmSend(false)}
-                    disabled={busy !== null}
-                    className="text-[13px] text-muted transition-colors hover:text-white"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </section>
+          {tab === "arrivals" && (
+            <GuideTab
+              eyebrow="New arrivals digest"
+              title="One email each morning, automatically"
+              badge={{ tone: "auto", label: "Automatic" }}
+              lead="Every day at 10:30 AM, LOOK emails your community any products you've published in the last 30 days. You never tag anything as “new” — publishing the product is the only trigger."
+              steps={[
+                "Add the product in Shopify and set it Active, available on the Online Store.",
+                "The next morning's email includes it automatically, newest first.",
+                "Once it goes out, the product is marked so it's never emailed twice.",
+              ]}
+              note="To send a product again, remove its “drop-announced” tag in Shopify. To keep one out of the email, add that tag by hand before 10:30 AM."
+              link={{ label: "Open Shopify products", href: `${SHOP_ADMIN}/products` }}
+            />
+          )}
+        </div>
 
         <footer className="mt-10 flex items-center gap-2 border-t border-line pt-6 text-[12px] text-faint">
           <span className="inline-block size-1.5 rounded-full bg-accent" aria-hidden />
