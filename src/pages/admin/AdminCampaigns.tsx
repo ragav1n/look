@@ -4,11 +4,12 @@
  * list. Unlinked from the storefront and robots-disallowed; the real protection
  * is the server-side session + per-send password step-up (see api/admin/*).
  *
- * Note: only works against the BFF (`npm run dev:bff` or a deploy) — plain
+ * Note: only works against the BFF (`npm run dev:local` or a deploy) — plain
  * `npm run dev` serves no /api routes, so the session check fails and you'll see
  * the login screen with no way through. That's expected.
  */
 import { useEffect, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
+import consolePhoto from "@/assets/about-pearl-lace.jpg";
 import logoWhite from "@/assets/look-logo-white.png";
 import { useToast } from "@/context/ToastContext";
 import {
@@ -22,11 +23,16 @@ import {
 } from "@/lib/admin";
 
 const inputCls =
-  "h-[46px] w-full rounded-btn border border-line bg-surface px-4 text-[14px] text-white outline-none transition-colors focus:border-accent";
+  "h-[46px] w-full rounded-btn border border-line bg-surface px-4 text-[14px] text-white placeholder:text-faint outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent/15";
 const secondaryBtn =
-  "h-[46px] cursor-pointer rounded-btn border border-line px-6 text-[14px] font-medium text-body transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-50";
+  "inline-flex h-[46px] cursor-pointer items-center justify-center rounded-btn border border-line px-6 text-[14px] font-medium text-body transition-colors hover:border-line-strong hover:text-white disabled:cursor-not-allowed disabled:opacity-50";
 const dangerBtn =
-  "h-[46px] cursor-pointer rounded-btn bg-accent px-6 text-[14px] font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50";
+  "inline-flex h-[46px] cursor-pointer items-center justify-center rounded-btn bg-accent px-6 text-[14px] font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50";
+
+/** Small red small-caps label used across the storefront's sections. */
+function Eyebrow({ children }: { children: ReactNode }) {
+  return <p className="text-[11px] tracking-[0.18em] text-accent uppercase">{children}</p>;
+}
 
 const emptyFields: CampaignFields = {
   subject: "",
@@ -65,23 +71,18 @@ export default function AdminCampaigns() {
 
   if (authed === null) {
     return (
-      <Shell>
-        <p className="text-[14px] text-muted">Checking session…</p>
-      </Shell>
+      <div className="flex min-h-screen items-center justify-center bg-page px-6">
+        <div className="flex animate-pulse items-center gap-3 text-muted">
+          <img src={logoWhite} alt="" className="h-6 w-auto object-contain opacity-70" />
+          <span className="text-[13px]">Checking session…</span>
+        </div>
+      </div>
     );
   }
   return authed ? (
     <Console onSignedOut={() => setAuthed(false)} />
   ) : (
     <LoginForm onAuthed={() => setAuthed(true)} />
-  );
-}
-
-function Shell({ children, wide }: { children: ReactNode; wide?: boolean }) {
-  return (
-    <div className="min-h-screen bg-page px-6 py-14 text-white">
-      <div className={`mx-auto w-full ${wide ? "max-w-[720px]" : "max-w-[400px]"}`}>{children}</div>
-    </div>
   );
 }
 
@@ -102,32 +103,80 @@ function LoginForm({ onAuthed }: { onAuthed: () => void }) {
   }
 
   return (
-    <Shell>
-      <img src={logoWhite} alt="LOOK" className="h-8 w-auto object-contain" />
-      <h1 className="mt-8 font-display text-[26px] font-medium">Campaigns</h1>
-      <p className="mt-1 text-[14px] text-muted">Owner access only.</p>
-      <form onSubmit={submit} className="mt-7">
-        <label className="mb-1.5 block text-[13px] font-medium text-body" htmlFor="admin-password">
-          Admin password
-        </label>
-        <input
-          id="admin-password"
-          type="password"
-          autoComplete="current-password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className={inputCls}
-          autoFocus
+    <div className="grid min-h-screen grid-cols-1 bg-page lg:grid-cols-2">
+      {/* Editorial panel — mirrors the customer auth split so the console reads as
+          part of LOOK, but with its own image + owner-facing script line. */}
+      <div className="relative hidden overflow-hidden lg:block">
+        <img
+          src={consolePhoto}
+          alt=""
+          className="animate-auth-image absolute inset-0 h-full w-full object-cover object-top"
         />
-        <button
-          type="submit"
-          disabled={busy || !password}
-          className="mt-4 h-[48px] w-full cursor-pointer rounded-btn bg-white text-[15px] font-medium text-black transition-opacity hover:opacity-85 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {busy ? "Signing in…" : "Sign in"}
-        </button>
-      </form>
-    </Shell>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/10" />
+        <div className="absolute top-11 left-12 flex items-center gap-3">
+          <img src={logoWhite} alt="LOOK" className="h-6 w-auto object-contain" />
+          <span className="text-[11px] tracking-[0.24em] text-white/55 uppercase">Console</span>
+        </div>
+        <div className="absolute bottom-12 left-12 max-w-[400px] text-white">
+          <Eyebrow>Owner access</Eyebrow>
+          <p className="mt-3 font-script text-[46px] leading-[1.1] text-white">
+            Speak to every subscriber
+          </p>
+          <p className="mt-3 text-[15px] leading-[24px] text-white/80">
+            Compose, preview, and send campaigns to the LOOK community — all from one quiet room.
+          </p>
+        </div>
+      </div>
+
+      {/* Form panel */}
+      <div className="relative flex items-center justify-center px-6 py-12">
+        <span className="animate-glow pointer-events-none absolute top-10 right-8 size-56 rounded-full bg-accent/15 blur-3xl" />
+        <span
+          className="animate-glow pointer-events-none absolute bottom-12 left-6 size-44 rounded-full bg-accent/10 blur-3xl"
+          style={{ animationDelay: "2s" }}
+        />
+        <div className="animate-auth-panel relative w-full max-w-[380px]">
+          <img src={logoWhite} alt="LOOK" className="h-8 w-auto object-contain lg:hidden" />
+          <div className="mt-8 lg:mt-0">
+            <Eyebrow>Owner console</Eyebrow>
+          </div>
+          <h1 className="mt-2 font-display text-[30px] leading-[1.1] font-medium text-white">
+            Campaigns
+          </h1>
+          <p className="mt-2 text-[14px] leading-[22px] text-muted">
+            Sign in to compose and broadcast to your newsletter subscribers.
+          </p>
+          <form onSubmit={submit} className="mt-8">
+            <label
+              className="mb-1.5 block text-[13px] font-medium text-body"
+              htmlFor="admin-password"
+            >
+              Admin password
+            </label>
+            <input
+              id="admin-password"
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className={inputCls}
+              autoFocus
+            />
+            <button
+              type="submit"
+              disabled={busy || !password}
+              className="mt-4 h-[48px] w-full cursor-pointer rounded-btn bg-white text-[15px] font-medium text-black transition-opacity hover:opacity-85 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {busy ? "Signing in…" : "Sign in"}
+            </button>
+          </form>
+          <p className="mt-6 flex items-center gap-2 text-[12px] text-faint">
+            <span className="inline-block size-1.5 rounded-full bg-accent" aria-hidden />
+            Unlisted &amp; password-protected — every send re-checks this password.
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -142,6 +191,23 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
     </div>
   );
 }
+
+/** Numbered, editorial step header — the console reads as Compose → Preview → Send. */
+function StepHeader({ n, title, desc }: { n: string; title: string; desc?: string }) {
+  return (
+    <div className="mb-6 flex items-start gap-3.5">
+      <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full border border-accent/45 text-[12px] font-medium text-accent">
+        {n}
+      </span>
+      <div>
+        <h2 className="font-display text-[19px] leading-tight font-medium text-white">{title}</h2>
+        {desc && <p className="mt-1 text-[13px] leading-[19px] text-muted">{desc}</p>}
+      </div>
+    </div>
+  );
+}
+
+const cardCls = "rounded-card border border-line bg-white/[0.02] p-6 sm:p-7";
 
 type Busy = null | "preview" | "test" | "send";
 
@@ -179,7 +245,9 @@ function Console({ onSignedOut }: { onSignedOut: () => void }) {
     setBusy(null);
     if (r.ok) {
       push(
-        r.simulated ? "Test simulated (no email key configured)." : `Test sent to ${testEmail.trim()}.`,
+        r.simulated
+          ? "Test simulated (no email key configured)."
+          : `Test sent to ${testEmail.trim()}.`,
         "success",
       );
     } else {
@@ -220,78 +288,130 @@ function Console({ onSignedOut }: { onSignedOut: () => void }) {
   }
 
   return (
-    <Shell wide>
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <img src={logoWhite} alt="LOOK" className="h-7 w-auto object-contain" />
-          <h1 className="mt-6 font-display text-[26px] font-medium">Send a campaign</h1>
-          <p className="mt-1 text-[14px] text-muted">
-            Reaches every newsletter subscriber. Preview and send yourself a test first.
-          </p>
-        </div>
-        <button onClick={signOut} className="shrink-0 text-[13px] text-muted hover:text-white">
-          Sign out
-        </button>
-      </div>
+    <div className="min-h-screen bg-page px-6 py-8 text-white sm:py-12">
+      <div className="animate-page-in mx-auto w-full max-w-[760px]">
+        {/* Top bar */}
+        <header className="flex items-center justify-between gap-4 border-b border-line pb-6">
+          <div className="flex items-center gap-3">
+            <img src={logoWhite} alt="LOOK" className="h-7 w-auto object-contain" />
+            <span className="text-[11px] tracking-[0.24em] text-faint uppercase">Console</span>
+          </div>
+          <button
+            onClick={signOut}
+            className="text-[13px] text-muted transition-colors hover:text-white"
+          >
+            Sign out
+          </button>
+        </header>
 
-      <div className="mt-8 space-y-5">
-        <Field label="Subject *">
-          <input className={inputCls} value={fields.subject} onChange={set("subject")} placeholder="48 hours only — 20% off" />
-        </Field>
-        <Field label="Heading *">
-          <input className={inputCls} value={fields.heading} onChange={set("heading")} placeholder="The weekend sale is on" />
-        </Field>
-        <Field label="Message *" hint="Leave a blank line to start a new paragraph.">
-          <textarea
-            className={`${inputCls} h-auto min-h-[140px] resize-y py-3 leading-relaxed`}
-            value={fields.body}
-            onChange={set("body")}
-            placeholder="Write your message…"
+        {/* Heading with a soft signature glow */}
+        <div className="relative mt-10">
+          <span className="animate-glow pointer-events-none absolute -top-10 -left-8 size-52 rounded-full bg-accent/12 blur-3xl" />
+          <div className="relative">
+            <Eyebrow>Broadcast</Eyebrow>
+            <h1 className="mt-2 font-display text-[32px] leading-[1.1] font-medium text-white">
+              Send a campaign
+            </h1>
+            <p className="mt-2 max-w-[520px] text-[14px] leading-[22px] text-muted">
+              Reaches every newsletter subscriber. Compose it, preview the real email, and send
+              yourself a test before it goes out.
+            </p>
+          </div>
+        </div>
+
+        {/* 01 · Compose */}
+        <section className={`mt-8 ${cardCls}`}>
+          <StepHeader n="01" title="Compose" desc="The bones of the email — required fields marked *." />
+          <div className="space-y-5">
+            <Field label="Subject *">
+              <input
+                className={inputCls}
+                value={fields.subject}
+                onChange={set("subject")}
+                placeholder="48 hours only — 20% off"
+              />
+            </Field>
+            <Field label="Heading *">
+              <input
+                className={inputCls}
+                value={fields.heading}
+                onChange={set("heading")}
+                placeholder="The weekend sale is on"
+              />
+            </Field>
+            <Field label="Message *" hint="Leave a blank line to start a new paragraph.">
+              <textarea
+                className={`${inputCls} h-auto min-h-[140px] resize-y py-3 leading-relaxed`}
+                value={fields.body}
+                onChange={set("body")}
+                placeholder="Write your message…"
+              />
+            </Field>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <Field label="Button label" hint="optional">
+                <input
+                  className={inputCls}
+                  value={fields.ctaLabel}
+                  onChange={set("ctaLabel")}
+                  placeholder="Shop the sale"
+                />
+              </Field>
+              <Field label="Button link" hint="optional">
+                <input
+                  className={inputCls}
+                  value={fields.ctaUrl}
+                  onChange={set("ctaUrl")}
+                  placeholder="https://look.ind.in/shop"
+                />
+              </Field>
+            </div>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <Field label="Hero image URL" hint="optional">
+                <input
+                  className={inputCls}
+                  value={fields.imageUrl}
+                  onChange={set("imageUrl")}
+                  placeholder="https://…"
+                />
+              </Field>
+              <Field label="Discount code" hint="optional">
+                <input
+                  className={inputCls}
+                  value={fields.discountCode}
+                  onChange={set("discountCode")}
+                  placeholder="WEEKEND20"
+                />
+              </Field>
+            </div>
+          </div>
+        </section>
+
+        {/* 02 · Preview */}
+        <section className={`mt-6 ${cardCls}`}>
+          <StepHeader n="02" title="Preview" desc="See exactly what lands in the inbox." />
+          <button onClick={doPreview} disabled={!ready || busy !== null} className={secondaryBtn}>
+            {busy === "preview" ? "Rendering…" : previewHtml ? "Refresh preview" : "Render preview"}
+          </button>
+          {previewHtml && (
+            <iframe
+              /* Sandboxed with no allow-* tokens: the email is static, this just
+                 denies it scripts/forms/same-origin as defence-in-depth. */
+              sandbox=""
+              srcDoc={previewHtml}
+              title="Email preview"
+              className="mt-5 h-[560px] w-full rounded-card border border-line bg-white"
+            />
+          )}
+        </section>
+
+        {/* 03 · Send */}
+        <section className={`mt-6 ${cardCls}`}>
+          <StepHeader
+            n="03"
+            title="Send"
+            desc="Your password is required for every send — test or live."
           />
-        </Field>
-        <div className="grid gap-5 sm:grid-cols-2">
-          <Field label="Button label" hint="optional">
-            <input className={inputCls} value={fields.ctaLabel} onChange={set("ctaLabel")} placeholder="Shop the sale" />
-          </Field>
-          <Field label="Button link" hint="optional">
-            <input className={inputCls} value={fields.ctaUrl} onChange={set("ctaUrl")} placeholder="https://look.ind.in/shop" />
-          </Field>
-        </div>
-        <div className="grid gap-5 sm:grid-cols-2">
-          <Field label="Hero image URL" hint="optional">
-            <input className={inputCls} value={fields.imageUrl} onChange={set("imageUrl")} placeholder="https://…" />
-          </Field>
-          <Field label="Discount code" hint="optional">
-            <input className={inputCls} value={fields.discountCode} onChange={set("discountCode")} placeholder="WEEKEND20" />
-          </Field>
-        </div>
-      </div>
 
-      <div className="mt-6">
-        <button onClick={doPreview} disabled={!ready || busy !== null} className={secondaryBtn}>
-          {busy === "preview" ? "Rendering…" : "Preview"}
-        </button>
-      </div>
-
-      {previewHtml && (
-        <div className="mt-6">
-          <p className="mb-1.5 text-[13px] font-medium text-body">Preview</p>
-          <iframe
-            /* Sandboxed with no allow-* tokens: the email is static, this just
-               denies it scripts/forms/same-origin as defence-in-depth. */
-            sandbox=""
-            srcDoc={previewHtml}
-            title="Email preview"
-            className="h-[560px] w-full rounded-card border border-line bg-white"
-          />
-        </div>
-      )}
-
-      <div className="mt-8 rounded-card border border-line p-5">
-        <p className="text-[14px] font-medium text-white">Send</p>
-        <p className="mt-1 text-[13px] text-muted">Your password is required for every send — test or live.</p>
-
-        <div className="mt-4">
           <label className="mb-1.5 block text-[13px] font-medium text-body" htmlFor="stepup">
             Admin password
           </label>
@@ -303,43 +423,62 @@ function Console({ onSignedOut }: { onSignedOut: () => void }) {
             onChange={(e) => setPassword(e.target.value)}
             className={inputCls}
           />
-        </div>
 
-        <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto]">
-          <input
-            type="email"
-            value={testEmail}
-            onChange={(e) => setTestEmail(e.target.value)}
-            placeholder="you@look.ind.in"
-            className={inputCls}
-          />
-          <button onClick={doTest} disabled={busy !== null} className={secondaryBtn}>
-            {busy === "test" ? "Sending…" : "Send test"}
-          </button>
-        </div>
-
-        <div className="mt-5 border-t border-line pt-5">
-          {!confirmSend ? (
-            <button onClick={doSend} disabled={!ready || busy !== null} className={dangerBtn}>
-              Send to all subscribers
-            </button>
-          ) : (
-            <div className="flex flex-wrap items-center gap-3">
-              <button onClick={doSend} disabled={busy !== null} className={dangerBtn}>
-                {busy === "send" ? "Sending…" : "Yes — send to everyone now"}
+          <div className="mt-5">
+            <label className="mb-1.5 block text-[13px] font-medium text-body" htmlFor="test-email">
+              Send yourself a test
+            </label>
+            <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+              <input
+                id="test-email"
+                type="email"
+                value={testEmail}
+                onChange={(e) => setTestEmail(e.target.value)}
+                placeholder="you@look.ind.in"
+                className={inputCls}
+              />
+              <button onClick={doTest} disabled={busy !== null} className={secondaryBtn}>
+                {busy === "test" ? "Sending…" : "Send test"}
               </button>
-              <button
-                onClick={() => setConfirmSend(false)}
-                disabled={busy !== null}
-                className="text-[13px] text-muted hover:text-white"
-              >
-                Cancel
-              </button>
-              <span className="text-[13px] text-sale">This emails your entire subscriber list.</span>
             </div>
-          )}
-        </div>
+          </div>
+
+          <div className="mt-6 border-t border-line pt-6">
+            {!confirmSend ? (
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                <button onClick={doSend} disabled={!ready || busy !== null} className={dangerBtn}>
+                  Send to all subscribers
+                </button>
+                <span className="text-[12px] text-faint">This emails your entire list.</span>
+              </div>
+            ) : (
+              <div className="rounded-btn border border-accent/30 bg-accent-tint-soft/40 p-4">
+                <p className="text-[13px] font-medium text-white">Send to everyone now?</p>
+                <p className="mt-0.5 text-[12px] text-sale">
+                  This emails your entire subscriber list and can't be undone.
+                </p>
+                <div className="mt-3 flex flex-wrap items-center gap-3">
+                  <button onClick={doSend} disabled={busy !== null} className={dangerBtn}>
+                    {busy === "send" ? "Sending…" : "Yes — send now"}
+                  </button>
+                  <button
+                    onClick={() => setConfirmSend(false)}
+                    disabled={busy !== null}
+                    className="text-[13px] text-muted transition-colors hover:text-white"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+
+        <footer className="mt-10 flex items-center gap-2 border-t border-line pt-6 text-[12px] text-faint">
+          <span className="inline-block size-1.5 rounded-full bg-accent" aria-hidden />
+          LOOK · Owner console — unlisted &amp; password-protected.
+        </footer>
       </div>
-    </Shell>
+    </div>
   );
 }
