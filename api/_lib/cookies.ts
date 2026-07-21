@@ -17,10 +17,15 @@ export const COOKIE = {
   accessExp: "look_at_exp",
   refresh: "look_rt",
   idToken: "look_idt",
+  admin: "look_admin", // campaign-console owner session (see _lib/admin.ts)
 } as const;
 
 const API_PATH = "/api";
 const TX_MAX_AGE = 600; // 10 min — the OAuth round-trip should take seconds
+/** Admin console session lifetime. Kept short because a stateless signed cookie
+ *  can't be revoked individually — to force logout everywhere, rotate
+ *  COOKIE_SECRET or ADMIN_PASSWORD (both invalidate every live cookie). */
+const ADMIN_MAX_AGE = 8 * 60 * 60; // 8h
 
 interface CookieOpts {
   maxAge?: number;
@@ -119,4 +124,46 @@ export function readAccessExpiry(req: VercelRequest): number {
   const raw = req.cookies?.[COOKIE.accessExp];
   const n = raw ? Number(raw) : NaN;
   return Number.isFinite(n) ? n : 0;
+}
+
+/* --- Admin console session ------------------------------------------------
+   Stateless, like the transient OAuth cookie: a signed `{exp}` payload whose
+   HMAC signature IS the proof of a prior successful password login. There is one
+   shared owner password (ADMIN_PASSWORD) and no session store — see _lib/admin.ts.
+   SameSite=Strict: this cookie never needs to survive a cross-site navigation the
+   way the Lax OAuth cookie does, so we take the stricter setting. */
+
+/** Mint an admin session cookie after a verified password login. */
+export function setAdminCookie(res: VercelResponse): void {
+  const exp = Date.now() + ADMIN_MAX_AGE * 1000;
+  const payload = b64url(Buffer.from(JSON.stringify({ exp })));
+  append(
+    res,
+    serialize(COOKIE.admin, `${payload}.${sign(payload)}`, {
+      maxAge: ADMIN_MAX_AGE,
+      path: API_PATH,
+      sameSite: "Strict",
+    }),
+  );
+}
+
+/** True when the request carries a validly-signed, unexpired admin session. */
+export function readAdminSession(req: VercelRequest): boolean {
+  const raw = req.cookies?.[COOKIE.admin];
+  if (!raw) return false;
+  const dot = raw.lastIndexOf(".");
+  if (dot < 0) return false;
+  const payload = raw.slice(0, dot);
+  const sig = raw.slice(dot + 1);
+  if (!verify(payload, sig)) return false;
+  try {
+    const { exp } = JSON.parse(Buffer.from(payload, "base64url").toString()) as { exp?: number };
+    return typeof exp === "number" && Date.now() < exp;
+  } catch {
+    return false;
+  }
+}
+
+export function clearAdminCookie(res: VercelResponse): void {
+  append(res, serialize(COOKIE.admin, "", { maxAge: 0, path: API_PATH, sameSite: "Strict" }));
 }
