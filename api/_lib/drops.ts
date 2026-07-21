@@ -43,13 +43,14 @@ export interface DropProduct {
 
 /**
  * Products published within the window that haven't been announced yet, newest
- * first. `first` caps how many are fetched — the email shows only a handful, but
- * we tag every one returned so nothing published in a burst is announced twice.
+ * first. `first` caps how many are fetched; the cron fetches, shows, and tags the
+ * SAME set, so anything beyond the cap stays un-tagged and surfaces on the next run
+ * rather than being announced without ever appearing in an email.
  *
  * The filter uses a NEGATED tag (`-tag:drop-announced`) and a published_at
  * lower bound; both were confirmed against the live store before this shipped.
  */
-export async function getUnannouncedDrops(first = 20): Promise<DropProduct[]> {
+export async function getUnannouncedDrops(first = 24): Promise<DropProduct[]> {
   const since = new Date(Date.now() - NEW_WINDOW_DAYS * 864e5).toISOString();
   const query = `status:active AND published_at:>'${since}' AND -tag:${ANNOUNCED_TAG}`;
 

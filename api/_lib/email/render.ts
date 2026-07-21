@@ -25,10 +25,12 @@ const WIDTH = 600;
    broken image, which is expected. */
 const LOGO_URL = "https://look.ind.in/email-logo.png";
 
-/** Cap on products shown in one drop email. Images are full-width portraits
- *  (~700px tall each), so this is a teaser, not a catalogue — the CTA carries
- *  anyone who wants the rest to /shop. */
-export const MAX_PRODUCTS = 4;
+/** Safety ceiling on products in one drop email. Full-width portraits are heavy,
+ *  but a collection launch should still arrive as ONE email rather than losing
+ *  pieces, so this sits well above any realistic single-day drop. The cron fetches,
+ *  shows, and tags exactly the same set (see api/cron/new-drop.ts), so anything
+ *  beyond this ceiling stays un-tagged and rolls into the next day, never vanishes. */
+export const MAX_PRODUCTS = 24;
 
 export interface EmailProduct {
   title: string;

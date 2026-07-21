@@ -80,13 +80,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   const dry = firstQuery(req.query.dry) === "1";
 
   try {
-    const drops = await getUnannouncedDrops();
+    // Fetch up to the email's ceiling and show every one — a collection launch
+    // arrives as one email instead of losing pieces past the old teaser cap.
+    const drops = await getUnannouncedDrops(MAX_PRODUCTS);
     if (!drops.length) {
       res.status(200).json({ ok: true, drops: 0, sent: 0, message: "no new drops" });
       return;
     }
 
-    const featured = drops.slice(0, MAX_PRODUCTS).map(toEmailProduct);
+    const featured = drops.map(toEmailProduct);
     const subscribers = await listSubscribers();
 
     if (dry) {
@@ -109,7 +111,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     );
     const result = await sendBatch(emails);
 
-    /* Tag once at least one email genuinely went out.
+    /* Tag exactly the products we showed (drops === featured now), once at least
+       one email genuinely went out.
        - `!simulated`: a "simulated" send (admin configured but no RESEND key, as
          on a preview deploy) logs instead of sending. Tagging then would burn
          the drop — the products would read as announced and never actually mail
