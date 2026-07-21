@@ -55,3 +55,39 @@ export async function sendLifecycleEmail(
     return false;
   }
 }
+
+/** Free-form owner campaign (a 24hr sale, a launch teaser). */
+export interface CampaignInput {
+  subject: string;
+  heading: string;
+  /** Body paragraphs, in order. */
+  body: string[];
+  ctaLabel?: string;
+  ctaUrl?: string;
+  imageUrl?: string;
+  discountCode?: string;
+  preheader?: string;
+}
+
+/**
+ * Compose a one-off campaign from copy typed into the admin console. Unlike
+ * composeEmail this takes its copy directly rather than from the fixed
+ * `email_template` metaobject, so it needs no EmailKey — the union stays closed.
+ * renderEmail esc()-escapes every field, so owner-authored copy can't inject into
+ * recipients' inboxes. Each recipient still gets their own signed unsubscribe link
+ * and the List-Unsubscribe headers that keep a bulk send deliverable. Synchronous:
+ * there's no metaobject read to await.
+ */
+export function composeCampaign(to: string, input: CampaignInput): OutgoingEmail {
+  const unsub = unsubscribeUrl(to);
+  const { html, text } = renderEmail({
+    preheader: input.preheader,
+    heading: input.heading,
+    body: input.body,
+    cta: input.ctaLabel && input.ctaUrl ? { label: input.ctaLabel, url: input.ctaUrl } : undefined,
+    imageUrl: input.imageUrl,
+    code: input.discountCode ? { label: "Your code", value: input.discountCode } : undefined,
+    unsubscribeUrl: unsub,
+  });
+  return { to, subject: input.subject, html, text, headers: listUnsubscribeHeaders(unsub) };
+}
