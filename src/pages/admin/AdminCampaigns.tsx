@@ -9,6 +9,7 @@
  * the login screen with no way through. That's expected.
  */
 import { useEffect, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
+import logoWhite from "@/assets/look-logo-white.png";
 import { useToast } from "@/context/ToastContext";
 import {
   adminLogin,
@@ -102,7 +103,8 @@ function LoginForm({ onAuthed }: { onAuthed: () => void }) {
 
   return (
     <Shell>
-      <h1 className="font-display text-[26px] font-medium">LOOK — Campaigns</h1>
+      <img src={logoWhite} alt="LOOK" className="h-8 w-auto object-contain" />
+      <h1 className="mt-8 font-display text-[26px] font-medium">Campaigns</h1>
       <p className="mt-1 text-[14px] text-muted">Owner access only.</p>
       <form onSubmit={submit} className="mt-7">
         <label className="mb-1.5 block text-[13px] font-medium text-body" htmlFor="admin-password">
@@ -221,7 +223,8 @@ function Console({ onSignedOut }: { onSignedOut: () => void }) {
     <Shell wide>
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="font-display text-[26px] font-medium">Send a campaign</h1>
+          <img src={logoWhite} alt="LOOK" className="h-7 w-auto object-contain" />
+          <h1 className="mt-6 font-display text-[26px] font-medium">Send a campaign</h1>
           <p className="mt-1 text-[14px] text-muted">
             Reaches every newsletter subscriber. Preview and send yourself a test first.
           </p>
