@@ -14,3 +14,4 @@ npm-debug.log*
 
 # Playwright MCP artifacts
 .playwright-mcp/
+.vercel
