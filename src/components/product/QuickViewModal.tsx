@@ -140,6 +140,11 @@ export default function QuickViewModal({ product, onClose }: Props) {
                   {formatPrice(product.mrp, product.currencyCode)}
                 </span>
               )}
+              {product.mrp && (
+                <span className="rounded-full bg-sale/15 px-2 py-1 text-[13px] font-medium text-sale">
+                  {Math.round(((product.mrp - product.price) / product.mrp) * 100)}% off
+                </span>
+              )}
             </div>
 
             <p className="text-[15px] leading-[22px] text-body">{product.description}</p>
