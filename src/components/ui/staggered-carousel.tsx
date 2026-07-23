@@ -2,8 +2,9 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 import type { Product } from "@/types";
-import { formatPrice } from "@/lib/format";
+import { formatPrice, discountPercent } from "@/lib/format";
 import Badge from "@/components/ui/Badge";
+import DiscountPill from "@/components/ui/DiscountPill";
 
 /* Staggered infinite product wall — a take on the 21st.dev "staggered carousel".
 
@@ -231,6 +232,7 @@ export default function StaggeredCarousel({
 function StaggeredCard({ product }: { product: Product }) {
   const prod = product.images[0] ?? "";
   const model = product.images[1] ?? prod;
+  const off = discountPercent(product.price, product.mrp);
 
   return (
     <Link
@@ -256,10 +258,16 @@ function StaggeredCard({ product }: { product: Product }) {
           className="absolute inset-0 h-full w-full scale-[1.05] object-cover object-top opacity-0 transition-all duration-700 ease-out group-hover:scale-100 group-hover:opacity-100"
         />
 
-        {product.badge && (
-          <span className="absolute top-3 left-3 z-10">
-            <Badge>{product.badge}</Badge>
-          </span>
+        {/* On sale, the corner pill states the discount; otherwise keep the
+            plain "New"/"Sale" word-badge. */}
+        {off > 0 ? (
+          <DiscountPill percent={off} className="absolute top-3 left-3 z-10" />
+        ) : (
+          product.badge && (
+            <span className="absolute top-3 left-3 z-10">
+              <Badge>{product.badge}</Badge>
+            </span>
+          )
         )}
 
         {/* readability gradient + info */}
