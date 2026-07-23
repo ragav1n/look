@@ -13,7 +13,7 @@
 export const site = {
   name: "LOOK",
   tagline: "Modern Western Essentials",
-  email: "looksupport.in@gmail.com",
+  email: "support@look.ind.in",
   instagram: "https://www.instagram.com/look_.in",
   instagramHandle: "@look_.in",
 } as const;

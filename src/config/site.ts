@@ -3,8 +3,8 @@
 export const site = {
   name: "LOOK",
   tagline: "Modern Western Essentials",
-  email: "looksupport.in@gmail.com",
-  emailHref: "mailto:looksupport.in@gmail.com",
+  email: "support@look.ind.in",
+  emailHref: "mailto:support@look.ind.in",
   phone: "+91 91500 02116",
   phoneHref: "tel:+919150002116",
   // WhatsApp click-to-chat (wa.me needs digits only, incl. country code)
