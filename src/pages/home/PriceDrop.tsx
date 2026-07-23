@@ -1,8 +1,9 @@
 import { Link } from "react-router-dom";
 import { getSaleProducts } from "@/lib/catalog";
-import { formatPrice } from "@/lib/format";
+import { formatPrice, discountPercent } from "@/lib/format";
 import { useAsyncData } from "@/hooks/useAsyncData";
 import Skeleton from "@/components/ui/Skeleton";
+import DiscountPill from "@/components/ui/DiscountPill";
 import Reveal from "@/components/ui/Reveal";
 
 /* Price Drop — data-driven from products Shopify reports on sale
@@ -42,7 +43,7 @@ export default function PriceDrop() {
 
           {!loading &&
             promos.map((p, i) => {
-              const percent = p.mrp ? Math.round(((p.mrp - p.price) / p.mrp) * 100) : 0;
+              const off = discountPercent(p.price, p.mrp);
               return (
                 <Reveal key={p.id} variant="up" delay={i * 90}>
                   <Link
@@ -58,18 +59,14 @@ export default function PriceDrop() {
                         loading="lazy"
                         className="aspect-[3/4] w-full bg-surface object-cover object-top transition-transform duration-700 ease-out group-hover:scale-[1.05]"
                       />
-                      {percent > 0 && (
-                        <span className="absolute top-3 left-3 rounded-full bg-accent px-2.5 py-1 font-ui text-[11px] font-semibold tracking-[0.02em] text-white">
-                          {percent}% OFF
-                        </span>
-                      )}
+                      <DiscountPill percent={off} className="absolute top-3 left-3" />
                     </div>
 
                     <h3 className="mt-3 text-[16px] leading-[22px] font-medium text-white group-hover:text-accent">
                       {p.name}
                     </h3>
                     <div className="mt-1 flex items-center gap-2">
-                      {p.mrp && (
+                      {off > 0 && p.mrp && (
                         <span className="text-[14px] text-muted line-through">
                           {formatPrice(p.mrp, p.currencyCode)}
                         </span>
