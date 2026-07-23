@@ -1,9 +1,10 @@
 import { Link } from "react-router-dom";
 import { Heart } from "lucide-react";
 import type { Product } from "@/types";
-import { formatPrice } from "@/lib/format";
+import { formatPrice, discountPercent } from "@/lib/format";
 import { useWishlist } from "@/context/WishlistContext";
 import Badge from "@/components/ui/Badge";
+import DiscountPill from "@/components/ui/DiscountPill";
 import Skeleton from "@/components/ui/Skeleton";
 
 interface Props {
@@ -17,7 +18,7 @@ export default function ProductCard({ product, onQuickView }: Props) {
   const { has, toggle } = useWishlist();
   const wished = has(product.id);
   // Shopify compare-at price drives the on-sale display: struck MRP + % off.
-  const percentOff = product.mrp ? Math.round(((product.mrp - product.price) / product.mrp) * 100) : 0;
+  const off = discountPercent(product.price, product.mrp);
 
   return (
     <div className="group relative flex flex-col rounded-card bg-card p-[13px] pb-[11px]">
@@ -38,10 +39,8 @@ export default function ProductCard({ product, onQuickView }: Props) {
         </Link>
         {/* On sale, the corner pill states the discount outright; otherwise it
             keeps the plain "New"/badge treatment. */}
-        {percentOff > 0 ? (
-          <span className="absolute top-[14px] left-[16px] inline-flex h-[18px] items-center rounded-btn border border-accent bg-accent px-2.5 font-ui text-[12px] font-medium text-white shadow-xs">
-            {percentOff}% OFF
-          </span>
+        {off > 0 ? (
+          <DiscountPill percent={off} className="absolute top-[14px] left-[16px]" />
         ) : (
           product.badge && (
             <span className="absolute top-[14px] left-[16px]">
@@ -91,7 +90,7 @@ export default function ProductCard({ product, onQuickView }: Props) {
             <p>{product.category}</p>
           </div>
           <div className="flex items-baseline gap-2">
-            {product.mrp && (
+            {off > 0 && product.mrp && (
               <span className="text-[14px] leading-[22px] text-muted line-through">
                 {formatPrice(product.mrp, product.currencyCode)}
               </span>
