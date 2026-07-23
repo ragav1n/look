@@ -12,6 +12,14 @@ export function formatPrice(amount: number, currency: string = DEFAULT_CURRENCY)
 
 export const formatMoney = (m: Money): string => formatPrice(m.amount, m.currencyCode);
 
+/** Rounded % off when there's a genuine markdown (mrp strictly above price),
+ *  else 0. Callers gate display on the result being > 0, which also absorbs
+ *  thin markdowns that round down to 0%. */
+export function discountPercent(price: number, mrp?: number): number {
+  if (!mrp || mrp <= price) return 0;
+  return Math.round(((mrp - price) / mrp) * 100);
+}
+
 /** Space out a stored phone number for display. Shopify holds numbers in E.164
  *  ("+919150002116"), which is correct to send and unreadable to look at.
  *  Anything that isn't a recognisable Indian mobile is returned untouched
