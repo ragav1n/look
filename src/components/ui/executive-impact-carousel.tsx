@@ -2,7 +2,8 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { Product } from "@/types";
-import { formatPrice } from "@/lib/format";
+import { formatPrice, discountPercent } from "@/lib/format";
+import DiscountPill from "@/components/ui/DiscountPill";
 
 /* "Shop the Edit" — a truly infinite horizontal product carousel.
 
@@ -370,6 +371,7 @@ export default function ExecutiveImpactCarousel({ products }: { products: Produc
 function CarouselCard({ product }: { product: Product }) {
   const prod = product.images[0] ?? "";
   const model = product.images[1] ?? prod;
+  const off = discountPercent(product.price, product.mrp);
 
   return (
     <Link
@@ -394,6 +396,8 @@ function CarouselCard({ product }: { product: Product }) {
           aria-hidden
           className="absolute inset-0 h-full w-full scale-[1.05] object-cover object-top opacity-0 transition-all duration-700 ease-out group-hover:scale-100 group-hover:opacity-100"
         />
+
+        <DiscountPill percent={off} className="absolute top-3 left-3 z-10" />
 
         {/* readability gradient + info */}
         <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
