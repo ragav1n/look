@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import type { Product } from "@/types";
-import { formatPrice } from "@/lib/format";
+import { formatPrice, discountPercent } from "@/lib/format";
 import { useCart } from "@/context/CartContext";
 import Modal from "@/components/ui/Modal";
+import DiscountPill from "@/components/ui/DiscountPill";
 import Button from "@/components/ui/Button";
 import RatingStars from "@/components/ui/RatingStars";
 import { ColorSwatches, SizeChips, QuantityStepper } from "./PurchaseControls";
@@ -55,6 +56,7 @@ export default function QuickViewModal({ product, onClose }: Props) {
         ? product.variants.find((v) => v.size === size && (hasColorOpt ? v.color === color : true))
         : undefined;
   const canAdd = Boolean(variant?.availableForSale);
+  const off = product ? discountPercent(product.price, product.mrp) : 0;
 
   const handleAdd = async () => {
     if (!product || !variant) return;
@@ -135,16 +137,12 @@ export default function QuickViewModal({ product, onClose }: Props) {
               <span className="text-[28px] leading-none font-medium text-white">
                 {formatPrice(product.price, product.currencyCode)}
               </span>
-              {product.mrp && (
-                <span className="text-[18px] leading-none text-body line-through">
+              {off > 0 && product.mrp && (
+                <span className="text-[18px] leading-none text-muted line-through">
                   {formatPrice(product.mrp, product.currencyCode)}
                 </span>
               )}
-              {product.mrp && (
-                <span className="rounded-full bg-sale/15 px-2 py-1 text-[13px] font-medium text-sale">
-                  {Math.round(((product.mrp - product.price) / product.mrp) * 100)}% off
-                </span>
-              )}
+              <DiscountPill percent={off} variant="inline" />
             </div>
 
             <p className="text-[15px] leading-[22px] text-body">{product.description}</p>
