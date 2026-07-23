@@ -16,6 +16,8 @@ interface Props {
 export default function ProductCard({ product, onQuickView }: Props) {
   const { has, toggle } = useWishlist();
   const wished = has(product.id);
+  // Shopify compare-at price drives the on-sale display: struck MRP + % off.
+  const percentOff = product.mrp ? Math.round(((product.mrp - product.price) / product.mrp) * 100) : 0;
 
   return (
     <div className="group relative flex flex-col rounded-card bg-card p-[13px] pb-[11px]">
@@ -34,10 +36,18 @@ export default function ProductCard({ product, onQuickView }: Props) {
             <div className="aspect-[294/348] w-full rounded-img bg-surface" />
           )}
         </Link>
-        {product.badge && (
-          <span className="absolute top-[14px] left-[16px]">
-            <Badge>{product.badge}</Badge>
+        {/* On sale, the corner pill states the discount outright; otherwise it
+            keeps the plain "New"/badge treatment. */}
+        {percentOff > 0 ? (
+          <span className="absolute top-[14px] left-[16px] inline-flex h-[18px] items-center rounded-btn border border-accent bg-accent px-2.5 font-ui text-[12px] font-medium text-white shadow-xs">
+            {percentOff}% OFF
           </span>
+        ) : (
+          product.badge && (
+            <span className="absolute top-[14px] left-[16px]">
+              <Badge>{product.badge}</Badge>
+            </span>
+          )
         )}
         {onQuickView && (
           <button
@@ -80,9 +90,16 @@ export default function ProductCard({ product, onQuickView }: Props) {
           <div className="text-[14px] leading-[22px] text-body">
             <p>{product.category}</p>
           </div>
-          <p className="text-[18px] leading-[22px] font-medium text-accent">
-            {formatPrice(product.price, product.currencyCode)}
-          </p>
+          <div className="flex items-baseline gap-2">
+            {product.mrp && (
+              <span className="text-[14px] leading-[22px] text-muted line-through">
+                {formatPrice(product.mrp, product.currencyCode)}
+              </span>
+            )}
+            <p className="text-[18px] leading-[22px] font-medium text-accent">
+              {formatPrice(product.price, product.currencyCode)}
+            </p>
+          </div>
         </div>
       </div>
     </div>
