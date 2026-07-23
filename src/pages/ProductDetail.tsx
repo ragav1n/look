@@ -3,7 +3,7 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 import { Heart, RefreshCw, ShieldCheck, Users, Ruler, X } from "lucide-react";
 import type { Product } from "@/types";
 import { getProductByHandle, getBestSellers } from "@/lib/catalog";
-import { formatPrice } from "@/lib/format";
+import { formatPrice, discountPercent } from "@/lib/format";
 import { useAsyncData } from "@/hooks/useAsyncData";
 import LoadError from "@/components/ui/LoadError";
 import { useCart } from "@/context/CartContext";
@@ -14,6 +14,7 @@ import ProductCard, { ProductCardSkeleton } from "@/components/product/ProductCa
 import ProductTabs from "@/components/product/ProductTabs";
 import { ColorSwatches, SizeChips, QuantityStepper } from "@/components/product/PurchaseControls";
 import RatingStars from "@/components/ui/RatingStars";
+import DiscountPill from "@/components/ui/DiscountPill";
 import Reveal from "@/components/ui/Reveal";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
@@ -96,7 +97,7 @@ function PdpContent({ product }: { product: Product }) {
       ? variant.compareAtPrice.amount
       : undefined;
   const mrp = variant ? variantMrp : product.mrp;
-  const discount = mrp && mrp > unitPrice ? Math.round(((mrp - unitPrice) / mrp) * 100) : 0;
+  const discount = discountPercent(unitPrice, mrp);
 
   /* Resolves false when the add failed — CartContext has already raised a
      toast, so the only job here is to not show success UI on top of it. */
@@ -172,16 +173,12 @@ function PdpContent({ product }: { product: Product }) {
             <span className="text-[30px] leading-none font-medium text-white">
               {formatPrice(unitPrice, product.currencyCode)}
             </span>
-            {mrp && (
+            {discount > 0 && mrp && (
               <span className="text-[18px] leading-none text-muted line-through">
                 {formatPrice(mrp, product.currencyCode)}
               </span>
             )}
-            {discount > 0 && (
-              <span className="rounded-full bg-sale/15 px-2 py-1 text-[13px] font-medium text-sale">
-                {discount}% off
-              </span>
-            )}
+            <DiscountPill percent={discount} variant="inline" />
           </div>
 
           {product.stockLeft != null && (
