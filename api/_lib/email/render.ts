@@ -18,12 +18,13 @@ const SANS = "'Poppins', 'Helvetica Neue', Helvetica, Arial, sans-serif";
 const SERIF = "'Playfair Display', Georgia, 'Times New Roman', serif";
 const WIDTH = 600;
 
-/* The white wordmark, served from the SPA's public/ dir so it's a stable
-   absolute URL (email can't use bundled or inline-SVG assets). It's white on
-   transparent, which sits right on the email's black background. NOTE: this URL
-   only resolves once the site is deployed — a local send before deploy shows a
-   broken image, which is expected. */
-const LOGO_URL = "https://look.ind.in/email-logo.png";
+/* The ink wordmark — black letterforms + red accent, on transparent — served
+   from the SPA's public/ dir so it's a stable absolute URL (email can't use
+   bundled or inline-SVG assets). It's dark so it reads on the email's light
+   ivory background; the old white variant (email-logo.png) would vanish there.
+   NOTE: this URL only resolves once the site is deployed — a local send before
+   deploy shows a broken image, which is expected. */
+const LOGO_URL = "https://look.ind.in/email-logo-dark.png";
 
 /** Safety ceiling on products in one drop email. Full-width portraits are heavy,
  *  but a collection launch should still arrive as ONE email rather than losing
@@ -143,8 +144,8 @@ export function renderEmail(opts: EmailOptions): RenderedEmail {
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="color-scheme" content="dark light" />
-<meta name="supported-color-schemes" content="dark light" />
+<meta name="color-scheme" content="light" />
+<meta name="supported-color-schemes" content="light" />
 <title>${esc(opts.heading)}</title>
 </head>
 <body style="margin:0;padding:0;background-color:${palette.page};">
