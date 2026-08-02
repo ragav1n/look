@@ -42,6 +42,35 @@ CartContext ──> src/lib/cart.ts ────┬─(env set)──> src/lib/s
 - **Checkout hands off to Shopify.** The cart's `checkoutUrl` (Cart API) is the
   buy button's destination. We do not build a payment flow.
 
+## Domains and the Online Store theme
+
+```
+look.ind.in        A      216.198.79.1          -> Vercel (this storefront)
+www.look.ind.in    CNAME  cname.vercel-dns.com  -> Vercel, 308 to apex
+shop.look.ind.in   CNAME  shops.myshopify.com   -> Shopify, PRIMARY domain
+```
+
+`cart.checkoutUrl` follows Shopify's **primary** domain, so making
+`shop.look.ind.in` primary is what puts checkout on the brand
+(`https://shop.look.ind.in/checkouts/cn/...`). No app code depends on this:
+`VITE_SHOPIFY_STORE_DOMAIN` stays `look-10300.myshopify.com` because Shopify's
+`/api/*` endpoints are exempt from the primary-domain redirect, which also keeps
+the `connect-src` pin in `vercel.json` valid.
+
+**Never point the apex A record at Shopify.** Shopify's "connect your domain"
+onboarding tells you to delete the Vercel record and add `23.227.38.65` — that
+flow assumes Shopify serves your pages and does not understand headless. Doing it
+takes look.ind.in down. If a Shopify DNS setup card asks about the `@` record,
+stop; for a subdomain it should only ever ask for the CNAME.
+
+A side effect of a custom primary domain is that the near-empty Online Store theme
+becomes publicly reachable at `shop.look.ind.in`, and Shopify's own order and
+abandoned-cart emails link customers into it.
+`docs/shopify-theme-redirect.liquid` bounces those theme-rendered pages back to
+this storefront, preserving product/cart/policy paths. Paste it as the first thing
+inside `<head>` in the theme's `layout/theme.liquid`. It cannot affect checkout,
+which is not theme-rendered on the Basic plan.
+
 ## Assumptions to revisit when the real store is connected
 
 These are derived from standard product fields today; adjust the transform

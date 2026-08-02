@@ -1,0 +1,57 @@
+{%- comment -%}
+  LOOK is headless. look.ind.in (Vercel) is the real storefront; this Shopify theme
+  exists only so Shopify can host checkout on shop.look.ind.in, which is the store's
+  primary domain. Two consequences we are fixing here:
+
+    1. Shopify redirects look-10300.myshopify.com -> shop.look.ind.in, so the
+       near-empty default theme is publicly reachable on a branded URL.
+    2. Shopify's own order-confirmation and abandoned-cart emails link to the
+       primary domain, so "continue shopping" lands customers in that bare theme.
+
+  Paste this block as the FIRST thing inside <head> in layout/theme.liquid.
+
+  Why this is safe:
+    - Checkout and the order status page are NOT theme-rendered on the Basic plan,
+      so nothing here can touch the checkout flow.
+    - The Storefront API is not theme-rendered either, so the headless site is
+      completely unaffected.
+    - request.design_mode is true inside the theme editor, so the editor keeps working.
+    - password / captcha / gift_card pages are passed through untouched: redirecting
+      them would lock out a password-protected store or hide a gift card code.
+
+  Path mapping matches src/App.tsx. Shopify product handles are our /shop/:slug
+  values (ProductDetail calls getProductByHandle(slug)), so product links survive.
+{%- endcomment -%}
+
+{%- assign storefront = 'https://look.ind.in' -%}
+{%- assign passthrough = 'password,captcha,gift_card' | split: ',' -%}
+
+{%- unless request.design_mode or passthrough contains request.page_type -%}
+  {%- case request.page_type -%}
+    {%- when 'product' -%}
+      {%- assign target = storefront | append: '/shop/' | append: product.handle -%}
+    {%- when 'cart' -%}
+      {%- assign target = storefront | append: '/cart' -%}
+    {%- when 'collection' or 'list-collections' or 'search' -%}
+      {%- assign target = storefront | append: '/shop' -%}
+    {%- when 'policy' -%}
+      {%- assign slug = request.path | split: '/' | last -%}
+      {%- if slug == 'refund-policy' -%}
+        {%- assign target = storefront | append: '/returns' -%}
+      {%- elsif slug == 'shipping-policy' -%}
+        {%- assign target = storefront | append: '/shipping' -%}
+      {%- elsif slug == 'privacy-policy' -%}
+        {%- assign target = storefront | append: '/privacy' -%}
+      {%- elsif slug == 'terms-of-service' -%}
+        {%- assign target = storefront | append: '/terms' -%}
+      {%- else -%}
+        {%- assign target = storefront | append: '/' -%}
+      {%- endif -%}
+    {%- else -%}
+      {%- assign target = storefront | append: '/' -%}
+  {%- endcase -%}
+
+  <meta name="robots" content="noindex, nofollow">
+  <meta http-equiv="refresh" content="0; url={{ target }}">
+  <script>window.location.replace({{ target | json }});</script>
+{%- endunless -%}
