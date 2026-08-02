@@ -32,7 +32,7 @@ export const faqs: Faq[] = [
     id: "faq-cod",
     category: "Payments",
     q: "Is Cash on Delivery (COD) available?",
-    a: "No. We currently accept UPI and card payments only. Your order is confirmed once payment is completed at checkout.",
+    a: "No. We currently accept UPI, cards, and netbanking. Your order is confirmed once payment is completed at checkout.",
   },
   {
     id: "faq-custom-sizing",
