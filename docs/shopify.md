@@ -81,6 +81,25 @@ layout if `{{ content_for_header }}` goes missing from the head section
 pasting over a selection. The redirect cannot affect checkout, which is not
 theme-rendered on the Basic plan.
 
+## Policies live in two places
+
+Shopify needs its own copy of the Refund, Shipping and Terms policies — the
+theme serves them at `/policies/*`, checkout links to them, and until they exist
+those URLs 404. The wording must stay identical to the site's, so don't retype
+them:
+
+```sh
+node scripts/extract-policies.mjs shipping | pbcopy   # returns | shipping | terms
+```
+
+Paste into Settings → Policies via the editor's `<>` source button. To confirm a
+paste landed intact, strip tags from both and diff — the site copy and the
+rendered Shopify page should share every paragraph in both directions.
+
+When the copy changes, it has to change in both places. `src/pages/Terms.tsx`
+carries a header comment recording each deliberate deviation from the
+brand-supplied document; keep adding to it rather than editing copy silently.
+
 ## Assumptions to revisit when the real store is connected
 
 These are derived from standard product fields today; adjust the transform
