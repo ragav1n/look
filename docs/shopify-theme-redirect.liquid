@@ -46,14 +46,19 @@
     {%- when 'collection' or 'list-collections' or 'search' -%}
       {%- assign target = storefront | append: '/shop' -%}
     {%- when 'policy' -%}
-      {%- assign slug = request.path | split: '/' | last -%}
-      {%- if slug == 'refund-policy' -%}
+      {%- comment -%}
+        Match on a substring of request.path rather than splitting it. An exact
+        match on the last path segment is brittle: locale prefixes, trailing
+        slashes and Shopify's own handle variations all break it, and the failure
+        is silent (everything falls through to the homepage).
+      {%- endcomment -%}
+      {%- if request.path contains 'refund' -%}
         {%- assign target = storefront | append: '/returns' -%}
-      {%- elsif slug == 'shipping-policy' -%}
+      {%- elsif request.path contains 'shipping' -%}
         {%- assign target = storefront | append: '/shipping' -%}
-      {%- elsif slug == 'privacy-policy' -%}
+      {%- elsif request.path contains 'privacy' -%}
         {%- assign target = storefront | append: '/privacy' -%}
-      {%- elsif slug == 'terms-of-service' -%}
+      {%- elsif request.path contains 'terms' -%}
         {%- assign target = storefront | append: '/terms' -%}
       {%- else -%}
         {%- assign target = storefront | append: '/' -%}
