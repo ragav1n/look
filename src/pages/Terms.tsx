@@ -13,7 +13,17 @@ import PolicyPage, { type PolicySection } from "@/components/layout/PolicyPage";
    open the final paragraph. It granted a cancellation right that the "Order
    Confirmation" clause above denies (no cancellation once an order enters
    production, customization, or dispatch). This is NOT a transcription slip —
-   do not restore it. */
+   do not restore it.
+
+   A SECOND deliberate deviation, removed on the client's instruction 2026-08-03:
+   under "Pricing & Payments" the paragraph continued "For selected products,
+   LOOK offers Partial Cash on Delivery (COD), where customers are required to
+   pay 50% of the total order value in advance, and the remaining balance is
+   payable upon delivery." Partial COD was dropped on 2026-07-23 — the store
+   takes UPI and card through Razorpay only — so the sentence promised a payment
+   method that does not exist. The client removed it from the Shopify Terms of
+   Service first; this matches that wording exactly, keeping the opening sentence
+   about payment confirmation. Do not restore it. */
 const sections: PolicySection[] = [
   {
     heading: "Acceptance of Terms",
@@ -33,7 +43,7 @@ const sections: PolicySection[] = [
     heading: "Pricing & Payments",
     body: [
       "All prices displayed on the website are in Indian Rupees (INR) and are inclusive of applicable GST unless otherwise mentioned.",
-      "Orders will only be processed after successful payment confirmation. For selected products, LOOK offers Partial Cash on Delivery (COD), where customers are required to pay 50% of the total order value in advance, and the remaining balance is payable upon delivery.",
+      "Orders will only be processed after successful payment confirmation.",
       "LOOK reserves the right to cancel any order if payment authorization fails, pricing errors occur, or fraudulent transactions are suspected.",
     ],
   },
