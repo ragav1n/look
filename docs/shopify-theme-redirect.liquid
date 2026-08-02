@@ -8,7 +8,18 @@
     2. Shopify's own order-confirmation and abandoned-cart emails link to the
        primary domain, so "continue shopping" lands customers in that bare theme.
 
-  Paste this block as the FIRST thing inside <head> in layout/theme.liquid.
+  INSTALL — two steps, and step 2 is a single line:
+
+    1. Edit code -> Snippets -> Add a new snippet, name it `headless-redirect`,
+       replace the placeholder contents with this whole file, Save.
+    2. Edit code -> layout/theme.liquid. Find the line that reads
+       {{ content_for_header }} and add this on the line directly BELOW it:
+
+           {% render 'headless-redirect' %}
+
+       Do not remove or move {{ content_for_header }} — Shopify refuses to save
+       theme.liquid without it in the head section, which is the FileSaveError
+       you get if it goes missing.
 
   Why this is safe:
     - Checkout and the order status page are NOT theme-rendered on the Basic plan,
