@@ -1,5 +1,16 @@
 import { site } from "@/config/site";
 
+/* Privacy Policy — brand-supplied copy, entered verbatim.
+
+   ONE deliberate deviation, on the client's instruction 2026-08-03: "Payment
+   Security" carried a second paragraph describing Partial COD (50% of the order
+   value in advance, the balance on delivery). Partial COD was dropped on
+   2026-07-23 and the store takes UPI and card through Razorpay only, so the
+   paragraph described a process that no longer exists. Removed rather than
+   reworded — it was about payment terms, not payment security, and the section
+   reads correctly without it. Do not restore it. The same removal was made in
+   the Terms (src/pages/Terms.tsx) and the COD FAQ (src/data/faqs.ts). */
+
 interface Section {
   heading: string;
   body: string[];
@@ -30,7 +41,6 @@ const sections: Section[] = [
     heading: "Payment Security",
     body: [
       "Your payment security is one of our highest priorities. All transactions on our website are processed through trusted and secure payment gateways using industry-standard encryption technologies. LOOK never stores your debit card details, credit card information, UPI PIN, CVV, or banking passwords on our servers.",
-      "For selected products where Partial Cash on Delivery (COD) is available, customers are required to pay 50% of the order value in advance, while the remaining balance can be paid upon delivery. This helps us process and fulfill orders efficiently while reducing order cancellations.",
     ],
   },
   {

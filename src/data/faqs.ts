@@ -1,6 +1,14 @@
 import type { Faq } from "@/types";
 
-/* Real LOOK FAQ content (provided by the brand). */
+/* Real LOOK FAQ content (provided by the brand).
+
+   ONE deliberate deviation, on the client's instruction 2026-08-03: `faq-cod`
+   used to answer "Yes" and describe Partial COD (50% advance, 50% on delivery).
+   Partial COD was dropped on 2026-07-23 and the store takes UPI and card through
+   Razorpay only, so the answer promised a payment method that does not exist.
+   The question is kept deliberately — customers do ask it — and only the answer
+   changed. Do not restore the old wording. Same removal was made in the Terms
+   (see src/pages/Terms.tsx) and the Privacy policy. */
 export const faqs: Faq[] = [
   {
     id: "faq-returns",
@@ -24,7 +32,7 @@ export const faqs: Faq[] = [
     id: "faq-cod",
     category: "Payments",
     q: "Is Cash on Delivery (COD) available?",
-    a: "Yes. Cash on Delivery (COD) is available for selected products through our Partial COD option. To confirm your order, 50% of the product value must be paid in advance, and the remaining 50% can be paid as Cash on Delivery when your order is delivered.",
+    a: "No. We currently accept UPI and card payments only. Your order is confirmed once payment is completed at checkout.",
   },
   {
     id: "faq-custom-sizing",
