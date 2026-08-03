@@ -241,11 +241,13 @@ interface RawOrder extends RawOrderState {
   paymentInformation?: { paymentStatus?: string | null } | null;
   lineItems?: { nodes: RawLineItem[] } | null;
   fulfillments?: {
-    createdAt?: string | null;
-    updatedAt?: string | null;
-    latestShipmentStatus?: string | null;
-    trackingInformation?: { company?: string | null; number?: string | null; url?: string | null }[];
-  }[];
+    nodes: {
+      createdAt?: string | null;
+      updatedAt?: string | null;
+      latestShipmentStatus?: string | null;
+      trackingInformation?: { company?: string | null; number?: string | null; url?: string | null }[];
+    }[];
+  } | null;
 }
 
 const toMoney = (m: RawMoney | null | undefined): Money | null =>
@@ -282,7 +284,10 @@ function toOrderItem(raw: RawLineItem, currencyCode: string): OrderItem {
 
 function toOrder(raw: RawOrder): Order {
   const currency = raw.totalPrice.currencyCode;
-  const fulfillments = raw.fulfillments ?? [];
+  /* `fulfillments` is a connection (`{ nodes }`), not a bare array — unwrap it
+     before any array work, or `.flatMap` throws on the object and fails the
+     whole page. */
+  const fulfillments = raw.fulfillments?.nodes ?? [];
   /* The first fulfilment carrying tracking wins — split shipments are rare
      enough here that showing one carrier beats showing none. */
   const tracking = fulfillments.flatMap((f) => f.trackingInformation ?? [])[0];

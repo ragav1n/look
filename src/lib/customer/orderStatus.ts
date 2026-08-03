@@ -20,8 +20,15 @@ export interface RawOrderState {
   processedAt?: string | null;
   cancelledAt?: string | null;
   fulfillmentStatus?: string | null;
-  fulfillments?: RawFulfillment[];
+  /* The Customer Account API returns `fulfillments` as a connection, not a bare
+     array — the query asks for `fulfillments(first: 10) { nodes { … } }`. */
+  fulfillments?: { nodes: RawFulfillment[] } | null;
 }
+
+/** Unwrap the fulfilments connection to the array everything here works on.
+ *  Reading `.nodes` in one place keeps the object-vs-array shape from leaking
+ *  into every helper (a `{nodes}` object silently has no `.map`/`.length`). */
+const fulfillmentsOf = (o: RawOrderState): RawFulfillment[] => o.fulfillments?.nodes ?? [];
 
 /** Shipment statuses that mean the parcel reached the customer. */
 const DELIVERED = new Set(["DELIVERED"]);
@@ -30,7 +37,7 @@ const DELIVERED = new Set(["DELIVERED"]);
 const OUT_FOR_DELIVERY = new Set(["OUT_FOR_DELIVERY", "ATTEMPTED_DELIVERY", "READY_FOR_PICKUP"]);
 
 const shipmentStatuses = (o: RawOrderState): string[] =>
-  (o.fulfillments ?? []).map((f) => f.latestShipmentStatus ?? "").filter(Boolean);
+  fulfillmentsOf(o).map((f) => f.latestShipmentStatus ?? "").filter(Boolean);
 
 /**
  * Every parcel arrived — not merely one of them.
@@ -41,7 +48,7 @@ const shipmentStatuses = (o: RawOrderState): string[] =>
  * today is worth surfacing.
  */
 function allDelivered(o: RawOrderState): boolean {
-  const fulfillments = o.fulfillments ?? [];
+  const fulfillments = fulfillmentsOf(o);
   if (fulfillments.length === 0) return false;
   return fulfillments.every((f) => DELIVERED.has(f.latestShipmentStatus ?? ""));
 }
@@ -53,7 +60,7 @@ export function deriveStatus(o: RawOrderState): OrderStatus {
   if (allDelivered(o)) return "delivered";
   if (shipmentStatuses(o).some((s) => OUT_FOR_DELIVERY.has(s))) return "out_for_delivery";
 
-  if ((o.fulfillments ?? []).length > 0) return "shipped";
+  if (fulfillmentsOf(o).length > 0) return "shipped";
   return "ordered";
 }
 
@@ -93,7 +100,7 @@ export function deriveTimeline(o: RawOrderState): OrderStep[] {
     return [placed, { status: "returned", reached: true, at: null }];
   }
 
-  const fulfillments = o.fulfillments ?? [];
+  const fulfillments = fulfillmentsOf(o);
   const isDelivered = allDelivered(o);
   const isOut = isDelivered || shipmentStatuses(o).some((s) => OUT_FOR_DELIVERY.has(s));
 
