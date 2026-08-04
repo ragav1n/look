@@ -10,8 +10,12 @@ export default function Login() {
   /* AccountLayout stashes where the visitor was headed before the guard bounced
      them here, so signing in returns them there rather than to Profile. */
   const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname;
-  /* The BFF callback sends failures back here as ?auth_error=… */
-  const failed = params.has("auth_error");
+  /* The BFF callback sends failures back here as ?auth_error=…. `invalid_state`
+     is worth its own wording: it nearly always means the attempt sat unfinished
+     too long (the code was slow to arrive, or went hunting in Spam), and "we
+     couldn't sign you in" gives someone no reason to just try again. */
+  const reason = params.get("auth_error");
+  const expired = reason === "invalid_state";
 
   return (
     <AuthShell
@@ -19,12 +23,14 @@ export default function Login() {
       subtitle="No password needed — we email you a one-time code."
       footer={<>New to LOOK? Continue above — your account is created in the same step.</>}
     >
-      {failed && (
+      {reason && (
         <p
           className="mb-5 rounded-btn border border-sale/40 bg-sale/10 px-4 py-3 text-[14px] text-sale"
           role="alert"
         >
-          We couldn’t sign you in. Please try again.
+          {expired
+            ? "That sign-in attempt timed out. Start again and you’ll be straight in."
+            : "We couldn’t sign you in. Please try again."}
         </p>
       )}
 

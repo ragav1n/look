@@ -1,4 +1,4 @@
-import { NavLink, Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { NavLink, Navigate, Outlet, useLocation } from "react-router-dom";
 import { useUser } from "@/context/UserProvider";
 
 /* `end` only where a parent path would otherwise over-match. Orders must NOT
@@ -18,7 +18,6 @@ const nav = [
    Outlet. */
 export default function AccountLayout() {
   const { user, ready, isAuthenticated, logout } = useUser();
-  const navigate = useNavigate();
   const location = useLocation();
 
   /* The session resolves asynchronously. Until it does, hold — redirecting on
@@ -74,10 +73,11 @@ export default function AccountLayout() {
             ))}
             <button
               type="button"
-              onClick={() => {
-                logout();
-                navigate("/");
-              }}
+              /* No navigate() here: logging out ends with a full-page trip to
+                 Shopify's logout and back to the home page. A client-side route
+                 change racing that redirect only muddies which one the shopper
+                 actually lands on. */
+              onClick={() => logout()}
               className="mt-1 rounded-btn px-4 py-3 text-left text-[15px] text-muted transition-colors hover:bg-surface hover:text-sale focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
             >
               Log out
