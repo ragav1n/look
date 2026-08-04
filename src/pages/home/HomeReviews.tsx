@@ -32,12 +32,23 @@ const avatars: Record<string, string> = {
 };
 
 /* The wall is a 3-column masonry, so it only bottoms out evenly on a multiple
-   of three — a 7th note leaves one column hanging far below the other two.
-   Show verified buyers only, capped at six: the badge then reads consistently
-   on every note, and the ratings stay mixed (two 4.5s among the fives) so the
-   wall doesn't look like a scrubbed all-perfect one. Every review stays in
-   `reviews` for the product pages. */
-const wall = reviews.filter((r) => r.verified).slice(0, 9);
+   of three. These nine are all verified buyers, which keeps the badge reading
+   consistently on every note, and the ratings stay mixed (two 4.5s among the
+   fives) so the wall doesn't look like a scrubbed all-perfect one. Meera (r-3)
+   is the one unverified review and is deliberately out; every review stays in
+   `reviews` for the product pages.
+
+   Order is art-directed, and a multi-column layout fills top-to-bottom before
+   it wraps, so this list reads as column one, then two, then three — NOT as
+   rows. Saara (r-4) and Shobhana (r-7) sit second in their columns to put them
+   in the middle and right of the second row. The tail of each column is picked
+   to keep the three columns close in height. */
+const WALL_ORDER = [
+  "r-1", "r-2", "r-9", // Ananya, Shraddha, Nandini
+  "r-5", "r-4", "r-6", // Divya, Saara, Ritika
+  "r-8", "r-7", "r-10", // Tanvi, Shobhana, Preethi
+];
+const wall = WALL_ORDER.flatMap((id) => reviews.find((r) => r.id === id) ?? []);
 
 export default function HomeReviews() {
   return (
