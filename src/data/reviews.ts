@@ -39,13 +39,13 @@ export const reviews: Review[] = [
   },
   {
     id: "r-4",
-    productId: "p-butter-yellow-belleza-gown",
-    productName: "Butter Yellow Belleza Gown",
+    productId: "p-blanc-top",
+    productName: "Blanc Top",
     author: "Saara",
     rating: 5,
     date: "2026-07-02",
-    title: "The yellow is prettier in person",
-    body: "I was nervous the colour would look washed out, but it's a soft buttery yellow that photographs really well. There's a lot of movement in the skirt when you walk. Wore it to an evening party and was comfortable the whole night.",
+    title: "Not see-through, which is rare",
+    body: "With a white top I always worry about it being sheer, but this one is fully lined so I never had to layer under it. The modal satin feels soft and the net gives it just enough dressiness for a nicer lunch. The little bow at the neck is what sold me, and it looked just as neat after a wash.",
     verified: true,
   },
   {
