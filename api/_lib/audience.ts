@@ -158,7 +158,69 @@ export async function writeFlag(customerId: string, key: string): Promise<void> 
 export const FLAG = {
   newsletterWelcome: "newsletter_welcome_sent",
   accountWelcome: "account_welcome_sent",
+  /** The sign-in opt-in has been applied — or deliberately skipped. Written
+   *  either way, which is what makes the opt-in happen exactly once and lets a
+   *  later unsubscribe stand for good. */
+  accountOptIn: "account_optin_set",
 } as const;
+
+/* --- Account state -------------------------------------------------------- */
+
+const ACCOUNT_STATE = /* GraphQL */ `
+  query AudienceAccountState($id: ID!) {
+    customer(id: $id) {
+      email
+      firstName
+      emailMarketingConsent { marketingState }
+      welcome: metafield(namespace: "${NS}", key: "${FLAG.accountWelcome}") { value }
+      optIn: metafield(namespace: "${NS}", key: "${FLAG.accountOptIn}") { value }
+    }
+  }
+`;
+
+export interface AccountState {
+  email: string;
+  firstName: string;
+  /** Raw Shopify consent: SUBSCRIBED · NOT_SUBSCRIBED · PENDING · UNSUBSCRIBED. */
+  marketingState: string;
+  subscribed: boolean;
+  /** The account-welcome email has already gone out. */
+  welcomeSent: boolean;
+  /** The one-time sign-in opt-in has already been decided. */
+  optInSet: boolean;
+}
+
+/**
+ * Identity, consent and both once-only flags in a single Admin call.
+ *
+ * Rolled into one query rather than three because this runs on every sign-in,
+ * and each Admin round-trip is latency the shopper waits through.
+ */
+export async function readAccountState(customerId: string): Promise<AccountState | null> {
+  const res = await adminGraphql(ACCOUNT_STATE, { id: customerId });
+  const json = (await res.json()) as {
+    data?: {
+      customer?: {
+        email?: string | null;
+        firstName?: string | null;
+        emailMarketingConsent?: { marketingState?: string | null } | null;
+        welcome?: { value?: string | null } | null;
+        optIn?: { value?: string | null } | null;
+      } | null;
+    };
+  };
+  const c = json.data?.customer;
+  if (!c) return null;
+  const marketingState = c.emailMarketingConsent?.marketingState ?? "NOT_SUBSCRIBED";
+  return {
+    email: c.email ?? "",
+    firstName: c.firstName ?? "",
+    marketingState,
+    subscribed: marketingState === "SUBSCRIBED",
+    welcomeSent: c.welcome?.value === "true",
+    optInSet: c.optIn?.value === "true",
+  };
+}
 
 /* --- The subscriber list -------------------------------------------------- */
 

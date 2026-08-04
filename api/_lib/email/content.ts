@@ -47,6 +47,10 @@ const DEFAULTS: Record<EmailKey, EmailContent> = {
     body: [
       "Your account is set up. You can now track your orders, save delivery addresses for a faster checkout, and keep a wishlist of the pieces you're deciding between.",
       "Everything lives under your account, whenever you need it.",
+      /* Creating an account also puts you on the drops list (see
+         api/account/index.ts), so the email that follows has to say so. The
+         unsubscribe link in the footer is the other half of that promise. */
+      "You're on the list for new drops too. If you'd rather not hear about those, turn it off under your profile or use the unsubscribe link below.",
     ],
     ctaLabel: "Go to my account",
     ctaUrl: `${SHOP_URL}/account/profile`,
