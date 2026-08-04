@@ -119,6 +119,17 @@ async function shim(req, res, url) {
     res.end(body);
     return res;
   };
+  /* Vercel's signature is redirect(url) or redirect(status, url). Without this
+     the whole OAuth flow was untestable locally — /api/auth/{login,callback}
+     threw "res.redirect is not a function" and 500'd. */
+  res.redirect = (statusOrUrl, maybeUrl) => {
+    const status = typeof statusOrUrl === "number" ? statusOrUrl : 302;
+    const target = typeof statusOrUrl === "number" ? maybeUrl : statusOrUrl;
+    res.statusCode = status;
+    res.setHeader("Location", target);
+    res.end();
+    return res;
+  };
 }
 
 async function main() {
