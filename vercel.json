@@ -20,6 +20,10 @@
       ]
     }
   ],
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
+  "rewrites": [
+    { "source": "/api/admin/session", "destination": "/api/admin/console?action=session" },
+    { "source": "/api/admin/campaign", "destination": "/api/admin/console?action=campaign" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ],
   "crons": [{ "path": "/api/cron/new-drop", "schedule": "0 5 * * *" }]
 }

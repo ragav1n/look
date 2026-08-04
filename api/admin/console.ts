@@ -1,12 +1,18 @@
 /**
- * /api/admin/[action] — the owner console's BFF, as ONE Serverless Function.
+ * /api/admin/console — the owner console's BFF, as ONE Serverless Function.
  *
  * The Hobby plan caps a deployment at 12 functions, so the two admin endpoints
- * share a single dynamic route rather than a file each:
- *   /api/admin/session   → the owner session (GET check · POST login · DELETE logout)
- *   /api/admin/campaign  → the compose/preview/test/send path
- * The URLs and methods the SPA calls (src/lib/admin.ts) are unchanged — Vercel
- * routes both paths here and fills `req.query.action`.
+ * share a single function rather than a file each. The two real URLs the SPA
+ * calls (src/lib/admin.ts) are mapped here by rewrites in vercel.json:
+ *   /api/admin/session   → /api/admin/console?action=session   (GET check · POST login · DELETE logout)
+ *   /api/admin/campaign  → /api/admin/console?action=campaign  (compose/preview/test/send)
+ *
+ * Why rewrites and not a dynamic `[action].ts` route: this project's SPA
+ * catch-all rewrite (`/(.*)` → /index.html) shadows dynamic API routes — a
+ * `[action]` file falls through to index.html and every call 405s. Static
+ * function files win against the catch-all, and an explicit rewrite (evaluated
+ * before it) routes the pretty URLs here. The `action` comes in via the rewrite
+ * destination's query, with a path fallback for safety.
  *
  * The two handlers below are the former api/admin/session.ts and
  * api/admin/campaign.ts, moved verbatim; only this dispatcher is new.
@@ -21,8 +27,19 @@ import { type CampaignInput, composeCampaign } from "../_lib/email/compose.js";
 import { sendBatch, sendEmail } from "../_lib/email/send.js";
 import { isAdminConfigured } from "../_lib/shopify.js";
 
+/** Which endpoint this is: the rewrite adds `?action=…`; if that's ever absent
+ *  (a direct hit, or a Vercel change), fall back to sniffing the request path. */
+function resolveAction(req: VercelRequest): "session" | "campaign" | null {
+  const q = firstQuery(req.query.action);
+  if (q === "session" || q === "campaign") return q;
+  const url = req.url ?? "";
+  if (url.includes("campaign")) return "campaign";
+  if (url.includes("session")) return "session";
+  return null;
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
-  switch (firstQuery(req.query.action)) {
+  switch (resolveAction(req)) {
     case "session":
       sessionHandler(req, res);
       return;
