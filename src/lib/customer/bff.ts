@@ -178,6 +178,37 @@ export async function notifyAccountWelcome(): Promise<void> {
   }
 }
 
+/**
+ * Read the signed-in customer's newsletter subscription.
+ *
+ * Consent lives on the Shopify customer, never in local state, so the account
+ * toggle always shows what Shopify actually holds — including an unsubscribe
+ * made from an email footer. Null means we couldn't read it (session gone, or
+ * the Admin API isn't configured); the caller hides the control rather than
+ * showing a switch that would lie.
+ */
+export async function getNewsletterPref(): Promise<boolean | null> {
+  try {
+    const res = await api("/api/account/newsletter");
+    if (!res.ok) return null;
+    const json = (await res.json()) as { subscribed?: boolean };
+    return json.subscribed === true;
+  } catch {
+    return null;
+  }
+}
+
+/** Set it, and hand back what was actually stored so an optimistic flip can
+ *  settle on the truth. Throws on failure, so the UI reverts and says so. */
+export async function setNewsletterPref(subscribed: boolean): Promise<boolean> {
+  const res = await api("/api/account/newsletter", jsonInit({ subscribed }));
+  const json = (await res.json().catch(() => ({}))) as { subscribed?: boolean };
+  if (!res.ok || typeof json.subscribed !== "boolean") {
+    throw new Error("We couldn't save your email preference. Please try again.");
+  }
+  return json.subscribed;
+}
+
 /* Best-effort: checkout still works even if linking fails, so errors are
    swallowed rather than surfaced. */
 export async function linkCart(cartId: string): Promise<void> {
