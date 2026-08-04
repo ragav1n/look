@@ -18,10 +18,19 @@ export const COOKIE = {
   refresh: "look_rt",
   idToken: "look_idt",
   admin: "look_admin", // campaign-console owner session (see _lib/admin.ts)
+  fresh: "look_fresh", // "you just logged out" — makes the next login prompt
 } as const;
 
 const API_PATH = "/api";
-const TX_MAX_AGE = 600; // 10 min — the OAuth round-trip should take seconds
+/** 30 min, NOT the "a redirect takes seconds" figure this used to be. Login is
+ *  passwordless: the shopper leaves for their inbox, hunts a 6-digit code out of
+ *  Promotions or Spam, and comes back. When this cookie expires first, the
+ *  callback finds no `state` and fails the sign-in with `invalid_state` — which
+ *  reads to the shopper as "we couldn't sign you in" for no visible reason. */
+const TX_MAX_AGE = 1800;
+/** Long enough to cover the trip out to Shopify's logout and back, short enough
+ *  that it can't still be sitting there on a genuinely new sign-in later. */
+const FRESH_MAX_AGE = 300;
 /** Admin console session lifetime. Kept short because a stateless signed cookie
  *  can't be revoked individually — to force logout everywhere, rotate
  *  COOKIE_SECRET or ADMIN_PASSWORD (both invalidate every live cookie). */
@@ -109,6 +118,22 @@ export function setTokenCookies(res: VercelResponse, t: TokenCookies): void {
   append(res, serialize(COOKIE.accessExp, String(t.expiresAt), { path: API_PATH }));
   append(res, serialize(COOKIE.refresh, t.refreshToken, { path: API_PATH }));
   if (t.idToken) append(res, serialize(COOKIE.idToken, t.idToken, { path: API_PATH }));
+}
+
+/* --- "just logged out" marker ---------------------------------------------
+   Set on logout, read and cleared by the next /api/auth/login. Not security-
+   sensitive (worst case: someone sees the login form when they'd have been
+   SSO'd in), so it carries no signature. */
+
+export function setFreshLoginCookie(res: VercelResponse): void {
+  append(res, serialize(COOKIE.fresh, "1", { maxAge: FRESH_MAX_AGE, path: API_PATH }));
+}
+
+export const readFreshLogin = (req: VercelRequest): boolean =>
+  req.cookies?.[COOKIE.fresh] === "1";
+
+export function clearFreshLoginCookie(res: VercelResponse): void {
+  append(res, serialize(COOKIE.fresh, "", { maxAge: 0, path: API_PATH }));
 }
 
 export function clearAuthCookies(res: VercelResponse): void {

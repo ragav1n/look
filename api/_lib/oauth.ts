@@ -25,7 +25,7 @@ export function generatePkce(): { verifier: string; challenge: string } {
 
 export function buildAuthorizeUrl(
   endpoints: Endpoints,
-  args: { state: string; nonce: string; challenge: string },
+  args: { state: string; nonce: string; challenge: string; forceLogin?: boolean },
 ): string {
   const url = new URL(endpoints.authorize);
   url.searchParams.set("scope", config.scope);
@@ -36,7 +36,31 @@ export function buildAuthorizeUrl(
   url.searchParams.set("nonce", args.nonce);
   url.searchParams.set("code_challenge", args.challenge);
   url.searchParams.set("code_challenge_method", "S256");
+  /* Shopify's hosted session outlives ours, so an authorize call right after a
+     logout can silently SSO the shopper straight back in — they click "Sign in"
+     and land in their account without ever seeing the form. `prompt=login` is
+     the OIDC way to demand a fresh authentication. Verified 2026-08-04 that the
+     authorize endpoint accepts it and carries it through to the login screen;
+     if Shopify ignores it, we're no worse off than before. */
+  if (args.forceLogin) url.searchParams.set("prompt", "login");
   return url.toString();
+}
+
+/**
+ * The `exp` of an id_token in epoch ms, WITHOUT verifying the signature.
+ *
+ * Only ever used to log whether a logout hint had already expired — never to
+ * make a trust decision, which is why not verifying is fine here.
+ */
+export function idTokenExpiry(idToken: string): number | null {
+  const payload = idToken.split(".")[1];
+  if (!payload) return null;
+  try {
+    const claims = JSON.parse(Buffer.from(payload, "base64url").toString()) as { exp?: number };
+    return typeof claims.exp === "number" ? claims.exp * 1000 : null;
+  } catch {
+    return null;
+  }
 }
 
 /* Confidential client → authenticate with the secret (client_secret_basic, the
