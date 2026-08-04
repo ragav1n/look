@@ -9,6 +9,9 @@ import avSaara from "@/assets/review-saara.jpg";
 import avDivya from "@/assets/review-divya.jpg";
 import avRitika from "@/assets/review-ritika.jpg";
 import avShobhana from "@/assets/review-shobhana.jpg";
+import avTanvi from "@/assets/review-tanvi.jpg";
+import avNandini from "@/assets/review-nandini.jpg";
+import avPreethi from "@/assets/review-preethi.jpg";
 
 /* "LOOK's Customer Diaries": real customer words on white note/diary cards,
    each with a customer picture, laid out as a masonry note-wall on the black
@@ -23,6 +26,9 @@ const avatars: Record<string, string> = {
   "r-5": avDivya,
   "r-6": avRitika,
   "r-7": avShobhana,
+  "r-8": avTanvi,
+  "r-9": avNandini,
+  "r-10": avPreethi,
 };
 
 /* The wall is a 3-column masonry, so it only bottoms out evenly on a multiple
@@ -31,7 +37,7 @@ const avatars: Record<string, string> = {
    on every note, and the ratings stay mixed (two 4.5s among the fives) so the
    wall doesn't look like a scrubbed all-perfect one. Every review stays in
    `reviews` for the product pages. */
-const wall = reviews.filter((r) => r.verified).slice(0, 6);
+const wall = reviews.filter((r) => r.verified).slice(0, 9);
 
 export default function HomeReviews() {
   return (
