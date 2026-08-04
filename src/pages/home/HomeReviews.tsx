@@ -13,9 +13,25 @@ import avShobhana from "@/assets/review-shobhana.jpg";
 /* "LOOK's Customer Diaries": real customer words on white note/diary cards,
    each with a customer picture, laid out as a masonry note-wall on the black
    theme (client request: white note style + customer pictures). Avatars are
-   face crops of the catalog's own model shots, ordered to line up with the
-   `reviews` array so each note pairs with a face from that product's shoot. */
-const avatars = [avAnanya, avShraddha, avMeera, avSaara, avDivya, avRitika, avShobhana];
+   face crops of the catalog's own model shots, keyed by review id so the wall
+   can be re-ordered or filtered without a note picking up a stranger's face. */
+const avatars: Record<string, string> = {
+  "r-1": avAnanya,
+  "r-2": avShraddha,
+  "r-3": avMeera,
+  "r-4": avSaara,
+  "r-5": avDivya,
+  "r-6": avRitika,
+  "r-7": avShobhana,
+};
+
+/* The wall is a 3-column masonry, so it only bottoms out evenly on a multiple
+   of three — a 7th note leaves one column hanging far below the other two.
+   Show verified buyers only, capped at six: the badge then reads consistently
+   on every note, and the ratings stay mixed (two 4.5s among the fives) so the
+   wall doesn't look like a scrubbed all-perfect one. Every review stays in
+   `reviews` for the product pages. */
+const wall = reviews.filter((r) => r.verified).slice(0, 6);
 
 export default function HomeReviews() {
   return (
@@ -35,7 +51,7 @@ export default function HomeReviews() {
         </Reveal>
 
         <div className="mt-[48px] columns-1 gap-5 sm:columns-2 lg:columns-3">
-          {reviews.map((r, i) => (
+          {wall.map((r, i) => (
             <Reveal
               key={r.id}
               variant="up"
@@ -45,7 +61,7 @@ export default function HomeReviews() {
               <figure className="rounded-[16px] bg-white p-6 text-black shadow-[0_12px_34px_rgba(0,0,0,0.4)] transition-transform duration-300 hover:rotate-0">
                 <div className="flex items-center gap-3">
                   <img
-                    src={avatars[i % avatars.length]}
+                    src={avatars[r.id]}
                     alt={r.author}
                     loading="lazy"
                     className="size-12 rounded-full object-cover object-top ring-2 ring-black/5"
