@@ -44,6 +44,27 @@ function loadEnv() {
   }
 }
 
+/**
+ * The exact-match /api rewrites from vercel.json, as source → destination.
+ *
+ * Deployments sit on the Hobby plan's 12-function cap, so several endpoints
+ * share one function and reach their pretty URLs by rewrite (api/admin/console,
+ * api/account). Reading the same table here is what makes /api/admin/session and
+ * /api/account/welcome answer locally instead of 404ing on a missing file.
+ * Pattern sources are skipped — only the SPA catch-all uses them.
+ */
+function loadApiRewrites() {
+  const out = new Map();
+  const path = resolve(ROOT, "vercel.json");
+  if (!existsSync(path)) return out;
+  const { rewrites = [] } = JSON.parse(readFileSync(path, "utf8"));
+  for (const { source, destination } of rewrites) {
+    if (!destination?.startsWith("/api/") || /[(:*]/.test(source)) continue;
+    out.set(source, destination);
+  }
+  return out;
+}
+
 function parseCookies(header) {
   const out = {};
   if (!header) return out;
@@ -102,6 +123,7 @@ async function shim(req, res, url) {
 
 async function main() {
   loadEnv();
+  const apiRewrites = loadApiRewrites();
 
   const vite = await createViteServer({
     root: ROOT,
@@ -113,9 +135,19 @@ async function main() {
     const url = new URL(req.url || "/", `http://localhost:${PORT}`);
 
     if (url.pathname.startsWith("/api/")) {
+      const rewrite = apiRewrites.get(url.pathname);
+      if (rewrite) {
+        const target = new URL(rewrite, url.origin);
+        url.pathname = target.pathname;
+        for (const [k, v] of target.searchParams) url.searchParams.set(k, v);
+      }
       const rel = url.pathname.replace(/^\/+/, ""); // api/admin/login
-      const file = resolve(ROOT, `${rel}.ts`);
-      if (!file.startsWith(resolve(ROOT, "api")) || !existsSync(file)) {
+      const apiDir = resolve(ROOT, "api");
+      // `api/account` resolves to api/account/index.ts, exactly as on Vercel.
+      const found = [`${rel}.ts`, `${rel}/index.ts`]
+        .map((p) => ({ path: p, abs: resolve(ROOT, p) }))
+        .find(({ abs }) => abs.startsWith(apiDir) && existsSync(abs));
+      if (!found) {
         res.statusCode = 404;
         res.setHeader("Content-Type", "application/json");
         res.end(JSON.stringify({ error: "not_found", path: url.pathname }));
@@ -123,7 +155,7 @@ async function main() {
       }
       try {
         await shim(req, res, url);
-        const mod = await vite.ssrLoadModule(`/${rel}.ts`);
+        const mod = await vite.ssrLoadModule(`/${found.path}`);
         await mod.default(req, res);
         if (!res.writableEnded) res.end();
       } catch (err) {
