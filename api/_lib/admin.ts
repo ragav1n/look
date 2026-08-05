@@ -9,7 +9,12 @@
  *     signature IS the proof of that prior login.
  *
  * Fail-closed, same as CRON_SECRET: with no ADMIN_PASSWORD configured, nobody can
- * log in. Rotate ADMIN_PASSWORD (or COOKIE_SECRET) to invalidate every session.
+ * log in.
+ *
+ * To kill every live session, rotate COOKIE_SECRET — that is the key the session
+ * cookies are signed with. Rotating ADMIN_PASSWORD alone leaves them valid, since
+ * the cookie payload is just `{exp}`; it does stop any new login and any action
+ * that re-checks the password (every campaign send), but it is not a revocation.
  */
 import crypto from "node:crypto";
 import type { VercelRequest } from "@vercel/node";

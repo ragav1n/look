@@ -33,7 +33,10 @@ const TX_MAX_AGE = 1800;
 const FRESH_MAX_AGE = 300;
 /** Admin console session lifetime. Kept short because a stateless signed cookie
  *  can't be revoked individually — to force logout everywhere, rotate
- *  COOKIE_SECRET or ADMIN_PASSWORD (both invalidate every live cookie). */
+ *  COOKIE_SECRET, which is what these cookies are signed with. Rotating
+ *  ADMIN_PASSWORD does NOT invalidate them: the payload is only `{exp}` and the
+ *  password isn't part of the signature. It does block anything that re-checks
+ *  the password, which is every campaign send. */
 const ADMIN_MAX_AGE = 8 * 60 * 60; // 8h
 
 interface CookieOpts {
