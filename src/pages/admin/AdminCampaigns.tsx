@@ -774,45 +774,45 @@ function Console({ onSignedOut }: { onSignedOut: () => void }) {
           {tab === "abandoned" && (
             <GuideTab
               eyebrow="Cart reminders"
-              title="A gentle nudge, sent for you"
-              badge={{ tone: "action", label: "Set up once, then automatic" }}
-              lead="Some shoppers add a piece, start checkout, then get distracted and leave. Shopify can automatically email them a reminder to come back — once after 1 hour, and again after 24 hours. You set this up once, and after that it runs on its own forever."
-              stepsLabel="How it's set up"
+              title="A gentle nudge — let's switch it on"
+              badge={{ tone: "action", label: "Needs a one-time setup" }}
+              lead="Some shoppers add a piece, start checkout, then get distracted and leave. Shopify can automatically email them a reminder to come back a little while later. Before it runs cleanly, there's a small tangle to sort out: while we were testing, more than one reminder system got half-switched-on. If several run at once, the same shopper gets the same nudge two or three times over. So the setup is simple — keep exactly one, turn the rest off, and make sure it can actually reach people."
+              stepsLabel="What to set up (one time)"
               steps={[
                 {
-                  title: "Open Marketing → Automations in Shopify",
+                  title: "Keep one reminder — turn the extra ones off",
                   detail:
-                    "This is where the automatic emails live. Look for the one called “Recover abandoned checkout”.",
+                    "During testing, two extra reminder “workflows” were created in the Shopify Flow app (named “Recover abandoned checkout” and “Recover abandoned cart”). Running more than one means a shopper gets the same email two or three times. Open the Flow app (Apps → Flow) and switch BOTH of those OFF.",
                 },
                 {
-                  title: "It waits, then emails — twice",
+                  title: "Turn on Shopify's built-in reminder",
                   detail:
-                    "One hour after a shopper leaves, it sends the first reminder. If they still haven't come back after 24 hours, it sends a second, final one.",
+                    "In Marketing → Automations, find the one called “Recover abandoned checkout” and turn it ON. This is the single one we keep — it's the only kind that can reach a shopper who left before signing in, because they typed their email at the checkout step. You can edit its timing and wording inside the automation whenever you like.",
                 },
                 {
-                  title: "It skips anyone who came back",
+                  title: "Check the email box is pre-ticked at checkout",
                   detail:
-                    "If they finish their order in the meantime, the reminders stop automatically. No one gets a “you forgot something” email after they've already bought.",
+                    "In Settings → Checkout, keep the email sign-up option pre-selected. This matters more than it looks: a reminder can only go to people on your email list, and that pre-ticked box is what adds a shopper to the list when they check out. Without it, most people who abandon can't be emailed at all. (This was already set up — just confirm it's still on.)",
                 },
                 {
-                  title: "Change the wording anytime",
+                  title: "Test it once with your own email",
                   detail:
-                    "Inside the automation, click the “Send marketing email” step to edit the subject and message the shopper sees.",
+                    "Start a checkout on your own store, enter your email, then leave without paying. You'll get the reminder after the wait. To test faster, temporarily shorten the wait to a couple of minutes, then set it back afterwards.",
                 },
               ]}
-              note="This can only reach people who typed their email during checkout. If someone just adds to their cart and closes the tab without starting checkout, we never get their email address, so there's no way to remind them. That's normal for every online store, not just LOOK."
+              note="A reminder can only reach a shopper who (a) got as far as the checkout page AND (b) is on your email list — the pre-ticked box in step 3 is what puts them on the list. If someone just adds to their cart and closes the tab without starting checkout, we never get their email, so there's no way to remind them. That's normal for every online store, not just LOOK."
               goodToKnow={[
                 {
-                  q: "Is it turned on right now?",
-                  a: "Yes — it's switched on. As long as the store is live, it runs by itself. (Reminders only go out once the store is open to the public.)",
+                  q: "Why turn some off — isn't more reminders better?",
+                  a: "No — they'd be the SAME reminder sent by different systems at the same moment, so the shopper gets duplicates and feels spammed. One reminder, sent well, is the goal.",
                 },
                 {
-                  q: "How can I test it myself?",
-                  a: "Start a checkout on your own store, enter your email, then leave without paying. You'll get the reminder after the wait. To test faster, you can temporarily shorten the waits to a couple of minutes, then set them back to 1 hour / 24 hours.",
+                  q: "Which one do we keep, and why that one?",
+                  a: "The checkout reminder (“Recover abandoned checkout”). It's the only kind that can reach a shopper who left before creating an account, because they entered their email at checkout. The “cart” and “browse” reminders can only reach people already on your list, so they'd miss most abandoners.",
                 },
                 {
-                  q: "Will it annoy people with too many emails?",
-                  a: "No. It's capped at two gentle reminders per abandoned cart, and it stops the moment they buy.",
+                  q: "How will I know it's working?",
+                  a: "After a checkout that's left unpaid, the reminder lands in the shopper's inbox — usually the Promotions tab, which is the normal home for this kind of email, not a mistake. Marketing → Automations also shows a running count of how many were sent.",
                 },
               ]}
               link={{ label: "Open Shopify automations", href: `${SHOP_ADMIN}/marketing/automations` }}
