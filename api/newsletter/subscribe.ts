@@ -17,6 +17,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import {
   FLAG,
   findCustomerIdByEmail,
+  readAccountState,
   readFlag,
   setEmailConsent,
   writeFlag,
@@ -58,10 +59,21 @@ async function welcomeOnce(customerId: string, email: string): Promise<boolean> 
 /** Existing customer? Flip their email consent to SUBSCRIBED, then welcome them
  *  if they've never been welcomed. Best-effort: any failure here just means we
  *  couldn't re-subscribe someone who already exists, which is a soft outcome,
- *  not an error worth surfacing to the visitor. */
+ *  not an error worth surfacing to the visitor.
+ *
+ *  An UNSUBSCRIBED customer is left alone. This endpoint is unauthenticated and
+ *  takes the address as plain text, so without that check anyone could type in
+ *  someone else's address and undo an unsubscribe they actually asked for —
+ *  putting them back into the next campaign and the daily drop. It is the same
+ *  rule the (authenticated) sign-in hook already follows: see `optInOnce` in
+ *  api/account/index.ts. Note the asymmetry is deliberate — subscribing an
+ *  address that never opted out is the ordinary job of a public signup form;
+ *  overriding a recorded opt-out is not. */
 async function resubscribeExisting(email: string): Promise<boolean> {
   const id = await findCustomerIdByEmail(email);
   if (!id) return false;
+  const state = await readAccountState(id);
+  if (state?.marketingState === "UNSUBSCRIBED") return false;
   const ok = await setEmailConsent(id, "SUBSCRIBED");
   if (ok) await welcomeOnce(id, email);
   return ok;
@@ -130,12 +142,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     // this as "Email has already been taken" / "has already been taken".
     const taken = userErrors.some((e) => /has already been taken/i.test(e.message));
     if (taken) {
-      const ok = await resubscribeExisting(email);
+      await resubscribeExisting(email);
       // Even if the consent update couldn't run, the address is on file — treat
       // the visitor's intent as satisfied rather than showing them an error.
       // (The customer search index lags ~30–60s, so an address created moments
       // ago genuinely won't be found here. Expected, not a bug — no retries.)
-      res.status(200).json({ ok: true, already: true, resubscribed: ok });
+      //
+      // Byte-identical to the "new subscriber" reply above, deliberately. This
+      // endpoint is public and unauthenticated, so any difference between the
+      // two would answer "is this person on LOOK's customer list?" for whatever
+      // address a stranger cared to type in. No caller needs to tell them apart.
+      res.status(200).json({ ok: true });
       return;
     }
 

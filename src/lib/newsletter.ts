@@ -7,14 +7,15 @@
 
 export interface SubscribeResult {
   ok: boolean;
-  /** Server-reported: the address was already a customer (still a success). */
-  already?: boolean;
 }
 
 /** Subscribe `email` to the LOOK newsletter. Resolves `{ ok:false }` on a real
  *  backend failure so callers can show an inline error. `honeypot` is the form's
  *  hidden trap field — empty for real users, forwarded so the BFF can silently
- *  drop bots. Sent as `contact_reason` (a name the browser won't autofill). */
+ *  drop bots. Sent as `contact_reason` (a name the browser won't autofill).
+ *
+ *  Success is a single flag by design: the BFF deliberately does not say whether
+ *  the address was already on the list, so there is nothing more to read here. */
 export async function subscribeEmail(email: string, honeypot = ""): Promise<SubscribeResult> {
   try {
     const res = await fetch("/api/newsletter/subscribe", {
@@ -24,7 +25,7 @@ export async function subscribeEmail(email: string, honeypot = ""): Promise<Subs
       body: JSON.stringify({ email, contact_reason: honeypot }),
     });
     const data = (await res.json().catch(() => ({}))) as SubscribeResult;
-    return { ok: res.ok && data.ok !== false, already: data.already };
+    return { ok: res.ok && data.ok !== false };
   } catch {
     // Plain `npm run dev` serves no /api routes, so the fetch throws. Treat that
     // as success in dev only, so the UI is testable without the BFF (the real
