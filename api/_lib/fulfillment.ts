@@ -53,6 +53,17 @@ const FIND_QUERY = /* GraphQL */ `
  *  "1001", "#1001" and " #1001 " all search the same order. */
 const orderNumber = (ref: string): string => ref.replace(/^#/, "").trim();
 
+/** What an order name may contain once the '#' is off: digits normally, letters
+ *  and separators if the store ever sets an order prefix/suffix. Deliberately
+ *  NOT `^\d+$` — that would silently stop the webhook matching anything the day
+ *  someone configures one.
+ *
+ *  The point is what it excludes. `number` is interpolated into the Admin
+ *  *search* string below, where quotes, spaces, colons and parens are operators;
+ *  a crafted ReferenceNo could otherwise widen the query and, via the
+ *  "or the first result" fallback, land a scan on an unrelated order. */
+const ORDER_NAME_RE = /^[A-Za-z0-9._-]+$/;
+
 /**
  * Locate the fulfilment a Delhivery scan belongs to.
  *
@@ -68,7 +79,7 @@ export async function findFulfillmentForShipment(args: {
   awb: string;
 }): Promise<FulfillmentMatch | null> {
   const number = orderNumber(args.referenceNo);
-  if (!number) return null; // no reference ⇒ nothing to join on
+  if (!ORDER_NAME_RE.test(number)) return null; // absent or not a name ⇒ nothing to join on
 
   const res = await adminGraphql(FIND_QUERY, { q: `name:#${number}` });
   const json = (await res.json()) as {
