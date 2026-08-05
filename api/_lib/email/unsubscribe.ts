@@ -9,8 +9,21 @@
 import crypto from "node:crypto";
 import { config } from "../shopify.js";
 
-const sign = (payload: string): string =>
-  crypto.createHmac("sha256", config.cookieSecret).update(payload).digest("base64url");
+const mac = (data: string): string =>
+  crypto.createHmac("sha256", config.cookieSecret).update(data).digest("base64url");
+
+/** Signed for this purpose only, so an unsubscribe token can never be replayed
+ *  as one of the cookies that shares COOKIE_SECRET (see _lib/cookies.ts). */
+const sign = (payload: string): string => mac(`unsub|${payload}`);
+
+/** The format used before the context tag existed. Still ACCEPTED on the way in,
+ *  never minted on the way out: these links sit in inboxes indefinitely, and a
+ *  one-click unsubscribe that silently stops working is a compliance failure,
+ *  not a cosmetic one. Safe to delete once the old campaigns have aged out.
+ *
+ *  Accepting it costs nothing: a token only unsubscribes the address it encodes,
+ *  and neither cookie payload is a bare base64url email address. */
+const legacySign = (payload: string): string => mac(payload);
 
 const UNSUBSCRIBE_PATH = "/api/newsletter/unsubscribe";
 
@@ -19,13 +32,17 @@ export function unsubscribeUrl(email: string): string {
   return `${config.appOrigin}${UNSUBSCRIBE_PATH}?e=${payload}&t=${sign(payload)}`;
 }
 
-/** Recover the email from a signed link, or null if the signature doesn't hold. */
+const matches = (expected: string, given: string): boolean => {
+  const a = new Uint8Array(Buffer.from(expected));
+  const b = new Uint8Array(Buffer.from(given));
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+};
+
+/** Recover the email from a signed link, or null if the signature doesn't hold.
+ *  Both the current and the pre-tag signature are accepted — see `legacySign`. */
 export function verifyUnsubscribe(payload: string, sig: string): string | null {
   if (!payload || !sig) return null;
-  const expected = Buffer.from(sign(payload));
-  const given = Buffer.from(sig);
-  if (expected.length !== given.length) return null;
-  if (!crypto.timingSafeEqual(new Uint8Array(expected), new Uint8Array(given))) return null;
+  if (!matches(sign(payload), sig) && !matches(legacySign(payload), sig)) return null;
   try {
     return Buffer.from(payload, "base64url").toString() || null;
   } catch {

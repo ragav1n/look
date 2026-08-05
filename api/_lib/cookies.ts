@@ -61,16 +61,32 @@ function append(res: VercelResponse, cookie: string): void {
 }
 
 /* --- HMAC signing (used for the transient OAuth cookie so `state`/`verifier`
-   can't be forged) --- */
+   can't be forged, and for the admin session cookie) --- */
 const b64url = (buf: Buffer) => buf.toString("base64url");
 
-function sign(payload: string): string {
-  return crypto.createHmac("sha256", config.cookieSecret).update(payload).digest("base64url");
+/**
+ * Three different things are signed with the one COOKIE_SECRET: the transient
+ * OAuth cookie, the admin session cookie, and the unsubscribe link (see
+ * email/unsubscribe.ts). Every signature therefore commits to the context it was
+ * minted for, so a blob signed for one purpose can't be replayed as another.
+ *
+ * Nothing is known to be forgeable without this — an admin cookie needs a
+ * payload that JSON-parses to `{exp}`, which neither of the other two shapes can
+ * produce today. The tag is here so that stays true as those payloads change,
+ * rather than resting on a coincidence of formats.
+ */
+type SigContext = "tx" | "admin";
+
+function sign(payload: string, context: SigContext): string {
+  return crypto
+    .createHmac("sha256", config.cookieSecret)
+    .update(`${context}|${payload}`)
+    .digest("base64url");
 }
 
-function verify(payload: string, sig: string): boolean {
+function verify(payload: string, sig: string, context: SigContext): boolean {
   const a = new Uint8Array(Buffer.from(sig));
-  const b = new Uint8Array(Buffer.from(sign(payload)));
+  const b = new Uint8Array(Buffer.from(sign(payload, context)));
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
@@ -83,7 +99,10 @@ export interface TxData {
 
 export function setTxCookie(res: VercelResponse, data: TxData): void {
   const payload = b64url(Buffer.from(JSON.stringify(data)));
-  append(res, serialize(COOKIE.tx, `${payload}.${sign(payload)}`, { maxAge: TX_MAX_AGE, path: API_PATH }));
+  append(
+    res,
+    serialize(COOKIE.tx, `${payload}.${sign(payload, "tx")}`, { maxAge: TX_MAX_AGE, path: API_PATH }),
+  );
 }
 
 export function readTxCookie(req: VercelRequest): TxData | null {
@@ -93,7 +112,7 @@ export function readTxCookie(req: VercelRequest): TxData | null {
   if (dot < 0) return null;
   const payload = raw.slice(0, dot);
   const sig = raw.slice(dot + 1);
-  if (!verify(payload, sig)) return null;
+  if (!verify(payload, sig, "tx")) return null;
   try {
     return JSON.parse(Buffer.from(payload, "base64url").toString()) as TxData;
   } catch {
@@ -164,7 +183,7 @@ export function setAdminCookie(res: VercelResponse): void {
   const payload = b64url(Buffer.from(JSON.stringify({ exp })));
   append(
     res,
-    serialize(COOKIE.admin, `${payload}.${sign(payload)}`, {
+    serialize(COOKIE.admin, `${payload}.${sign(payload, "admin")}`, {
       maxAge: ADMIN_MAX_AGE,
       path: API_PATH,
       sameSite: "Strict",
@@ -180,7 +199,7 @@ export function readAdminSession(req: VercelRequest): boolean {
   if (dot < 0) return false;
   const payload = raw.slice(0, dot);
   const sig = raw.slice(dot + 1);
-  if (!verify(payload, sig)) return false;
+  if (!verify(payload, sig, "admin")) return false;
   try {
     const { exp } = JSON.parse(Buffer.from(payload, "base64url").toString()) as { exp?: number };
     return typeof exp === "number" && Date.now() < exp;
