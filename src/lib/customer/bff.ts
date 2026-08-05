@@ -5,6 +5,7 @@
  */
 import type { Address, AddressInput, Money, Order, OrderItem, UserProfile } from "@/types";
 import { stateCodeFor, stateNameFor } from "@/data/indianStates";
+import { safeHttpUrl } from "@/lib/url";
 import { deriveStatus, deriveTimeline, humanise, type RawOrderState } from "./orderStatus";
 import {
   ADDRESS_CREATE,
@@ -342,7 +343,10 @@ function toOrder(raw: RawOrder): Order {
       ? {
           company: tracking.company ?? null,
           number: tracking.number ?? null,
-          url: tracking.url ?? null,
+          /* Scheme-guarded like every other href we don't author (see toReel):
+             this one is set by whoever files the fulfilment, and React won't
+             block `javascript:` in an href on its own. */
+          url: safeHttpUrl(tracking.url) ?? null,
         }
       : undefined,
     statusPageUrl: raw.statusPageUrl ?? "",
