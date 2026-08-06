@@ -61,65 +61,69 @@ export default function PolicyPage({
   const introParas = Array.isArray(intro) ? intro : [intro];
 
   return (
-    <div className="mx-auto w-full max-w-[820px] px-6 py-[72px]">
-      <p className="text-[12px] tracking-[0.08em] text-accent uppercase">Legal</p>
-      <h1 className="mt-3 font-display text-[38px] leading-[48px] font-medium text-white">
-        {title}
-      </h1>
-      <p className="mt-3 text-[13px] text-muted">Last updated: {lastUpdated}</p>
+    /* The bloom sits on this outer element so the light spans the viewport
+       rather than stopping at the 820px measure the document is set in. */
+    <div className="accent-bloom accent-bloom-header">
+      <div className="mx-auto w-full max-w-[820px] px-6 py-[72px]">
+        <p className="text-[12px] tracking-[0.08em] text-accent uppercase">Legal</p>
+        <h1 className="mt-3 font-display text-[38px] leading-[48px] font-medium text-white">
+          {title}
+        </h1>
+        <p className="mt-3 text-[13px] text-muted">Last updated: {lastUpdated}</p>
 
-      <div className="mt-8 flex flex-col gap-4">
-        {introParas.map((p, i) => (
-          <p key={i} className="text-[16px] leading-[27px] text-body">
-            {p}
-          </p>
-        ))}
-      </div>
+        <div className="mt-8 flex flex-col gap-4">
+          {introParas.map((p, i) => (
+            <p key={i} className="text-[16px] leading-[27px] text-body">
+              {p}
+            </p>
+          ))}
+        </div>
 
-      <div className="mt-10 flex flex-col gap-9">
-        {sections.map((s) => (
-          <section key={s.heading}>
+        <div className="mt-10 flex flex-col gap-9">
+          {sections.map((s) => (
+            <section key={s.heading}>
+              <h2 className="font-display text-[22px] leading-[30px] font-medium text-heading-soft">
+                {s.heading}
+              </h2>
+              <Blocks blocks={s.body} />
+              {s.subsections?.map((sub) => (
+                <div key={sub.heading} className="mt-6">
+                  <h3 className="font-display text-[17px] leading-[26px] font-medium text-white">
+                    {sub.heading}
+                  </h3>
+                  <Blocks blocks={sub.body} />
+                </div>
+              ))}
+            </section>
+          ))}
+
+          <section>
             <h2 className="font-display text-[22px] leading-[30px] font-medium text-heading-soft">
-              {s.heading}
+              Contact Us
             </h2>
-            <Blocks blocks={s.body} />
-            {s.subsections?.map((sub) => (
-              <div key={sub.heading} className="mt-6">
-                <h3 className="font-display text-[17px] leading-[26px] font-medium text-white">
-                  {sub.heading}
-                </h3>
-                <Blocks blocks={sub.body} />
-              </div>
-            ))}
+            <p className="mt-3 text-[16px] leading-[27px] text-body">{contactIntro}</p>
+            <p className="mt-4 text-[16px] leading-[28px] text-body">
+              Email:{" "}
+              <a href={site.emailHref} className="font-medium text-accent hover:underline">
+                {site.email}
+              </a>
+              <br />
+              Phone:{" "}
+              <a href={site.phoneHref} className="font-medium text-accent hover:underline">
+                {site.phone}
+              </a>
+            </p>
           </section>
-        ))}
 
-        <section>
-          <h2 className="font-display text-[22px] leading-[30px] font-medium text-heading-soft">
-            Contact Us
-          </h2>
-          <p className="mt-3 text-[16px] leading-[27px] text-body">{contactIntro}</p>
-          <p className="mt-4 text-[16px] leading-[28px] text-body">
-            Email:{" "}
-            <a href={site.emailHref} className="font-medium text-accent hover:underline">
-              {site.email}
-            </a>
-            <br />
-            Phone:{" "}
-            <a href={site.phoneHref} className="font-medium text-accent hover:underline">
-              {site.phone}
-            </a>
-          </p>
-        </section>
-
-        {closing && (
-          <section className="rounded-card bg-card p-7">
-            <h2 className="font-display text-[22px] leading-[30px] font-medium text-heading-soft">
-              {closing.heading}
-            </h2>
-            <Blocks blocks={closing.body} />
-          </section>
-        )}
+          {closing && (
+            <section className="rounded-card bg-card p-7">
+              <h2 className="font-display text-[22px] leading-[30px] font-medium text-heading-soft">
+                {closing.heading}
+              </h2>
+              <Blocks blocks={closing.body} />
+            </section>
+          )}
+        </div>
       </div>
     </div>
   );

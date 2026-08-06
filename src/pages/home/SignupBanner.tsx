@@ -11,9 +11,13 @@ export default function SignupBanner() {
       <div className="mx-auto w-full max-w-[1338px] px-6 min-[1400px]:px-0">
         <Reveal
           variant="scale"
-          className="relative overflow-hidden rounded-card border border-white/10 bg-surface px-8 py-[56px] text-center text-white lg:px-16"
+          className="accent-bloom accent-bloom-panel relative overflow-hidden rounded-card border border-white/10 bg-surface px-8 py-[56px] text-center text-white lg:px-16"
         >
-          {/* soft moving red glow accents */}
+          {/* Directional bloom underneath (the shared .accent-bloom), then these
+              two breathing circles on top of it. The bloom gives the band the
+              same lighting as the share card and the 404; the circles are what
+              keep it alive. Both stay inside the card's overflow-hidden, so no
+              red reaches the product rows above and below. */}
           <span className="animate-glow pointer-events-none absolute -top-16 -left-10 size-56 rounded-full bg-accent/25 blur-3xl" />
           <span
             className="animate-glow pointer-events-none absolute -right-10 -bottom-16 size-56 rounded-full bg-accent/20 blur-3xl"

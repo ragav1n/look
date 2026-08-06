@@ -88,7 +88,7 @@ function FooterLink({ to, label }: { to: string; label: string }) {
 
 export default function Footer() {
   return (
-    <footer className="border-t border-white/10 bg-black text-white">
+    <footer className="accent-bloom accent-bloom-edge border-t border-white/10 bg-black text-white">
       <div className="mx-auto grid w-full max-w-[1227px] grid-cols-1 gap-12 px-6 py-[72px] sm:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr_0.9fr] lg:gap-[64px] min-[1300px]:px-0">
         {/* Brand + contact */}
         <div>

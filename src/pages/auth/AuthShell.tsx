@@ -38,7 +38,9 @@ export default function AuthShell({
         </div>
       </div>
 
-      <div className="flex items-center justify-center px-6 py-12">
+      {/* Lit like the share card. No merchandise on this half, so the red
+          can't distort anything a shopper is judging. */}
+      <div className="accent-bloom accent-bloom-panel flex items-center justify-center px-6 py-12">
         <div className="animate-auth-panel w-full max-w-[384px]">
           <Link to="/" aria-label="LOOK — home">
             <img src={logoWhite} alt="LOOK" className="h-8 w-auto object-contain" />

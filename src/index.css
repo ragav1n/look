@@ -274,6 +274,74 @@ body {
   animation: toast-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+/* Film grain. Breaks up the banding a wide black-to-red gradient shows once
+   it's quantised to 8 bits, and reads as photographic grain rather than as an
+   effect. Shared by the 404 stage and .accent-bloom below. */
+.bg-grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+}
+
+/* Accent bloom — the red-on-black lighting from the 404 stage and the share
+   card, as a section backdrop.
+
+   NEVER put this behind product imagery. The layered blacks exist so
+   full-length photography reads true; a red wash under a product grid shifts
+   how every garment's colour looks, and a shopper who misjudges a colour
+   returns the parcel. Non-merchandise surfaces only: auth, legal headers,
+   the footer, the newsletter band.
+
+   Painted by ::before at z-index -1, which lands above the element's own
+   background but below its in-flow content — no wrapper divs, no z-index on
+   the content. `isolation: isolate` is what keeps that -1 from escaping
+   behind an ancestor's background. */
+.accent-bloom {
+  position: relative;
+  isolation: isolate;
+}
+.accent-bloom::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-repeat: no-repeat;
+}
+/* Light from low and left, the way the share card is lit. For tall panels. */
+.accent-bloom-panel::before {
+  background-image:
+    radial-gradient(
+      58% 64% at 6% 104%,
+      rgba(225, 29, 42, 0.34) 0%,
+      rgba(178, 22, 35, 0.13) 38%,
+      transparent 72%
+    ),
+    radial-gradient(46% 44% at 96% -6%, rgba(255, 59, 71, 0.12) 0%, transparent 66%);
+}
+/* A wash falling from the top edge, for the header of a long document.
+   Sized in pixels, not percentages: a percentage radius is measured against
+   the element, so on a 4000px legal page the same gradient stretches into
+   invisibility. This stays a fixed lamp near the masthead however long the
+   document runs. */
+.accent-bloom-header::before {
+  background-image: radial-gradient(
+    900px 480px at 16% -70px,
+    rgba(225, 29, 42, 0.34) 0%,
+    rgba(178, 22, 35, 0.12) 42%,
+    transparent 72%
+  );
+}
+/* Wide and shallow, hugging the top edge — lifts the footer off the page
+   without lighting the whole block. */
+.accent-bloom-edge::before {
+  background-image: radial-gradient(
+    120% 78% at 50% 0%,
+    rgba(225, 29, 42, 0.2) 0%,
+    rgba(140, 18, 28, 0.07) 38%,
+    transparent 68%
+  );
+}
+
 /* Hide scrollbars on drag/snap carousels while keeping scroll behaviour */
 .no-scrollbar {
   -ms-overflow-style: none;

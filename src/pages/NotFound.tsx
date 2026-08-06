@@ -10,12 +10,6 @@ import Reveal from "@/components/ui/Reveal";
    ones framed for full-bleed, which is exactly what this page needs. */
 const HERO_COLLECTION = "hero";
 
-/* Film grain. A single tiling SVG as a data URI — no asset to ship, and the CSP
-   already allows `img-src data:`. At 5% over black it stops the large flat
-   areas from banding and gives the page a printed, editorial feel. */
-const GRAIN =
-  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E";
-
 /** Pointer position within the element, as -0.5…0.5 on each axis. Drives the
  *  parallax. rAF-throttled so a fast mouse can't outpace the paint, and inert
  *  for reduced-motion or non-hover (touch) devices, where it would only ever
@@ -176,11 +170,7 @@ export default function NotFound() {
           }}
         />
 
-        <div
-          aria-hidden
-          className="absolute inset-0 opacity-[0.05] mix-blend-overlay"
-          style={{ backgroundImage: `url("${GRAIN}")`, backgroundSize: "160px 160px" }}
-        />
+        <div aria-hidden className="bg-grain absolute inset-0 opacity-[0.05] mix-blend-overlay" />
 
         {/* ===== CONTENT ===== */}
         <div className="relative z-10 mx-auto w-full max-w-[900px] px-6 py-20 text-center lg:py-24">

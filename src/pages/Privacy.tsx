@@ -95,69 +95,73 @@ const sections: Section[] = [
 
 export default function Privacy() {
   return (
-    <div className="mx-auto w-full max-w-[820px] px-6 py-[72px]">
-      <p className="text-[12px] tracking-[0.08em] text-accent uppercase">Legal</p>
-      <h1 className="mt-3 font-display text-[38px] leading-[48px] font-medium text-white">
-        Privacy Policy
-      </h1>
-      <p className="mt-3 text-[13px] text-muted">Last updated: 18 July 2026</p>
+    /* Bloom on the outer element so the light spans the viewport rather than
+       stopping at the 820px measure. Layout only — the copy is untouched. */
+    <div className="accent-bloom accent-bloom-header">
+      <div className="mx-auto w-full max-w-[820px] px-6 py-[72px]">
+        <p className="text-[12px] tracking-[0.08em] text-accent uppercase">Legal</p>
+        <h1 className="mt-3 font-display text-[38px] leading-[48px] font-medium text-white">
+          Privacy Policy
+        </h1>
+        <p className="mt-3 text-[13px] text-muted">Last updated: 18 July 2026</p>
 
-      <p className="mt-8 text-[16px] leading-[27px] text-body">
-        Welcome to LOOK. We believe that trust is the foundation of every meaningful relationship,
-        and that includes the relationship we build with our customers. When you choose LOOK, you’re
-        not only choosing thoughtfully designed fashion but also a brand that values your privacy and
-        respects your personal information. This Privacy Policy explains how we collect, use, store,
-        and protect your information whenever you visit our website, create an account, browse our
-        collections, or make a purchase.
-      </p>
+        <p className="mt-8 text-[16px] leading-[27px] text-body">
+          Welcome to LOOK. We believe that trust is the foundation of every meaningful relationship,
+          and that includes the relationship we build with our customers. When you choose LOOK, you’re
+          not only choosing thoughtfully designed fashion but also a brand that values your privacy and
+          respects your personal information. This Privacy Policy explains how we collect, use, store,
+          and protect your information whenever you visit our website, create an account, browse our
+          collections, or make a purchase.
+        </p>
 
-      <div className="mt-10 flex flex-col gap-9">
-        {sections.map((s) => (
-          <section key={s.heading}>
+        <div className="mt-10 flex flex-col gap-9">
+          {sections.map((s) => (
+            <section key={s.heading}>
+              <h2 className="font-display text-[22px] leading-[30px] font-medium text-heading-soft">
+                {s.heading}
+              </h2>
+              {s.body.map((p, i) => (
+                <p key={i} className="mt-3 text-[16px] leading-[27px] text-body">
+                  {p}
+                </p>
+              ))}
+            </section>
+          ))}
+
+          <section>
             <h2 className="font-display text-[22px] leading-[30px] font-medium text-heading-soft">
-              {s.heading}
+              Contact Us
             </h2>
-            {s.body.map((p, i) => (
-              <p key={i} className="mt-3 text-[16px] leading-[27px] text-body">
-                {p}
-              </p>
-            ))}
+            <p className="mt-3 text-[16px] leading-[27px] text-body">
+              If you have any questions regarding this Privacy Policy or the way your personal
+              information is collected, stored, or used, please feel free to contact us. Our team is
+              always here to assist you.
+            </p>
+            <p className="mt-4 text-[16px] leading-[28px] text-body">
+              Email:{" "}
+              <a href={site.emailHref} className="font-medium text-accent hover:underline">
+                {site.email}
+              </a>
+              <br />
+              Phone:{" "}
+              <a href={site.phoneHref} className="font-medium text-accent hover:underline">
+                {site.phone}
+              </a>
+            </p>
           </section>
-        ))}
 
-        <section>
-          <h2 className="font-display text-[22px] leading-[30px] font-medium text-heading-soft">
-            Contact Us
-          </h2>
-          <p className="mt-3 text-[16px] leading-[27px] text-body">
-            If you have any questions regarding this Privacy Policy or the way your personal
-            information is collected, stored, or used, please feel free to contact us. Our team is
-            always here to assist you.
-          </p>
-          <p className="mt-4 text-[16px] leading-[28px] text-body">
-            Email:{" "}
-            <a href={site.emailHref} className="font-medium text-accent hover:underline">
-              {site.email}
-            </a>
-            <br />
-            Phone:{" "}
-            <a href={site.phoneHref} className="font-medium text-accent hover:underline">
-              {site.phone}
-            </a>
-          </p>
-        </section>
-
-        <section className="rounded-card bg-card p-7">
-          <h2 className="font-display text-[22px] leading-[30px] font-medium text-heading-soft">
-            Our Promise
-          </h2>
-          <p className="mt-3 text-[16px] leading-[27px] text-body">
-            At LOOK, every stitch reflects care, every design celebrates individuality, and every
-            customer relationship is built on trust. We are committed to protecting your privacy with
-            the same dedication, integrity, and attention to detail that goes into creating every
-            LOOK collection. Thank you for choosing us and for being a valued part of our journey.
-          </p>
-        </section>
+          <section className="rounded-card bg-card p-7">
+            <h2 className="font-display text-[22px] leading-[30px] font-medium text-heading-soft">
+              Our Promise
+            </h2>
+            <p className="mt-3 text-[16px] leading-[27px] text-body">
+              At LOOK, every stitch reflects care, every design celebrates individuality, and every
+              customer relationship is built on trust. We are committed to protecting your privacy with
+              the same dedication, integrity, and attention to detail that goes into creating every
+              LOOK collection. Thank you for choosing us and for being a valued part of our journey.
+            </p>
+          </section>
+        </div>
       </div>
     </div>
   );
