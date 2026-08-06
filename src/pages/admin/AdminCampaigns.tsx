@@ -150,8 +150,9 @@ function LoginForm({ onAuthed }: { onAuthed: () => void }) {
         </div>
       </div>
 
-      {/* Form panel */}
-      <div className="relative flex items-center justify-center px-6 py-12">
+      {/* Form panel. Same lighting as the customer auth split — directional
+          bloom underneath, the two breathing circles on top of it. */}
+      <div className="accent-bloom accent-bloom-panel flex items-center justify-center px-6 py-12">
         <span className="animate-glow pointer-events-none absolute top-10 right-8 size-56 rounded-full bg-accent/15 blur-3xl" />
         <span
           className="animate-glow pointer-events-none absolute bottom-12 left-6 size-44 rounded-full bg-accent/10 blur-3xl"
@@ -461,7 +462,9 @@ function Console({ onSignedOut }: { onSignedOut: () => void }) {
   }
 
   return (
-    <div className="min-h-screen bg-page px-6 py-8 text-white sm:py-12">
+    /* Bloom on the full-width shell, not the 760px column, so the light isn't
+       cut off mid-glow at the measure's edge. */
+    <div className="accent-bloom accent-bloom-header min-h-screen bg-page px-6 py-8 text-white sm:py-12">
       <div className="animate-page-in mx-auto w-full max-w-[760px]">
         {/* Top bar */}
         <header className="flex items-center justify-between gap-4 border-b border-line pb-6">

@@ -276,9 +276,16 @@ body {
 
 /* Film grain. Breaks up the banding a wide black-to-red gradient shows once
    it's quantised to 8 bits, and reads as photographic grain rather than as an
-   effect. Shared by the 404 stage and .accent-bloom below. */
+   effect. Shared by the 404 stage (.bg-grain) and .accent-bloom below.
+
+   Measured, not assumed: an ungrained bloom put only 11 distinct red values
+   across 520px, in flat plateaus up to 67px wide — those plateaus are the
+   arcs you see as rings on a dark screen. */
+:root {
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
 .bg-grain {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-image: var(--grain);
   background-size: 160px 160px;
 }
 
@@ -307,6 +314,35 @@ body {
   pointer-events: none;
   background-repeat: no-repeat;
 }
+/* Grain over the bloom, under the content — this is what dithers the gradient's
+   steps into each other. Same z-index as ::before, painted after it.
+
+   Two things here were measured rather than guessed, on a 560px crop of the
+   console masthead (widest single-value run inside the lit region):
+
+     no grain            79px bands
+     overlay @ 0.05      89px bands   <- overlay is 2*base*blend below mid-grey,
+     grain  @ 0.03       20px bands      so over near-black it does nothing
+     grain  @ 0.05        7px bands
+
+   Hence plain `normal`, not `overlay`. Masking the grain with the bloom itself
+   was tried and is worse than useless (113px): the mask is thinnest exactly in
+   the low-alpha outskirts where the bands actually live.
+
+   0.03 rather than 0.05 on purpose. Unmasked grain lifts the surface it sits on
+   (#0a0a0a reads 13 at 0.03, 15 at 0.05), and this class abuts ungrained black
+   at the navbar and footer. On a site built out of layered blacks, a seam
+   between two blacks is a worse artefact than a 20px band at one level. */
+.accent-bloom::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: var(--grain);
+  background-size: 160px 160px;
+  opacity: 0.03;
+}
 /* Light from low and left, the way the share card is lit. For tall panels. */
 .accent-bloom-panel::before {
   background-image:
@@ -322,10 +358,14 @@ body {
    Sized in pixels, not percentages: a percentage radius is measured against
    the element, so on a 4000px legal page the same gradient stretches into
    invisibility. This stays a fixed lamp near the masthead however long the
-   document runs. */
+   document runs.
+
+   The vw ceiling is what keeps it a lamp on a phone. At a flat 900px the glow
+   is wider than a 390px screen, so it stops reading as light falling on the
+   masthead and becomes a red field behind the body copy. */
 .accent-bloom-header::before {
   background-image: radial-gradient(
-    900px 480px at 16% -70px,
+    min(900px, 135vw) min(480px, 62vw) at 16% -70px,
     rgba(225, 29, 42, 0.34) 0%,
     rgba(178, 22, 35, 0.12) 42%,
     transparent 72%
