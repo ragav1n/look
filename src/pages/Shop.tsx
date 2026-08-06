@@ -284,7 +284,7 @@ export default function Shop() {
             />
           ) : (
             <>
-              <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-[15px]">
+              <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 lg:gap-[15px]">
                 {loading
                   ? Array.from({ length: 6 }).map((_, i) => <ProductCardSkeleton key={i} />)
                   : visible.map((p) => (

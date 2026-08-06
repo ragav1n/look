@@ -29,7 +29,7 @@ export default function Wishlist() {
           onRetry={reload}
         />
       ) : loading ? (
-        <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-[15px]">
+        <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 lg:gap-[15px]">
           {Array.from({ length: 3 }).map((_, i) => (
             <ProductCardSkeleton key={i} />
           ))}
@@ -48,7 +48,7 @@ export default function Wishlist() {
           </Link>
         </div>
       ) : (
-        <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-[15px]">
+        <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 lg:gap-[15px]">
           {items.map((p) => (
             <ProductCard key={p.id} product={p} onQuickView={setQuickView} />
           ))}

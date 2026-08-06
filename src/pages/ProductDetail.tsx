@@ -340,7 +340,7 @@ function RelatedProducts({ currentId, category }: { currentId: string; category:
           You may also like
         </h2>
       </Reveal>
-      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-[15px]">
+      <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 lg:gap-[15px]">
         {loading
           ? Array.from({ length: 4 }).map((_, i) => <ProductCardSkeleton key={i} />)
           : items.map((p, i) => (
