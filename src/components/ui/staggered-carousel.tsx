@@ -271,14 +271,19 @@ function StaggeredCard({ product }: { product: Product }) {
         )}
 
         {/* readability gradient + info */}
-        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5">
-          <h3 className="font-display text-[18px] leading-tight font-medium text-white drop-shadow-sm">
+        {/* Pale garments (yellows, ivories) are the hard case — white type on
+            them needs a firmer floor than the old 70/20 ramp gave it. */}
+        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/85 via-black/35 to-transparent" />
+        {/* Two cards to a phone row leaves ~140px of text width, so the
+            desktop overlay sizes have to come down or the name swallows the
+            garment it's sitting on. */}
+        <div className="absolute inset-x-0 bottom-0 p-3 sm:p-5">
+          <h3 className="line-clamp-2 font-display text-[14px] leading-[18px] font-medium text-white drop-shadow-sm sm:text-[18px] sm:leading-tight">
             {product.name}
           </h3>
-          <div className="mt-1 flex items-center gap-2 font-display text-[15px]">
+          <div className="mt-0.5 flex flex-wrap items-center gap-x-2 font-display text-[12px] sm:mt-1 sm:text-[15px]">
             {product.mrp && (
-              <span className="text-white/55 line-through">
+              <span className="text-white/70 line-through">
                 {formatPrice(product.mrp, product.currencyCode)}
               </span>
             )}
