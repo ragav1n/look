@@ -19,6 +19,7 @@ import Reveal from "@/components/ui/Reveal";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
 import Skeleton from "@/components/ui/Skeleton";
+import NotFound from "@/pages/NotFound";
 import sizeChart from "@/assets/size-chart.jpg";
 
 /* Brand size-chart artwork (from size_chart.pdf). The "Size Chart" button on
@@ -50,6 +51,9 @@ export default function ProductDetail() {
         onRetry={reload}
       />
     );
+  /* A retired or mistyped product handle is the most common way anyone
+     actually reaches a 404 here, so it gets the real page — same treatment,
+     and it offers new arrivals instead of a dead end. */
   if (!product) return <NotFound />;
 
   return <PdpContent key={product.slug} product={product} />;
@@ -372,19 +376,3 @@ function PdpSkeleton() {
   );
 }
 
-function NotFound() {
-  return (
-    <div className="mx-auto max-w-[600px] px-6 py-24 text-center">
-      <h1 className="font-display text-[28px] font-medium text-white">Product not found</h1>
-      <p className="mt-2 text-[15px] text-body">
-        The product you’re looking for doesn’t exist or is no longer available.
-      </p>
-      <Link
-        to="/shop"
-        className="mt-6 inline-flex items-center justify-center rounded-btn bg-white px-6 py-3 text-[15px] font-medium text-black transition-opacity hover:opacity-85"
-      >
-        Back to Shop
-      </Link>
-    </div>
-  );
-}
