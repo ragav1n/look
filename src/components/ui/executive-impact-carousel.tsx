@@ -399,15 +399,16 @@ function CarouselCard({ product }: { product: Product }) {
 
         <DiscountPill percent={off} className="absolute top-3 left-3 z-10" />
 
-        {/* readability gradient + info */}
-        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+        {/* readability gradient + info — same ramp as the Shop-the-Hits card,
+            which shares this treatment and sits on the same page. */}
+        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/85 via-black/35 to-transparent" />
         <div className="absolute inset-x-0 bottom-0 p-5">
           <h3 className="font-display text-[19px] leading-tight font-medium text-white drop-shadow-sm">
             {product.name}
           </h3>
           <div className="mt-1 flex items-center gap-2 font-display text-[15px]">
             {product.mrp && (
-              <span className="text-white/55 line-through">
+              <span className="text-white/70 line-through">
                 {formatPrice(product.mrp, product.currencyCode)}
               </span>
             )}
