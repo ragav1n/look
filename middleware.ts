@@ -51,9 +51,11 @@ const PRODUCT_QUERY = `
       description
       productType
       seo { description }
-      featuredImage {
-        url(transform: { maxWidth: $width })
-        altText
+      images(first: 2) {
+        nodes {
+          url(transform: { maxWidth: $width })
+          altText
+        }
       }
       priceRange {
         minVariantPrice { amount currencyCode }
@@ -89,7 +91,7 @@ export async function fetchProduct(handle: string): Promise<Product | null> {
         description?: string;
         productType?: string;
         seo?: { description?: string | null } | null;
-        featuredImage?: { url?: string; altText?: string | null } | null;
+        images?: { nodes?: { url?: string; altText?: string | null }[] } | null;
         priceRange?: { minVariantPrice?: { amount?: string; currencyCode?: string } };
       } | null;
     };
@@ -98,15 +100,24 @@ export async function fetchProduct(handle: string): Promise<Product | null> {
   const p = json.data?.product;
   if (!p?.title) return null;
 
+  /* Second shot, not the first. A preview card is a wide band and these photos
+     are tall, so clients centre-crop: on a distant full-length hero that leaves
+     a strip of fabric with no bodice and no hem. Image two is the shot after
+     the hero, which on this catalogue is framed closer and survives the crop.
+     It is a rule of thumb, not a guarantee — where image two is a back view the
+     card shows the back. The hero stays image one, where the shop grid wants
+     it; that split is the whole reason the preview picks its own rather than
+     the shop reordering media for both. */
+  const shots = (p.images?.nodes ?? []).filter((n) => n.url);
+  const shot = shots[1] ?? shots[0];
+
   const money = p.priceRange?.minVariantPrice;
   return {
     title: p.title,
     description: (p.description ?? "").trim(),
     seoDescription: (p.seo?.description ?? "").trim(),
     productType: (p.productType ?? "").trim(),
-    image: p.featuredImage?.url
-      ? { url: p.featuredImage.url, alt: p.featuredImage.altText ?? p.title }
-      : undefined,
+    image: shot?.url ? { url: shot.url, alt: shot.altText ?? p.title } : undefined,
     price:
       money?.amount && money.currencyCode
         ? { amount: money.amount, currencyCode: money.currencyCode }
