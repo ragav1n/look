@@ -7,7 +7,7 @@
     "dev": "vite",
     "dev:bff": "npx vercel dev",
     "dev:local": "node scripts/dev-local.mjs",
-    "build": "tsc --noEmit && vite build",
+    "build": "node scripts/generate-sitemap.mjs && tsc --noEmit && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },

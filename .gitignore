@@ -7,6 +7,9 @@ npm-debug.log*
 # TypeScript incremental build cache
 *.tsbuildinfo
 
+# Written from the live catalogue by scripts/generate-sitemap.mjs on every build
+public/sitemap.xml
+
 # Local env — never commit real Shopify credentials (keep .env.example tracked)
 .env
 .env.*

@@ -1,33 +1,29 @@
 import { next } from "@vercel/edge";
 
 /**
- * What crawlers need and a client-rendered SPA cannot give them.
+ * Product link previews.
  *
  * The site is a client-rendered SPA behind a catch-all rewrite, so every URL
- * serves the same index.html. A crawler never runs the app's JavaScript, so
- * two things have to be answered at the edge, before that rewrite:
+ * serves the same index.html. A link crawler never runs the app's JavaScript,
+ * which is why sharing a product landed the generic site card in WhatsApp
+ * instead of the piece being shared.
  *
- *   /shop/<handle>  link previews. Sharing a product landed the generic site
- *                   card in WhatsApp instead of the piece being shared, so for
- *                   crawler requests this fetches the product and serves the
- *                   real index.html with its Open Graph block swapped for that
- *                   product's title, description, price and photo. Ordinary
- *                   visitors are passed straight through — they run the app,
- *                   which sets up the page itself, and adding a Shopify round
- *                   trip to their first byte would buy them nothing.
+ * For crawler requests to /shop/<handle> this fetches the product from the
+ * Storefront API and serves the real index.html with its Open Graph block
+ * swapped for that product's title, description, price and photo. Ordinary
+ * visitors are passed straight through — they run the app, which sets up the
+ * page itself, and adding a Shopify round trip to their first byte would buy
+ * them nothing.
  *
- *   /sitemap.xml    the catalogue, listed. Nothing on the site links to every
- *                   product, so a crawler that has not already seen a handle
- *                   has no way to reach it.
+ * Everything is fail-open: any error, timeout or miss falls back to next(),
+ * which serves exactly what the site served before.
  *
- * Both are fail-open: any error, timeout or miss falls back to next() (or, for
- * the sitemap, to the static routes alone), never to an error page.
- *
- * This lives in middleware rather than api/ because Vercel's plan caps the
- * project at 12 serverless functions and api/ is at 12.
+ * The sitemap deliberately does NOT live here — Vercel's edge drops the
+ * content-type header from HEAD responses to middleware paths, which Google's
+ * sitemap fetcher would not accept. See scripts/generate-sitemap.mjs.
  */
 
-export const config = { matcher: ["/shop/:path*", "/sitemap.xml"] };
+export const config = { matcher: "/shop/:path*" };
 
 /* Preview bots plus the search crawlers, which get the same document either
    way — only the meta tags differ, and they describe the page accurately. */
@@ -207,186 +203,9 @@ export function injectOg(html: string, product: Product, pageUrl: string): strin
     );
 }
 
-/* ------------------------------------------------------------------ sitemap */
-
-/** Google is patient in a way WhatsApp is not, so this gets its own budget. */
-const SITEMAP_TIMEOUT_MS = 8000;
-
-/** 250 is the Storefront page cap; four pages is far past this catalogue. */
-const SITEMAP_PAGE_SIZE = 250;
-const SITEMAP_MAX_PAGES = 4;
-
-/**
- * The public routes with no data behind them.
- *
- * Deliberately absent: /cart and /account/* are personal and empty to a
- * crawler, /login and /signup are dead ends, /admin is robots-disallowed.
- * Listing any of them asks Google to index a page worth nothing in a result.
- */
-const STATIC_PATHS = [
-  "/",
-  "/shop",
-  "/about",
-  "/support",
-  "/shipping",
-  "/returns",
-  "/privacy",
-  "/terms",
-];
-
-/** The two pages that are windows onto the catalogue, so the catalogue's
- *  freshness is honestly theirs. Every other static path gets no lastmod —
- *  Google would rather have none than one it learns to distrust. */
-const CATALOGUE_PATHS = new Set(["/", "/shop"]);
-
-const SITEMAP_QUERY = `
-  query SitemapProducts($first: Int!, $cursor: String) {
-    products(first: $first, after: $cursor) {
-      pageInfo { hasNextPage endCursor }
-      nodes {
-        handle
-        updatedAt
-        featuredImage { url }
-      }
-    }
-  }
-`;
-
-interface SitemapProduct {
-  handle: string;
-  updatedAt: string;
-  image?: string;
-}
-
-/* Annotated rather than inferred, and read back through the annotation below:
-   `cursor` is assigned from endCursor and passed to the call that produces it,
-   which is a cycle TypeScript cannot infer its way out of. */
-interface SitemapPageInfo {
-  hasNextPage?: boolean;
-  endCursor?: string | null;
-}
-
-interface SitemapPage {
-  products?: {
-    pageInfo?: SitemapPageInfo;
-    nodes?: { handle?: string; updatedAt?: string; featuredImage?: { url?: string } | null }[];
-  } | null;
-}
-
-/** Every product published to this sales channel, oldest cursor first. */
-async function fetchSitemapProducts(): Promise<SitemapProduct[]> {
-  const products: SitemapProduct[] = [];
-  let cursor: string | null = null;
-
-  for (let page = 0; page < SITEMAP_MAX_PAGES; page++) {
-    const data: SitemapPage | null = await storefront<SitemapPage>(
-      SITEMAP_QUERY,
-      { first: SITEMAP_PAGE_SIZE, cursor },
-      SITEMAP_TIMEOUT_MS,
-    );
-
-    const nodes = data?.products?.nodes;
-    if (!nodes) break;
-
-    for (const n of nodes) {
-      if (!n.handle) continue;
-      products.push({
-        handle: n.handle,
-        updatedAt: n.updatedAt ?? "",
-        image: n.featuredImage?.url ?? undefined,
-      });
-    }
-
-    const info: SitemapPageInfo | undefined = data?.products?.pageInfo;
-    if (!info?.hasNextPage || !info.endCursor) break;
-    cursor = info.endCursor;
-  }
-
-  return products;
-}
-
-/** One <url> entry. `esc` is doing XML duty here — its five replacements are
- *  exactly the predefined entities, and Shopify's CDN URLs carry the `&` that
- *  makes escaping mandatory rather than decorative. */
-function urlEntry(loc: string, lastmod?: string, image?: string): string {
-  return [
-    "  <url>",
-    `    <loc>${esc(loc)}</loc>`,
-    lastmod ? `    <lastmod>${esc(lastmod)}</lastmod>` : "",
-    image ? `    <image:image><image:loc>${esc(image)}</image:loc></image:image>` : "",
-    "  </url>",
-  ]
-    .filter(Boolean)
-    .join("\n");
-}
-
-/**
- * The sitemap document.
- *
- * `origin` comes from the request rather than a constant so the file always
- * lists URLs on the host that served it — the spec's rule, and it keeps a
- * preview deployment's sitemap pointing at itself instead of at production.
- *
- * No <changefreq> or <priority>: Google ignores both, and has said so.
- */
-function buildSitemap(origin: string, products: SitemapProduct[]): string {
-  const newest = products
-    .map((p) => p.updatedAt)
-    .filter(Boolean)
-    .sort()
-    .pop();
-
-  const entries = [
-    ...STATIC_PATHS.map((path) =>
-      urlEntry(`${origin}${path}`, CATALOGUE_PATHS.has(path) ? newest : undefined),
-    ),
-    ...products.map((p) =>
-      urlEntry(
-        `${origin}/shop/${encodeURIComponent(p.handle)}`,
-        p.updatedAt || undefined,
-        p.image,
-      ),
-    ),
-  ];
-
-  return [
-    `<?xml version="1.0" encoding="UTF-8"?>`,
-    `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"`,
-    `        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">`,
-    ...entries,
-    `</urlset>`,
-    "",
-  ].join("\n");
-}
-
-async function serveSitemap(origin: string): Promise<Response> {
-  /* A Shopify outage should cost the product URLs, not the whole file: the
-     static routes are known without asking anyone, and a sitemap listing eight
-     real pages beats a 500 that Search Console reports as an error. */
-  let products: SitemapProduct[] = [];
-  try {
-    products = await fetchSitemapProducts();
-  } catch {
-    products = [];
-  }
-
-  return new Response(buildSitemap(origin, products), {
-    status: 200,
-    headers: {
-      "content-type": "application/xml; charset=utf-8",
-      "cache-control": "public, s-maxage=3600, stale-while-revalidate=86400",
-    },
-  });
-}
-
-/* --------------------------------------------------------------- dispatch */
-
 export default async function middleware(request: Request): Promise<Response> {
   try {
     const url = new URL(request.url);
-
-    // Served to anyone who asks, crawler or not — it is a public document.
-    if (url.pathname === "/sitemap.xml") return serveSitemap(url.origin);
 
     const ua = request.headers.get("user-agent") ?? "";
     if (!CRAWLER.test(ua)) return next();
