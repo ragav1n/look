@@ -201,7 +201,8 @@ export default async function middleware(request: Request): Promise<Response> {
     });
     if (!shell.ok) return next();
 
-    const html = injectOg(await shell.text(), product, url.href);
+    // Canonical, so a link shared with ?utm_… still declares the clean URL.
+    const html = injectOg(await shell.text(), product, `${url.origin}${url.pathname}`);
 
     return new Response(html, {
       status: 200,
