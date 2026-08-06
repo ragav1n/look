@@ -21,12 +21,15 @@ export default function SignupBanner() {
           />
           <div className="relative">
             <p className="text-[12px] tracking-[0.08em] text-accent uppercase">Stay in the loop</p>
-            <h2 id="signup-heading" className="mt-2 font-display text-[35px] leading-[47px] font-medium">
-              Join the LOOK Community
+            <h2
+              id="signup-heading"
+              className="mt-2 font-display text-[28px] leading-[38px] font-medium sm:text-[35px] sm:leading-[47px]"
+            >
+              Join the LOOK Community and <span className="text-accent">Get 5% Off</span>
             </h2>
             <p className="mx-auto mt-3 max-w-[520px] text-[16px] leading-[24px] text-white/75">
               Be first to know about new drops, exclusive offers, and styling edits — straight to
-              your inbox.
+              your inbox. Your 5% welcome code arrives with the first one.
             </p>
 
             <NewsletterForm />
