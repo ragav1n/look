@@ -69,7 +69,11 @@ export default function NewsletterForm({ autoFocus, onSuccess }: Props) {
         onChange={(e) => setEmail(e.target.value)}
         placeholder="Enter your email"
         aria-label="Email address"
-        className="h-[50px] flex-1 rounded-btn border border-white/15 bg-black px-5 text-[15px] text-white outline-none placeholder:text-muted focus:border-accent"
+        /* flex-1 is `flex: 1 1 0%`, and on a phone this form is a COLUMN — so
+           that zero basis lands on the height and collapses the field to half
+           the button's size. It only wants to fill the row, so scope it to the
+           row. */
+        className="h-[50px] w-full rounded-btn border border-white/15 bg-black px-5 text-[15px] text-white outline-none placeholder:text-muted focus:border-accent sm:w-auto sm:flex-1"
       />
       <button
         type="submit"

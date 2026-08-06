@@ -25,6 +25,10 @@ export interface EmailContent {
   imageUrl?: string;
   /** Shown as a boxed code. Empty string ⇒ no code block. */
   discountCode: string;
+  /** Caption above the code box. Says what the code is worth, so the box still
+   *  explains itself when the metaobject body (which wins over the copy below)
+   *  doesn't mention the offer. Defaults to "Your code". */
+  discountLabel?: string;
 }
 
 const SHOP_URL = "https://look.ind.in";
@@ -35,11 +39,15 @@ const DEFAULTS: Record<EmailKey, EmailContent> = {
     heading: "You're on the list.",
     body: [
       `Thank you for joining ${site.name}. You'll be the first to know when a new drop lands — and we'll keep it to just that.`,
+      /* The signup band promises 5% off, so the email that follows has to
+         hand it over. The code box renders directly under these paragraphs. */
+      "Here's 5% off your first order. Use the code below at checkout.",
       "Take a look at what's in the studio right now.",
     ],
     ctaLabel: "Shop new arrivals",
     ctaUrl: `${SHOP_URL}/shop`,
-    discountCode: "",
+    discountCode: "WELCOME5",
+    discountLabel: "Your 5% welcome code",
   },
   welcome_account: {
     subject: `Your ${site.name} account is ready`,
@@ -165,5 +173,6 @@ export async function getEmailContent(key: EmailKey): Promise<EmailContent> {
     ctaUrl: pick(raw.ctaUrl, defaults.ctaUrl),
     imageUrl: raw.image?.reference?.image?.url ?? undefined,
     discountCode: pick(raw.discountCode, defaults.discountCode),
+    discountLabel: defaults.discountLabel,
   };
 }

@@ -27,7 +27,9 @@ export async function composeEmail(
     body: content.body,
     cta: { label: content.ctaLabel, url: content.ctaUrl },
     imageUrl: content.imageUrl,
-    code: content.discountCode ? { label: "Your code", value: content.discountCode } : undefined,
+    code: content.discountCode
+      ? { label: content.discountLabel ?? "Your code", value: content.discountCode }
+      : undefined,
     products: opts.products,
     unsubscribeUrl: unsub,
   });

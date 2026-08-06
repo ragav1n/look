@@ -54,9 +54,6 @@ const wall = WALL_ORDER.flatMap((id) => reviews.find((r) => r.id === id) ?? []);
 /** Rail gap in px (gap-4), needed to work out which note is parked. */
 const GAP = 16;
 
-/** Averaged over the wall, whose notes are all verified buyers. */
-const AVERAGE = wall.reduce((sum, r) => sum + r.rating, 0) / wall.length;
-
 export default function HomeReviews() {
   /* Which note the phone rail is parked on, so the dots can track it. The wall
      above sm doesn't scroll, so this stays at 0 and the dots stay hidden. */
@@ -85,14 +82,6 @@ export default function HomeReviews() {
           <p className="mt-2 text-[16px] text-body">
             Little notes from the women who wear LOOK.
           </p>
-
-          {/* The wall says "lots of happy customers" at a glance; one note at a
-              time on a phone can't, so state it outright above the rail. */}
-          <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3.5 py-1.5 sm:hidden">
-            <RatingStars rating={AVERAGE} size={14} />
-            <span className="text-[13px] font-semibold text-white">{AVERAGE.toFixed(1)}</span>
-            <span className="text-[13px] text-muted">· {wall.length} verified buyers</span>
-          </div>
         </Reveal>
 
         {/* Phones get a swipe rail, not the wall: nine stacked note cards made

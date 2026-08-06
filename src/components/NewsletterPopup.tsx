@@ -58,7 +58,8 @@ export default function NewsletterPopup() {
         <div className="relative">
           <p className="text-[12px] tracking-[0.08em] text-accent uppercase">Stay in the loop</p>
           <h2 className="mt-2 font-display text-[24px] leading-[32px] font-medium sm:text-[30px] sm:leading-[40px]">
-            Join the LOOK Community and <span className="text-accent">Get 5% Off</span>
+            Join the LOOK Community and{" "}
+            <span className="text-accent whitespace-nowrap">Get 5% Off</span>
           </h2>
           <p className="mx-auto mt-3 max-w-[400px] text-[15px] leading-[23px] text-white/75">
             Be first to know about new drops, exclusive offers, and styling edits — straight to your
