@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
 import { SlidersHorizontal, ChevronUp } from "lucide-react";
 import type { Product, ProductSort } from "@/types";
@@ -73,6 +73,12 @@ const GRID_FADE_MS = 170;
    those cards are below the fold anyway. */
 const CARD_STAGGER_MS = 40;
 const MAX_STAGGERED_CARDS = 6;
+
+/* Eleven products down to three is four grid rows of height leaving at once,
+   which yanks the footer up the screen. The results box eases between the two
+   heights instead. Roughly the length of a card's entrance, so the layout
+   settles as the last visible card lands. */
+const HEIGHT_MS = 380;
 
 /* Figma Shop (1:1356) + a left filter sidebar. Filters + sort live in the URL
    (searchParams) so views are shareable and back/forward works. */
@@ -150,6 +156,12 @@ export default function Shop() {
   const [applied, setApplied] = useState(() => ({ key: filterKey, col, stock, q }));
   const [fading, setFading] = useState(false);
 
+  /* The results box, and the height it was showing when the fade began. Read
+     while the outgoing cards are still in the DOM — by the time the layout
+     effect below runs, that height is gone. */
+  const boxRef = useRef<HTMLDivElement>(null);
+  const heightFrom = useRef<number | null>(null);
+
   useEffect(() => {
     if (filterKey === applied.key) return;
 
@@ -166,7 +178,10 @@ export default function Shop() {
 
     // Next frame, so the fade starts from a painted grid rather than being
     // collapsed into the same style recalculation as the click.
-    const frame = window.requestAnimationFrame(() => setFading(true));
+    const frame = window.requestAnimationFrame(() => {
+      heightFrom.current = boxRef.current?.getBoundingClientRect().height ?? null;
+      setFading(true);
+    });
     // A second click mid-fade cancels this one and restarts from where it is.
     const timer = window.setTimeout(commit, GRID_FADE_MS);
     return () => {
@@ -174,6 +189,50 @@ export default function Shop() {
       window.clearTimeout(timer);
     };
   }, [filterKey, applied.key, col, stockKey, q]);
+
+  /* Ease the box between the old and new heights so the footer slides instead of
+     jumping. Layout effect, not effect: the height has to be pinned in the same
+     commit that swaps the cards, before the browser paints the new one.
+
+     Driven through the DOM rather than state — React owns no style on this node,
+     so there's nothing to fight over, and it saves a render per frame. */
+  useLayoutEffect(() => {
+    const box = boxRef.current;
+    const from = heightFrom.current;
+    heightFrom.current = null;
+    if (!box || from == null) return;
+
+    /* Layout height, NOT scrollHeight. The new cards are sitting at the start of
+       their entrance — translated down 14px — and that overflow counts towards
+       scrollHeight, so the box would ease to 14px too tall and then snap back
+       the moment the pin came off. */
+    const to = box.getBoundingClientRect().height;
+    if (Math.abs(to - from) < 2) return; // same number of rows — nothing to ease
+
+    box.style.overflow = "hidden"; // rows past the current height stay clipped
+    box.style.height = `${from}px`;
+    void box.offsetHeight; // flush the start height, or the browser skips to `to`
+    /* Eased at both ends, unlike the site's expo-out entrances. A thousand
+       pixels of layout leaving at expo-out's opening speed spends a third of
+       the distance in the first two frames, which is the jump this is meant to
+       remove. Accelerating from rest reads as the page settling. */
+    box.style.transition = `height ${HEIGHT_MS}ms cubic-bezier(0.4, 0, 0.2, 1)`;
+    box.style.height = `${to}px`;
+
+    /* Back to auto once it lands — a pinned height would survive a viewport
+       resize and crop the grid. Cleanup runs it early when a second filter
+       click interrupts, so the next pass measures a real height. */
+    const release = () => {
+      box.style.height = "";
+      box.style.transition = "";
+      box.style.overflow = "";
+    };
+    const timer = window.setTimeout(release, HEIGHT_MS + 40);
+    return () => {
+      window.clearTimeout(timer);
+      release();
+    };
+  }, [applied.key]);
 
   // Products after search + category, before availability (used for counts).
   const preAvailability = useMemo(
@@ -337,9 +396,18 @@ export default function Shop() {
               onRetry={reload}
             />
           ) : (
-            <>
+            /* The measured box: everything whose height changes with the filters
+               lives in here, so the grid and the empty state ease between
+               heights as one block.
+
+               The top margin belongs to the box, not to the grid inside it. As
+               the grid's margin it collapses out through the box — until the
+               height animation sets `overflow: hidden`, which makes the box a
+               block formatting context, pulls the 24px back inside, and shunts
+               the whole grid down for exactly the length of the transition. */
+            <div ref={boxRef} className="mt-6">
               <div
-                className={`mt-6 grid grid-cols-2 gap-3 transition-opacity duration-150 ease-out sm:gap-4 lg:grid-cols-3 lg:gap-[15px] ${
+                className={`grid grid-cols-2 gap-3 transition-opacity duration-150 ease-out sm:gap-4 lg:grid-cols-3 lg:gap-[15px] ${
                   fading ? "opacity-0" : "opacity-100"
                 }`}
               >
@@ -372,7 +440,7 @@ export default function Shop() {
                   </p>
                 </div>
               )}
-            </>
+            </div>
           )}
         </div>
       </div>
