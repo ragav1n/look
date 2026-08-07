@@ -16,6 +16,11 @@
         sips -s format jpeg -s formatOptions 82 /tmp/og.png \
           --out public/og-default.jpg
 
+      Then bump the ?v= date on og:image and twitter:image in index.html.
+      Overwriting the JPEG alone changes nothing for anyone who has already
+      shared a link: WhatsApp and the rest cache previews against the image URL,
+      so the URL is what has to move.
+
       JPEG, not PNG, on purpose. A photograph plus film grain encodes to ~690kB
       as a PNG, and WhatsApp quietly drops previews for images past roughly
       600kB — the same card is ~115kB as a JPEG with no visible artefacts.

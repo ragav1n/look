@@ -15,7 +15,13 @@
          Product pages get their own photo and price swapped in by
          middleware.ts before the HTML is served; these are the fallback for
          every other page. The markers are what middleware.ts replaces —
-         keep them. -->
+         keep them.
+
+         The ?v= on the image is a cache bust, and the only lever we have.
+         WhatsApp and friends key their preview cache on the image URL and hold
+         it for an unpublished stretch, so re-cutting og-default.jpg under the
+         same URL changes nothing for anyone who has already shared a link.
+         Bump the date whenever the artwork is regenerated. -->
     <!--og:start-->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="LOOK" />
@@ -25,7 +31,7 @@
       content="Discover premium western wear, dresses, coord sets and elevated everyday essentials crafted for confidence, comfort and timeless elegance. Thoughtfully designed for every woman."
     />
     <meta property="og:url" content="https://look.ind.in/" />
-    <meta property="og:image" content="https://look.ind.in/og-default.jpg" />
+    <meta property="og:image" content="https://look.ind.in/og-default.jpg?v=20260807" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="LOOK — modern western essentials" />
@@ -35,7 +41,7 @@
       name="twitter:description"
       content="Discover premium western wear, dresses, coord sets and elevated everyday essentials crafted for confidence, comfort and timeless elegance. Thoughtfully designed for every woman."
     />
-    <meta name="twitter:image" content="https://look.ind.in/og-default.jpg" />
+    <meta name="twitter:image" content="https://look.ind.in/og-default.jpg?v=20260807" />
     <!--og:end-->
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
