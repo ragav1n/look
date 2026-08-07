@@ -80,6 +80,10 @@ const MAX_STAGGERED_CARDS = 6;
    settles as the last visible card lands. */
 const HEIGHT_MS = 380;
 
+/* Where the results come to rest under the sticky 72px navbar. Same offset the
+   sidebar pins at, so the two line up across the gutter. */
+const STICKY_TOP = 96;
+
 /* Figma Shop (1:1356) + a left filter sidebar. Filters + sort live in the URL
    (searchParams) so views are shareable and back/forward works. */
 export default function Shop() {
@@ -100,6 +104,12 @@ export default function Shop() {
   const { data, loading, error, reload } = useAsyncData(() => getProducts({ sort }), [sort]);
   const products = data ?? [];
 
+  /* `preventScrollReset` because PageShell renders <ScrollRestoration>, which
+     yanks you to the very top of the page on every navigation — and a filter
+     click is a navigation. With the sidebar now pinned you can filter from
+     halfway down the grid, and being thrown to the masthead for it undoes the
+     point of pinning it. The effect below eases to the top of the RESULTS
+     instead, which is the part that actually changed. */
   const setParam = (key: string, value: string) => {
     setParams(
       (prev) => {
@@ -108,7 +118,7 @@ export default function Shop() {
         else next.set(key, value);
         return next;
       },
-      { replace: true },
+      { replace: true, preventScrollReset: true },
     );
   };
 
@@ -125,7 +135,7 @@ export default function Shop() {
         next.delete("stock");
         return next;
       },
-      { replace: true },
+      { replace: true, preventScrollReset: true },
     );
   };
 
@@ -162,6 +172,23 @@ export default function Shop() {
   const boxRef = useRef<HTMLDivElement>(null);
   const heightFrom = useRef<number | null>(null);
 
+  /* The results column, from its count/sort bar down. Scrolling to ITS top on a
+     filter change puts the new set under the navbar with the sidebar still
+     pinned alongside — the filters never move, only the results do. */
+  const resultsRef = useRef<HTMLDivElement>(null);
+
+  /* Only ever scrolls UP, and only when the results have already run off the top
+     of the screen. Someone filtering from the top of the page has nothing to
+     correct, and pulling them DOWN to the grid would hide the mobile filter
+     panel they're still working in. */
+  const scrollToResults = (smooth: boolean) => {
+    const el = resultsRef.current;
+    if (!el) return;
+    const top = el.getBoundingClientRect().top + window.scrollY - STICKY_TOP;
+    if (window.scrollY <= top + 1) return;
+    window.scrollTo({ top, behavior: smooth ? "smooth" : "auto" });
+  };
+
   useEffect(() => {
     if (filterKey === applied.key) return;
 
@@ -172,9 +199,14 @@ export default function Shop() {
 
     // Nothing to ease for a shopper who asked for no motion — just swap.
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      scrollToResults(false);
       const now = window.setTimeout(commit, 0);
       return () => window.clearTimeout(now);
     }
+
+    /* Starts with the fade rather than after it, so the travel happens while
+       the old cards are dimming and the new ones are already on their way in. */
+    scrollToResults(true);
 
     // Next frame, so the fade starts from a painted grid rather than being
     // collapsed into the same style recalculation as the click.
@@ -369,7 +401,7 @@ export default function Shop() {
         </aside>
 
         {/* ===== Product area ===== */}
-        <div className="min-w-0 flex-1">
+        <div ref={resultsRef} className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-4 border-b border-line pb-4">
             {/* Counts the applied set, so the number changes with the cards
                 rather than a beat ahead of them. */}
@@ -414,8 +446,16 @@ export default function Shop() {
                the grid's margin it collapses out through the box — until the
                height animation sets `overflow: hidden`, which makes the box a
                block formatting context, pulls the 24px back inside, and shunts
-               the whole grid down for exactly the length of the transition. */
-            <div ref={boxRef} className="mt-6">
+               the whole grid down for exactly the length of the transition.
+
+               `overflow-anchor: none` because the swap replaces every card at
+               once, which destroys whatever node the browser had anchored the
+               scroll to. Its correction lands mid-flight against our own scroll
+               to the results — measured as 197px backwards on the commit frame,
+               then a bounce forwards. Scroll anchoring earns its keep when
+               content shifts under you unbidden; here the scrolling is ours and
+               deliberate. */
+            <div ref={boxRef} className="mt-6 [overflow-anchor:none]">
               <div
                 className={`grid grid-cols-2 gap-3 transition-opacity duration-150 ease-out sm:gap-4 lg:grid-cols-3 lg:gap-[15px] ${
                   fading ? "opacity-0" : "opacity-100"
