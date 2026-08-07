@@ -292,8 +292,18 @@ export default function Shop() {
       </div>
 
       <div className="mt-10 flex flex-col gap-8 lg:flex-row lg:gap-10">
-        {/* ===== Sidebar ===== */}
-        <aside className="lg:w-[240px] lg:shrink-0">
+        {/* ===== Sidebar =====
+            Sticks beside the grid on desktop: the filters scrolled away with the
+            page, so changing your mind about a category meant scrolling back to
+            the top of a long grid to reach them.
+
+            `self-start` is what makes it work. A flex item stretches to the row's
+            height by default, which leaves a sticky element no room to travel
+            inside its own box — it just sits there. `max-h`/`overflow-y` are the
+            safety net for a short window, where the filter list would otherwise
+            be taller than the space it's pinned into and clip its own tail.
+            Top offset clears the 72px sticky navbar. */}
+        <aside className="lg:sticky lg:top-[96px] lg:max-h-[calc(100vh-120px)] lg:w-[240px] lg:shrink-0 lg:self-start lg:overflow-y-auto">
           {/* mobile toggle */}
           <button
             type="button"
