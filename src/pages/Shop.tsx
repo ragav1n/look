@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
 import { SlidersHorizontal, ChevronUp } from "lucide-react";
 import type { Product, ProductSort } from "@/types";
@@ -63,6 +63,17 @@ const matchesCol = (p: Product, col: string) => {
 
 const isInStock = (p: Product) => p.variants.some((v) => v.availableForSale);
 
+/* How long the outgoing grid fades before the new set is committed. Short on
+   purpose — this sits between a filter click and its answer, so it has to read
+   as a transition, not as latency. */
+const GRID_FADE_MS = 170;
+
+/* Cards enter on a stagger, capped at the first two rows of the widest grid.
+   Beyond that the delay stops reading as rhythm and starts reading as lag — and
+   those cards are below the fold anyway. */
+const CARD_STAGGER_MS = 40;
+const MAX_STAGGERED_CARDS = 6;
+
 /* Figma Shop (1:1356) + a left filter sidebar. Filters + sort live in the URL
    (searchParams) so views are shareable and back/forward works. */
 export default function Shop() {
@@ -125,25 +136,66 @@ export default function Shop() {
 
   const clearSearch = () => setParam("q", "");
 
-  // Products after search + category, before availability (used for counts).
   const q = query.toLowerCase();
+  const stockKey = [...stock].sort().join(",");
+  const filterKey = `${col}|${stockKey}|${q}|${sort}`;
+
+  /* The grid renders the APPLIED filters, which trail the URL by one short fade.
+     Clicking a category used to swap every card inside a single frame — a hard
+     cut. Now the current cards fade out, the new selection lands, and they
+     cascade back in (`animate-card-in`, keyed on `applied.key`).
+
+     The controls themselves stay on the live URL values, so a click still
+     highlights instantly; only the imagery waits. */
+  const [applied, setApplied] = useState(() => ({ key: filterKey, col, stock, q }));
+  const [fading, setFading] = useState(false);
+
+  useEffect(() => {
+    if (filterKey === applied.key) return;
+
+    const commit = () => {
+      setApplied({ key: filterKey, col, stock: stockKey ? stockKey.split(",") : [], q });
+      setFading(false);
+    };
+
+    // Nothing to ease for a shopper who asked for no motion — just swap.
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      const now = window.setTimeout(commit, 0);
+      return () => window.clearTimeout(now);
+    }
+
+    // Next frame, so the fade starts from a painted grid rather than being
+    // collapsed into the same style recalculation as the click.
+    const frame = window.requestAnimationFrame(() => setFading(true));
+    // A second click mid-fade cancels this one and restarts from where it is.
+    const timer = window.setTimeout(commit, GRID_FADE_MS);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.clearTimeout(timer);
+    };
+  }, [filterKey, applied.key, col, stockKey, q]);
+
+  // Products after search + category, before availability (used for counts).
   const preAvailability = useMemo(
     () =>
       products.filter((p) => {
-        if (col && !matchesCol(p, col)) return false;
-        if (q && !`${p.name} ${p.category} ${p.group ?? ""} ${p.sku ?? ""}`.toLowerCase().includes(q))
+        if (applied.col && !matchesCol(p, applied.col)) return false;
+        if (
+          applied.q &&
+          !`${p.name} ${p.category} ${p.group ?? ""} ${p.sku ?? ""}`.toLowerCase().includes(applied.q)
+        )
           return false;
         return true;
       }),
-    [products, col, q],
+    [products, applied.col, applied.q],
   );
 
   const inStockCount = preAvailability.filter(isInStock).length;
   const outStockCount = preAvailability.length - inStockCount;
 
   const visible = preAvailability.filter((p) => {
-    const showIn = stock.includes("in");
-    const showOut = stock.includes("out");
+    const showIn = applied.stock.includes("in");
+    const showOut = applied.stock.includes("out");
     if (showIn === showOut) return true; // both or neither → show all
     return showIn ? isInStock(p) : !isInStock(p);
   });
@@ -250,6 +302,8 @@ export default function Shop() {
         {/* ===== Product area ===== */}
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-4 border-b border-line pb-4">
+            {/* Counts the applied set, so the number changes with the cards
+                rather than a beat ahead of them. */}
             <p className="text-[14px] text-muted">
               {loading
                 ? "Loading…"
@@ -284,16 +338,32 @@ export default function Shop() {
             />
           ) : (
             <>
-              <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 lg:gap-[15px]">
+              <div
+                className={`mt-6 grid grid-cols-2 gap-3 transition-opacity duration-150 ease-out sm:gap-4 lg:grid-cols-3 lg:gap-[15px] ${
+                  fading ? "opacity-0" : "opacity-100"
+                }`}
+              >
                 {loading
                   ? Array.from({ length: 6 }).map((_, i) => <ProductCardSkeleton key={i} />)
-                  : visible.map((p) => (
-                      <ProductCard key={p.id} product={p} onQuickView={setQuickView} />
+                  : visible.map((p, i) => (
+                      /* Keyed on the applied filters so the entrance replays even
+                         for a product that survives the change. Remounting costs
+                         nothing visible: the card starts transparent, so a cached
+                         image is decoded long before it's on screen. */
+                      <div
+                        key={`${applied.key}-${p.id}`}
+                        className="animate-card-in"
+                        style={{
+                          animationDelay: `${Math.min(i, MAX_STAGGERED_CARDS) * CARD_STAGGER_MS}ms`,
+                        }}
+                      >
+                        <ProductCard product={p} onQuickView={setQuickView} />
+                      </div>
                     ))}
               </div>
 
               {!loading && visible.length === 0 && (
-                <div className="py-20 text-center">
+                <div key={applied.key} className="animate-card-in py-20 text-center">
                   <p className="text-[18px] font-medium text-white">No products found</p>
                   <p className="mt-1 text-[14px] text-body">
                     {query

@@ -258,6 +258,24 @@ body {
   animation: gallery-fade 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+/* Shop grid — cards ease up in a short cascade when the filters change, so a
+   category click reads as the grid re-dealing itself rather than the old set
+   being replaced between two frames. The outgoing set fades first (see
+   Shop.tsx), which is what this entrance is timed against. */
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+.animate-card-in {
+  animation: card-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 /* Toasts — rise into the bottom-right stack. Matches the modal panel easing so
    transient messages feel like part of the same surface language. */
 @keyframes toast-in {
@@ -495,6 +513,7 @@ body {
   .animate-auth-panel,
   .animate-tab-panel,
   .animate-toast,
+  .animate-card-in,
   .animate-gallery-fade {
     animation: none;
     opacity: 1;
