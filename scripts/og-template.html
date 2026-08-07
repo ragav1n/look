@@ -232,6 +232,14 @@
       }
       .split .rule {
         margin-top: 28px;
+        /* One-sided fade. The rule's box is flush left with the logo and the
+           tagline (all three start at 92px), but the centred card's symmetric
+           gradient spends its first 18px going from transparent to red — so the
+           ink began 18px inside the edge everything else lines up on, and read
+           as neither aligned nor centred. Starting at full strength puts the
+           first pixel of colour on that edge, and the fade running right
+           agrees with the card's light, which comes from low and left. */
+        background: linear-gradient(90deg, #ff3b47 0%, #e11d2a 52%, transparent 100%);
       }
       .split-photo {
         position: relative;
