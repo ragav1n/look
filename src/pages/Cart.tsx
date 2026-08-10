@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useCart } from "@/context/CartContext";
 import { formatMoney } from "@/lib/format";
-import { maxOrderableQty } from "@/lib/stock";
+import { lowStockLeft, lowStockNotice, maxOrderableQty } from "@/lib/stock";
 import { QuantityStepper } from "@/components/product/PurchaseControls";
 import Skeleton from "@/components/ui/Skeleton";
 import iconCart from "@/assets/icon-cart.svg";
@@ -23,7 +23,9 @@ export default function Cart() {
         {/* Lines */}
         <div>
           <ul className="flex flex-col divide-y divide-line border-y border-line">
-            {cart.lines.map((line) => (
+            {cart.lines.map((line) => {
+              const left = lowStockLeft(line.quantityAvailable);
+              return (
               <li key={line.id} className="flex gap-4 py-5">
                 <Link
                   to={`/shop/${line.productSlug}`}
@@ -58,12 +60,18 @@ export default function Cart() {
                     {/* Capped at what Shopify says is left for this variant, so
                         the cart can't quietly climb past the stock the product
                         page just promised. A line that already exceeds it (stock
-                        fell after it was added) simply can't go up. */}
-                    <QuantityStepper
-                      value={line.quantity}
-                      onChange={(q) => updateQty(line.id, q)}
-                      max={maxOrderableQty(line.quantityAvailable)}
-                    />
+                        fell after it was added) simply can't go up, and the note
+                        below says why the "+" has gone dead. */}
+                    <div className="flex flex-col gap-1.5">
+                      <QuantityStepper
+                        value={line.quantity}
+                        onChange={(q) => updateQty(line.id, q)}
+                        max={maxOrderableQty(line.quantityAvailable)}
+                      />
+                      {left != null && (
+                        <p className="text-[12px] font-medium text-sale">{lowStockNotice(left)}</p>
+                      )}
+                    </div>
                     <button
                       type="button"
                       disabled={busyLines.includes(line.id)}
@@ -75,7 +83,8 @@ export default function Cart() {
                   </div>
                 </div>
               </li>
-            ))}
+              );
+            })}
           </ul>
 
           <div className="mt-5 flex items-center justify-between">

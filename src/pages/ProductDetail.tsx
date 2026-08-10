@@ -4,7 +4,7 @@ import { Heart, RefreshCw, ShieldCheck, Users, Ruler, X } from "lucide-react";
 import type { Product } from "@/types";
 import { getProductByHandle, getBestSellers } from "@/lib/catalog";
 import { formatPrice, discountPercent } from "@/lib/format";
-import { lowStockLeft, lowStockNotice, maxOrderableQty } from "@/lib/stock";
+import { cartLimitNotice, lowStockLeft, lowStockNotice, roomToAdd } from "@/lib/stock";
 import { useAsyncData } from "@/hooks/useAsyncData";
 import LoadError from "@/components/ui/LoadError";
 import { useCart } from "@/context/CartContext";
@@ -61,7 +61,7 @@ export default function ProductDetail() {
 }
 
 function PdpContent({ product }: { product: Product }) {
-  const { add } = useCart();
+  const { add, cart } = useCart();
   const { has, toggle } = useWishlist();
   const navigate = useNavigate();
   const [color, setColor] = useState<string | null>(product.colors[0]?.name ?? null);
@@ -89,10 +89,17 @@ function PdpContent({ product }: { product: Product }) {
       ? product.variants.find((v) => v.size === size && (hasColorOpt ? v.color === color : true))
       : undefined;
   const canAdd = Boolean(variant?.availableForSale);
+  /* The ceiling counts what's already in the cart, so the stepper offers only
+     the room that's actually left rather than inviting an add the cart will
+     refuse. At zero there's nothing to offer and the buttons go quiet. */
+  const inCart = variant ? (cart.lines.find((l) => l.variantId === variant.id)?.quantity ?? 0) : 0;
+  const room = roomToAdd(variant?.quantityAvailable, inCart);
+  const atCartLimit = canAdd && room === 0;
+  const maxQty = Math.max(1, room);
   /* Stock is reported per variant, so this only has an answer once a size (and
-     colour, where there is one) narrows the product down to a single one. */
-  const stockLeft = lowStockLeft(variant);
-  const maxQty = maxOrderableQty(variant?.quantityAvailable);
+     colour, where there is one) narrows the product down to a single one.
+     Suppressed at the limit, where the cart's own line says it better. */
+  const stockLeft = canAdd && !atCartLimit ? lowStockLeft(variant?.quantityAvailable) : undefined;
   /* A size with 2 left must not inherit the quantity chosen under a size that
      had 40, so the chosen figure is clamped on the way out rather than stored
      pre-clamped. Switching back to a roomier size restores what they picked. */
@@ -246,8 +253,12 @@ function PdpContent({ product }: { product: Product }) {
 
           {/* Add to cart + wishlist */}
           <div className="mt-7 flex flex-wrap items-center gap-4">
-            <QuantityStepper value={qty} onChange={setQtyChoice} max={maxQty} />
-            <Button className="min-w-[200px] flex-1" disabled={!canAdd || busy} onClick={handleAdd}>
+            <QuantityStepper value={qty} onChange={setQtyChoice} max={maxQty} disabled={atCartLimit} />
+            <Button
+              className="min-w-[200px] flex-1"
+              disabled={!canAdd || busy || atCartLimit}
+              onClick={handleAdd}
+            >
               {busy ? "Adding…" : added ? "Added to cart ✓" : "ADD TO CART"}
             </Button>
             <button
@@ -267,7 +278,7 @@ function PdpContent({ product }: { product: Product }) {
           <Button
             variant="accent"
             className="mt-3 w-full"
-            disabled={!canAdd || busy}
+            disabled={!canAdd || busy || atCartLimit}
             onClick={handleBuyNow}
           >
             BUY NOW
@@ -281,6 +292,10 @@ function PdpContent({ product }: { product: Product }) {
             <p className="mt-3 text-[13px] text-muted">Select a size to add to cart.</p>
           ) : !canAdd ? (
             <p className="mt-3 text-[13px] text-muted">This piece is currently out of stock.</p>
+          ) : atCartLimit ? (
+            <p className="mt-3 text-[13px] text-sale">
+              {cartLimitNotice(variant?.quantityAvailable, 0)}
+            </p>
           ) : null}
 
           {/* Trust info */}

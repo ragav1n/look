@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import type { Product } from "@/types";
 import { formatPrice, discountPercent } from "@/lib/format";
-import { lowStockLeft, lowStockNotice, maxOrderableQty } from "@/lib/stock";
+import { cartLimitNotice, lowStockLeft, lowStockNotice, roomToAdd } from "@/lib/stock";
 import { useCart } from "@/context/CartContext";
 import Modal from "@/components/ui/Modal";
 import DiscountPill from "@/components/ui/DiscountPill";
@@ -18,7 +18,7 @@ interface Props {
 
 /* Figma "Home/Popoup" 1:1030 — quick-view over Top Picks */
 export default function QuickViewModal({ product, onClose }: Props) {
-  const { add } = useCart();
+  const { add, cart } = useCart();
   const [color, setColor] = useState<string | null>(product?.colors[0]?.name ?? null);
   const [size, setSize] = useState<string | null>(null);
   const [qtyChoice, setQtyChoice] = useState(1);
@@ -58,8 +58,11 @@ export default function QuickViewModal({ product, onClose }: Props) {
         : undefined;
   const canAdd = Boolean(variant?.availableForSale);
   // Same per-variant stock rules as the PDP — see @/lib/stock.
-  const stockLeft = lowStockLeft(variant);
-  const maxQty = maxOrderableQty(variant?.quantityAvailable);
+  const inCart = variant ? (cart.lines.find((l) => l.variantId === variant.id)?.quantity ?? 0) : 0;
+  const room = roomToAdd(variant?.quantityAvailable, inCart);
+  const atCartLimit = canAdd && room === 0;
+  const maxQty = Math.max(1, room);
+  const stockLeft = canAdd && !atCartLimit ? lowStockLeft(variant?.quantityAvailable) : undefined;
   // Clamped on read, as on the PDP, so a newly picked size can't be over-ordered.
   const qty = Math.min(qtyChoice, maxQty);
   const off = product ? discountPercent(product.price, product.mrp) : 0;
@@ -191,8 +194,17 @@ export default function QuickViewModal({ product, onClose }: Props) {
             </p>
 
             <div className="flex items-center gap-5">
-              <QuantityStepper value={qty} onChange={setQtyChoice} max={maxQty} />
-              <Button className="flex-1" disabled={!canAdd || busy} onClick={handleAdd}>
+              <QuantityStepper
+                value={qty}
+                onChange={setQtyChoice}
+                max={maxQty}
+                disabled={atCartLimit}
+              />
+              <Button
+                className="flex-1"
+                disabled={!canAdd || busy || atCartLimit}
+                onClick={handleAdd}
+              >
                 {busy ? "Adding…" : added ? "Added to cart ✓" : "ADD TO CART"}
               </Button>
             </div>
@@ -202,6 +214,10 @@ export default function QuickViewModal({ product, onClose }: Props) {
               <p className="text-[13px] text-muted">Select a colour and size to add to cart.</p>
             ) : hasSizeOpt && !size ? (
               <p className="text-[13px] text-muted">Select a size to add to cart.</p>
+            ) : atCartLimit ? (
+              <p className="text-[13px] text-sale">
+                {cartLimitNotice(variant?.quantityAvailable, 0)}
+              </p>
             ) : null}
             <Link
               to={`/shop/${product.slug}`}

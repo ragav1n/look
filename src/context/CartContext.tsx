@@ -10,6 +10,7 @@ import {
 } from "react";
 import type { AddToCartInput, Cart } from "@/types";
 import { cartBackend } from "@/lib/cart";
+import { cartLimitNotice, roomToAdd } from "@/lib/stock";
 import { linkCart, unlinkCart } from "@/lib/customer";
 import { emptyCart } from "@/lib/shopify/transform";
 import { useToast } from "./ToastContext";
@@ -131,8 +132,28 @@ export function CartProvider({ children }: { children: ReactNode }) {
       ready,
       itemCount: cart.totalQuantity,
       busyLines,
-      add: (input) =>
-        run(() => cartBackend.addLine(input), "We couldn't add that to your cart. Please try again."),
+      /* Shopify merges a repeat add into the existing line, so a stepper capped
+         at 2 still reaches 4 if you press the button twice. The ceiling is a
+         total per variant, so what's already in the cart has to come off it
+         here — the one place every Add to Cart passes through. Reading `cart`
+         at call time is enough: both callers disable their button while an add
+         is in flight, so there's no overlapping pair to race. */
+      add: async (input) => {
+        const already = cart.lines.find((l) => l.variantId === input.variantId)?.quantity ?? 0;
+        const room = roomToAdd(input.quantityAvailable, already);
+        if (room <= 0) {
+          push(cartLimitNotice(input.quantityAvailable, 0));
+          return false;
+        }
+        const quantity = Math.min(input.quantity, room);
+        const ok = await run(
+          () => cartBackend.addLine({ ...input, quantity }),
+          "We couldn't add that to your cart. Please try again.",
+        );
+        // Took some but not all — say so rather than let the count quietly differ.
+        if (ok && quantity < input.quantity) push(cartLimitNotice(input.quantityAvailable, quantity));
+        return ok;
+      },
       updateQty: (lineId, quantity) => {
         /* Reflect the new quantity right away so a burst of stepper clicks each
            compute from the value the user sees rather than from the last server
@@ -157,7 +178,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         ),
       clear: () => run(() => cartBackend.clear(), "We couldn't clear your cart. Please try again."),
     }),
-    [cart, ready, busyLines, run],
+    [cart, ready, busyLines, run, push],
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
