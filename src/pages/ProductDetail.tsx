@@ -4,6 +4,7 @@ import { Heart, RefreshCw, ShieldCheck, Users, Ruler, X } from "lucide-react";
 import type { Product } from "@/types";
 import { getProductByHandle, getBestSellers } from "@/lib/catalog";
 import { formatPrice, discountPercent } from "@/lib/format";
+import { lowStockLeft, lowStockNotice, maxOrderableQty } from "@/lib/stock";
 import { useAsyncData } from "@/hooks/useAsyncData";
 import LoadError from "@/components/ui/LoadError";
 import { useCart } from "@/context/CartContext";
@@ -65,7 +66,7 @@ function PdpContent({ product }: { product: Product }) {
   const navigate = useNavigate();
   const [color, setColor] = useState<string | null>(product.colors[0]?.name ?? null);
   const [size, setSize] = useState<string | null>(null);
-  const [qty, setQty] = useState(1);
+  const [qtyChoice, setQtyChoice] = useState(1);
   const [added, setAdded] = useState(false);
   const [busy, setBusy] = useState(false);
   const [sizeChartOpen, setSizeChartOpen] = useState(false);
@@ -88,6 +89,14 @@ function PdpContent({ product }: { product: Product }) {
       ? product.variants.find((v) => v.size === size && (hasColorOpt ? v.color === color : true))
       : undefined;
   const canAdd = Boolean(variant?.availableForSale);
+  /* Stock is reported per variant, so this only has an answer once a size (and
+     colour, where there is one) narrows the product down to a single one. */
+  const stockLeft = lowStockLeft(variant);
+  const maxQty = maxOrderableQty(variant, product.stockLeft);
+  /* A size with 2 left must not inherit the quantity chosen under a size that
+     had 40, so the chosen figure is clamped on the way out rather than stored
+     pre-clamped. Switching back to a roomier size restores what they picked. */
+  const qty = Math.min(qtyChoice, maxQty);
   const wished = has(product.id);
   const reviews = reviewsFor(product.id);
 
@@ -185,12 +194,6 @@ function PdpContent({ product }: { product: Product }) {
             <DiscountPill percent={discount} variant="inline" />
           </div>
 
-          {product.stockLeft != null && (
-            <p className="mt-3 text-[13px] font-medium text-sale">
-              Only {product.stockLeft} left in stock
-            </p>
-          )}
-
           {product.colors.length > 0 && (
             <div className="mt-6 flex flex-col gap-2">
               <p className="text-[15px] font-medium text-white">Color{color ? `: ${color}` : ""}</p>
@@ -227,11 +230,18 @@ function PdpContent({ product }: { product: Product }) {
             />
           </div>
 
+          {/* Sits under the size row because it describes the selected size, not
+              the product — the same gown can be plentiful in M and nearly gone
+              in 4XL. aria-live so it's announced on each size change. */}
+          {stockLeft != null && (
+            <p aria-live="polite" className="mt-3 text-[13px] font-medium text-sale">
+              {lowStockNotice(stockLeft)}
+            </p>
+          )}
+
           {/* Add to cart + wishlist */}
           <div className="mt-7 flex flex-wrap items-center gap-4">
-            {/* Don't let someone pick 10 under a "Only 3 left in stock" line and
-                then hit a silent rejection at checkout. */}
-            <QuantityStepper value={qty} onChange={setQty} max={Math.min(10, product.stockLeft ?? 10)} />
+            <QuantityStepper value={qty} onChange={setQtyChoice} max={maxQty} />
             <Button className="min-w-[200px] flex-1" disabled={!canAdd || busy} onClick={handleAdd}>
               {busy ? "Adding…" : added ? "Added to cart ✓" : "ADD TO CART"}
             </Button>

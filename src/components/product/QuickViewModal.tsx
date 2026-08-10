@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import type { Product } from "@/types";
 import { formatPrice, discountPercent } from "@/lib/format";
+import { lowStockLeft, lowStockNotice, maxOrderableQty } from "@/lib/stock";
 import { useCart } from "@/context/CartContext";
 import Modal from "@/components/ui/Modal";
 import DiscountPill from "@/components/ui/DiscountPill";
@@ -20,7 +21,7 @@ export default function QuickViewModal({ product, onClose }: Props) {
   const { add } = useCart();
   const [color, setColor] = useState<string | null>(product?.colors[0]?.name ?? null);
   const [size, setSize] = useState<string | null>(null);
-  const [qty, setQty] = useState(1);
+  const [qtyChoice, setQtyChoice] = useState(1);
   const [added, setAdded] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -30,7 +31,7 @@ export default function QuickViewModal({ product, onClose }: Props) {
     setLastKey(key);
     setColor(product?.colors[0]?.name ?? null);
     setSize(null);
-    setQty(1);
+    setQtyChoice(1);
     setAdded(false);
     setBusy(false);
   }
@@ -56,6 +57,11 @@ export default function QuickViewModal({ product, onClose }: Props) {
         ? product.variants.find((v) => v.size === size && (hasColorOpt ? v.color === color : true))
         : undefined;
   const canAdd = Boolean(variant?.availableForSale);
+  // Same per-variant stock rules as the PDP — see @/lib/stock.
+  const stockLeft = lowStockLeft(variant);
+  const maxQty = maxOrderableQty(variant, product?.stockLeft);
+  // Clamped on read, as on the PDP, so a newly picked size can't be over-ordered.
+  const qty = Math.min(qtyChoice, maxQty);
   const off = product ? discountPercent(product.price, product.mrp) : 0;
 
   const handleAdd = async () => {
@@ -175,8 +181,14 @@ export default function QuickViewModal({ product, onClose }: Props) {
               </div>
             )}
 
+            {stockLeft != null && (
+              <p aria-live="polite" className="-mt-2 text-[13px] font-medium text-sale">
+                {lowStockNotice(stockLeft)}
+              </p>
+            )}
+
             <div className="flex items-center gap-5">
-              <QuantityStepper value={qty} onChange={setQty} max={Math.min(10, product.stockLeft ?? 10)} />
+              <QuantityStepper value={qty} onChange={setQtyChoice} max={maxQty} />
               <Button className="flex-1" disabled={!canAdd || busy} onClick={handleAdd}>
                 {busy ? "Adding…" : added ? "Added to cart ✓" : "ADD TO CART"}
               </Button>
