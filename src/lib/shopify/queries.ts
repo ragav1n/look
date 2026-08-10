@@ -109,6 +109,9 @@ export const CART_FRAGMENT = /* GraphQL */ `
             id
             title
             image { url altText }
+            # Lets the cart's stepper cap itself at what's actually on the shelf
+            # instead of leaving Shopify to reject the line at checkout.
+            quantityAvailable
             selectedOptions { name value }
             product { handle title featuredImage { url altText } }
           }

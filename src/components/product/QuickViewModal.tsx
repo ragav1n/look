@@ -59,7 +59,7 @@ export default function QuickViewModal({ product, onClose }: Props) {
   const canAdd = Boolean(variant?.availableForSale);
   // Same per-variant stock rules as the PDP — see @/lib/stock.
   const stockLeft = lowStockLeft(variant);
-  const maxQty = maxOrderableQty(variant);
+  const maxQty = maxOrderableQty(variant?.quantityAvailable);
   // Clamped on read, as on the PDP, so a newly picked size can't be over-ordered.
   const qty = Math.min(qtyChoice, maxQty);
   const off = product ? discountPercent(product.price, product.mrp) : 0;
@@ -78,6 +78,7 @@ export default function QuickViewModal({ product, onClose }: Props) {
         size: variant.size,
         color: variant.color,
         unitPrice: variant.price,
+        quantityAvailable: variant.quantityAvailable,
       });
       if (ok) setAdded(true);
     } finally {

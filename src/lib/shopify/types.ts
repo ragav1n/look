@@ -79,6 +79,7 @@ export interface SFCartLine {
     id: string;
     title: string;
     image: SFImage | null;
+    quantityAvailable: number | null;
     selectedOptions: SFSelectedOption[];
     product: { handle: string; title: string; featuredImage: SFImage | null };
   };

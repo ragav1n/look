@@ -70,6 +70,7 @@ export async function addLine(input: AddToCartInput): Promise<Cart> {
       size: input.size,
       color: input.color,
       quantity: input.quantity,
+      quantityAvailable: input.quantityAvailable,
       unitPrice: input.unitPrice,
       lineTotal: lineTotal(input.unitPrice, input.quantity),
     });

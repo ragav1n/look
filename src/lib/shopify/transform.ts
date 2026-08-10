@@ -164,6 +164,7 @@ export function toCart(c: SFCart): Cart {
       l.merchandise.selectedOptions.find((o) => ["color", "colour"].includes(o.name.toLowerCase()))
         ?.value ?? "",
     quantity: l.quantity,
+    quantityAvailable: l.merchandise.quantityAvailable ?? undefined,
     unitPrice: money(l.cost.amountPerQuantity),
     lineTotal: money(l.cost.totalAmount),
   }));

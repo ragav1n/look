@@ -92,7 +92,7 @@ function PdpContent({ product }: { product: Product }) {
   /* Stock is reported per variant, so this only has an answer once a size (and
      colour, where there is one) narrows the product down to a single one. */
   const stockLeft = lowStockLeft(variant);
-  const maxQty = maxOrderableQty(variant);
+  const maxQty = maxOrderableQty(variant?.quantityAvailable);
   /* A size with 2 left must not inherit the quantity chosen under a size that
      had 40, so the chosen figure is clamped on the way out rather than stored
      pre-clamped. Switching back to a roomier size restores what they picked. */
@@ -125,6 +125,7 @@ function PdpContent({ product }: { product: Product }) {
       size: variant.size,
       color: variant.color,
       unitPrice: variant.price,
+      quantityAvailable: variant.quantityAvailable,
     });
   };
 

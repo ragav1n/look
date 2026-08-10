@@ -122,6 +122,10 @@ export interface CartLine {
   size: string;
   color: string;
   quantity: number;
+  /** Units Shopify reports on hand for this line's variant, so the cart's
+   *  stepper can cap itself. Undefined when inventory isn't tracked — same
+   *  meaning as on `ProductVariant`. */
+  quantityAvailable?: number;
   unitPrice: Money;
   lineTotal: Money;
 }
@@ -159,6 +163,8 @@ export interface AddToCartInput {
   size: string;
   color: string;
   unitPrice: Money;
+  /** Carried through so the fixture cart's stepper caps like the live one's. */
+  quantityAvailable?: number;
 }
 
 export type OrderStatus =

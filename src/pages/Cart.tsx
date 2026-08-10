@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useCart } from "@/context/CartContext";
 import { formatMoney } from "@/lib/format";
+import { maxOrderableQty } from "@/lib/stock";
 import { QuantityStepper } from "@/components/product/PurchaseControls";
 import Skeleton from "@/components/ui/Skeleton";
 import iconCart from "@/assets/icon-cart.svg";
@@ -54,9 +55,14 @@ export default function Cart() {
                   </div>
 
                   <div className="mt-auto flex items-center justify-between pt-4">
+                    {/* Capped at what Shopify says is left for this variant, so
+                        the cart can't quietly climb past the stock the product
+                        page just promised. A line that already exceeds it (stock
+                        fell after it was added) simply can't go up. */}
                     <QuantityStepper
                       value={line.quantity}
                       onChange={(q) => updateQty(line.id, q)}
+                      max={maxOrderableQty(line.quantityAvailable)}
                     />
                     <button
                       type="button"
