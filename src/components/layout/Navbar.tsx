@@ -55,7 +55,7 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-white/10 bg-black shadow-[0px_7px_11.2px_rgba(0,0,0,0.35)]">
-      <div className="mx-auto grid h-[72px] w-full max-w-[1512px] grid-cols-[1fr_auto_1fr] items-center gap-6 px-6 lg:px-[85px]">
+      <div className="mx-auto grid h-[72px] w-full max-w-[1512px] grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 sm:gap-6 sm:px-6 lg:px-[85px]">
         {/* LEFT: hamburger + primary nav */}
         <div className="flex items-center gap-4 justify-self-start">
           <button
@@ -116,12 +116,19 @@ export default function Navbar() {
         </div>
 
         {/* CENTER: logo */}
+        {/* `min-w-0` + `max-w-full` let the wordmark give ground on very narrow
+            phones instead of pushing the icon rail off the edge. It renders at its
+            natural 186px everywhere there's room. */}
         <Link
           to="/"
-          className="flex h-[42px] shrink-0 items-center justify-self-center transition-transform duration-200 hover:scale-[1.03]"
+          className="flex h-[42px] min-w-0 items-center justify-self-center transition-transform duration-200 hover:scale-[1.03]"
           aria-label="LOOK — home"
         >
-          <img src={logoWhite} alt="LOOK" className="h-[38px] w-auto object-contain" />
+          <img
+            src={logoWhite}
+            alt="LOOK"
+            className="h-[30px] w-auto max-w-full object-contain min-[360px]:h-[38px]"
+          />
         </Link>
 
         {/* RIGHT: search + account actions */}
@@ -129,7 +136,7 @@ export default function Navbar() {
           <form
             onSubmit={submitSearch}
             role="search"
-            className="hidden h-[42px] w-[300px] items-center gap-2 rounded-full border border-white/25 pr-2 pl-[22px] transition-colors focus-within:border-white/70 md:flex"
+            className="hidden h-[42px] w-[300px] items-center gap-2 rounded-full border border-white/25 pr-2 pl-[22px] transition-colors focus-within:border-white/70 lg:flex"
           >
             <input
               type="search"
@@ -148,6 +155,13 @@ export default function Navbar() {
             </button>
           </form>
 
+          {/* Every link here is `shrink-0`, and that is load-bearing. The icons are
+              `<img>`s of Figma SVGs, which carry no intrinsic width — so WebKit
+              gives their link an automatic minimum size of 0 and flex-shrinks them
+              to nothing when the row is tight, while Chrome refuses to. On a phone
+              that showed the cart's absolutely-positioned badge floating beside an
+              invisible cart. Below `sm` the account icon moves into the burger menu
+              (as "My Account", alongside Wishlist) so the row fits without it. */}
           <div className="flex items-center gap-5 sm:gap-6">
             <button
               type="button"
@@ -155,17 +169,17 @@ export default function Navbar() {
               aria-label="Search"
               aria-expanded={searchOpen}
               aria-controls="mobile-search"
-              className="grid place-items-center text-white md:hidden"
+              className="grid shrink-0 place-items-center text-white lg:hidden"
             >
               <Search className="size-6" strokeWidth={1.8} />
             </button>
-            <Link to="/account/profile" aria-label="My account">
+            <Link to="/account/profile" aria-label="My account" className="hidden shrink-0 sm:block">
               <img src={iconUser} alt="" className={iconClass} />
             </Link>
-            <Link to="/account/wishlist" aria-label="Wishlist" className="hidden sm:block">
+            <Link to="/account/wishlist" aria-label="Wishlist" className="hidden shrink-0 sm:block">
               <img src={iconWishlist} alt="" className={iconClass} />
             </Link>
-            <Link to="/cart" aria-label="Cart" className="group relative">
+            <Link to="/cart" aria-label="Cart" className="group relative shrink-0">
               <img src={iconCart} alt="" className={iconClass} />
               {itemCount > 0 && (
                 <span className="absolute -top-2 -right-2 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-accent px-1 font-ui text-[11px] font-medium text-white transition-transform duration-200 group-hover:scale-110">
@@ -177,14 +191,18 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile search row. The desktop form is `hidden md:flex`, so below md the
+      {/* Mobile search row. The desktop form is `hidden lg:flex`, so below lg the
           magnifier used to just navigate to /shop — leaving no field anywhere on
           the page and making search unreachable on a phone. Same 0fr→1fr grid
-          animation as the menu panel. */}
+          animation as the menu panel.
+
+          The field waits for `lg` rather than `md` because its fixed 300px, plus the
+          186px wordmark and the icon rail, overflowed the bar at tablet widths —
+          which used to hide itself by crushing the icons to zero width. */}
       <div
         id="mobile-search"
         inert={!searchOpen}
-        className={`grid overflow-hidden transition-[grid-template-rows,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] md:hidden ${
+        className={`grid overflow-hidden transition-[grid-template-rows,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] lg:hidden ${
           searchOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
         }`}
       >
