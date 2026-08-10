@@ -92,7 +92,7 @@ function PdpContent({ product }: { product: Product }) {
   /* Stock is reported per variant, so this only has an answer once a size (and
      colour, where there is one) narrows the product down to a single one. */
   const stockLeft = lowStockLeft(variant);
-  const maxQty = maxOrderableQty(variant, product.stockLeft);
+  const maxQty = maxOrderableQty(variant);
   /* A size with 2 left must not inherit the quantity chosen under a size that
      had 40, so the chosen figure is clamped on the way out rather than stored
      pre-clamped. Switching back to a roomier size restores what they picked. */
@@ -232,12 +232,16 @@ function PdpContent({ product }: { product: Product }) {
 
           {/* Sits under the size row because it describes the selected size, not
               the product — the same gown can be plentiful in M and nearly gone
-              in 4XL. aria-live so it's announced on each size change. */}
-          {stockLeft != null && (
-            <p aria-live="polite" className="mt-3 text-[13px] font-medium text-sale">
-              {lowStockNotice(stockLeft)}
-            </p>
-          )}
+              in 4XL. The live region stays mounted rather than being conditionally
+              rendered: a screen reader only announces changes inside a region that
+              already existed. With nothing to say it goes sr-only, which is
+              absolutely positioned and so costs no layout. */}
+          <p
+            aria-live="polite"
+            className={stockLeft != null ? "mt-3 text-[13px] font-medium text-sale" : "sr-only"}
+          >
+            {stockLeft != null ? lowStockNotice(stockLeft) : ""}
+          </p>
 
           {/* Add to cart + wishlist */}
           <div className="mt-7 flex flex-wrap items-center gap-4">

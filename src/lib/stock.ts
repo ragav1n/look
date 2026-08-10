@@ -35,16 +35,17 @@ export function lowStockLeft(variant: ProductVariant | undefined): number | unde
 export const lowStockNotice = (left: number): string => `Only ${left} left in stock`;
 
 /**
- * Ceiling for the quantity stepper. Never offers more than Shopify says is on
- * the shelf, so nobody picks 10 under an "Only 3 left in stock" line and then
- * hits a silent rejection at checkout. Falls back to the product-wide figure,
- * then to the per-order cap, when the variant carries no count of its own.
+ * Ceiling for the quantity stepper, so nobody picks 10 under an "Only 3 left in
+ * stock" line. Stock only has a meaning per variant, so until one is resolved
+ * there is nothing to cap against and the per-order limit stands on its own —
+ * which costs nothing, since Add to Cart is disabled until a size is picked.
+ *
+ * This governs a single add, not the cart as a whole: two adds of 2 still make
+ * a line of 4, and the cart's own stepper carries no stock cap. Shopify
+ * validates the real thing and its `userErrors` surface as a toast.
  */
-export function maxOrderableQty(
-  variant: ProductVariant | undefined,
-  productStockLeft?: number,
-): number {
-  const left = variant?.quantityAvailable ?? productStockLeft;
+export function maxOrderableQty(variant: ProductVariant | undefined): number {
+  const left = variant?.quantityAvailable;
   // A variant can be `availableForSale` at zero units when the store lets it
   // oversell, so a non-positive count means "no ceiling known", not "none left".
   if (left == null || left <= 0) return MAX_QTY_PER_ORDER;

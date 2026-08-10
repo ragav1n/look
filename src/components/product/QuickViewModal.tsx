@@ -59,7 +59,7 @@ export default function QuickViewModal({ product, onClose }: Props) {
   const canAdd = Boolean(variant?.availableForSale);
   // Same per-variant stock rules as the PDP — see @/lib/stock.
   const stockLeft = lowStockLeft(variant);
-  const maxQty = maxOrderableQty(variant, product?.stockLeft);
+  const maxQty = maxOrderableQty(variant);
   // Clamped on read, as on the PDP, so a newly picked size can't be over-ordered.
   const qty = Math.min(qtyChoice, maxQty);
   const off = product ? discountPercent(product.price, product.mrp) : 0;
@@ -181,11 +181,13 @@ export default function QuickViewModal({ product, onClose }: Props) {
               </div>
             )}
 
-            {stockLeft != null && (
-              <p aria-live="polite" className="-mt-2 text-[13px] font-medium text-sale">
-                {lowStockNotice(stockLeft)}
-              </p>
-            )}
+            {/* Kept mounted for the same reason as the PDP's — see there. */}
+            <p
+              aria-live="polite"
+              className={stockLeft != null ? "-mt-2 text-[13px] font-medium text-sale" : "sr-only"}
+            >
+              {stockLeft != null ? lowStockNotice(stockLeft) : ""}
+            </p>
 
             <div className="flex items-center gap-5">
               <QuantityStepper value={qty} onChange={setQtyChoice} max={maxQty} />

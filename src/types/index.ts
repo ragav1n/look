@@ -50,7 +50,6 @@ export interface Product {
   variants: ProductVariant[];
   rating: number;
   reviewCount: number;
-  stockLeft?: number;
   /** Plain-text description (Shopify `description`). Used for previews/meta. */
   description: string;
   /** Rich HTML description (Shopify `descriptionHtml`) — tables, lists, etc.

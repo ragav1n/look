@@ -91,11 +91,6 @@ export function toProduct(p: SFProduct): Product {
   const isNew =
     p.tags.some((t) => t.toLowerCase() === "new" || t.toLowerCase() === "new-arrival") ||
     isWithinNewWindow(p.publishedAt ?? p.createdAt);
-  const lowStock =
-    p.totalInventory != null && p.totalInventory > 0 && p.totalInventory <= 5
-      ? p.totalInventory
-      : undefined;
-
   return {
     id: p.id,
     slug: p.handle,
@@ -114,7 +109,6 @@ export function toProduct(p: SFProduct): Product {
     // Ratings/reviews come from a reviews app/metafield — 0 until wired.
     rating: 0,
     reviewCount: 0,
-    stockLeft: lowStock,
     description: p.description,
     // The store admin authors one rich description in Shopify (tables, lists).
     // Render that HTML directly; the old `details` split was a plain-text copy

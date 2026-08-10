@@ -57,8 +57,11 @@ type RawProduct = Omit<Product, "variants" | "currencyCode">;
 /** Per-variant stock for the fixture catalogue, cycled by colour×size position
  *  so a handful of sizes sit under the low-stock threshold and the rest sit
  *  well clear of it. Deterministic on purpose: dev should render the same
- *  "Only N left in stock" lines on every reload. */
-const FIXTURE_STOCK = [1, 24, 3, 40, 2, 18, 7, 33, 5];
+ *  "Only N left in stock" lines on every reload.
+ *
+ *  Length is deliberately coprime with the 9-size scale — at 9 entries the
+ *  cycle aliased against `sizes.length` and every colour got an identical run. */
+const FIXTURE_STOCK = [1, 24, 3, 40, 2, 18, 7];
 
 /** Fabricate a Shopify-shaped variant per colour×size so the cart has real
  *  merchandise ids to work with in dev. */
@@ -97,7 +100,6 @@ const raw: RawProduct[] = [
     sizes: SIZES,
     rating: 4.5,
     reviewCount: 14,
-    stockLeft: 2,
     description:
       "Discover a curated collection of modern western wear designed for comfort, confidence, and everyday elegance. Explore timeless essentials and trendy styles that elevate your wardrobe.",
     details: defaultDetails("cotton blend"),
@@ -286,7 +288,6 @@ const raw: RawProduct[] = [
     sizes: SIZES,
     rating: 4.9,
     reviewCount: 26,
-    stockLeft: 4,
     description:
       "Occasion-ready scarlet with fine detailing — our most loved festive silhouette.",
     details: defaultDetails("silk blend"),
