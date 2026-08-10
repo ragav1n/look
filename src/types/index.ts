@@ -17,6 +17,11 @@ export interface ProductVariant {
   size: string;
   color: string;
   availableForSale: boolean;
+  /** Units Shopify reports on hand for this one variant. Undefined when the
+   *  store doesn't track inventory for it, or when the Storefront token lacks
+   *  `unauthenticated_read_product_inventory` — in either case Shopify sends
+   *  null and we say nothing about stock rather than guess at a number. */
+  quantityAvailable?: number;
   price: Money;
   /** Shopify's per-variant compare-at ("was") price. Only a real markdown when
    *  it exceeds `price`; undefined when the variant isn't on sale. */

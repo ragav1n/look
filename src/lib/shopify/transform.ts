@@ -76,6 +76,7 @@ export function toProduct(p: SFProduct): Product {
     size: optionValue(v, "Size"),
     color: optionValue(v, "Color") || optionValue(v, "Colour"),
     availableForSale: v.availableForSale,
+    quantityAvailable: v.quantityAvailable ?? undefined,
     price: money(v.price),
     compareAtPrice: v.compareAtPrice ? money(v.compareAtPrice) : undefined,
   }));

@@ -54,16 +54,23 @@ const defaultDetails = (fabric: string) => ({
 
 type RawProduct = Omit<Product, "variants" | "currencyCode">;
 
+/** Per-variant stock for the fixture catalogue, cycled by colour×size position
+ *  so a handful of sizes sit under the low-stock threshold and the rest sit
+ *  well clear of it. Deterministic on purpose: dev should render the same
+ *  "Only N left in stock" lines on every reload. */
+const FIXTURE_STOCK = [1, 24, 3, 40, 2, 18, 7, 33, 5];
+
 /** Fabricate a Shopify-shaped variant per colour×size so the cart has real
  *  merchandise ids to work with in dev. */
 const makeVariants = (p: RawProduct): ProductVariant[] =>
-  p.colors.flatMap((c) =>
-    p.sizes.map((s) => ({
+  p.colors.flatMap((c, ci) =>
+    p.sizes.map((s, si) => ({
       id: `fixture:variant:${p.slug}:${c.name}:${s}`,
       title: `${c.name} / ${s}`,
       size: s,
       color: c.name,
       availableForSale: true,
+      quantityAvailable: FIXTURE_STOCK[(ci * p.sizes.length + si) % FIXTURE_STOCK.length],
       price: { amount: p.price, currencyCode: DEFAULT_CURRENCY },
     })),
   );
