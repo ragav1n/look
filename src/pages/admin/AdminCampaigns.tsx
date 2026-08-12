@@ -358,9 +358,10 @@ function GuideTab({
 
 /* --- The console ---------------------------------------------------------- */
 
-type TabKey = "campaign" | "orders" | "abandoned" | "arrivals";
+type TabKey = "campaign" | "offers" | "orders" | "abandoned" | "arrivals";
 const TABS: { key: TabKey; label: string }[] = [
   { key: "campaign", label: "Campaigns" },
+  { key: "offers", label: "Offers & codes" },
   { key: "orders", label: "Order emails" },
   { key: "abandoned", label: "Abandoned carts" },
   { key: "arrivals", label: "New arrivals" },
@@ -725,6 +726,90 @@ function Console({ onSignedOut }: { onSignedOut: () => void }) {
                 </div>
               </section>
             </>
+          )}
+
+          {tab === "offers" && (
+            <GuideTab
+              eyebrow="Offers & discount codes"
+              title="Two steps — and it's the second one people forget"
+              badge={{ tone: "action", label: "You do this each time" }}
+              lead="Making a discount code in Shopify makes it WORK. It does not make it SHOW UP on the website. Those are two separate jobs. Think of it as printing the coupon, then putting the poster in the window — a coupon with no poster still works, but nobody knows it exists. It's built this way on purpose, so you can send a quiet code to one customer without it appearing on the site for everyone."
+              stepsLabel="Every time you run an offer"
+              steps={[
+                {
+                  title: "Make the code work — Discounts",
+                  detail:
+                    "Discounts → Create discount → Amount off order. Type the code in capitals (MONSOON20), choose the percentage or rupees off, and set a minimum order value if you want one. Set the start and end dates here too — this page controls what the code is WORTH.",
+                },
+                {
+                  title: "Now look at the website. Nothing has changed.",
+                  detail:
+                    "That's right, not broken. You've printed the coupon. The next step puts up the poster.",
+                },
+                {
+                  title: "Make it show up — Content → Metaobjects → Promo",
+                  detail:
+                    "You'll see one entry, named after the code it's running. Click it to swap in your new offer, or press “Add entry” to line up the next sale without stopping this one. Put your code in “Discount code”, tick “Active”, and write the wording.",
+                },
+                {
+                  title: "Tick only the places you want it",
+                  detail: (
+                    <>
+                      These four boxes decide <em>where</em> the offer appears. Anything left
+                      unticked never mentions the code at all.
+                      <span className="mt-2.5 block space-y-1.5">
+                        <span className="block">
+                          <b className="text-body">Show in top bar</b> — the thin red strip across
+                          the very top of every page.
+                        </span>
+                        <span className="block">
+                          <b className="text-body">Show in home ticker</b> — the moving red band
+                          under the big photo on the home page.
+                        </span>
+                        <span className="block">
+                          <b className="text-body">Show in popup poster</b> — the full-screen poster
+                          that greets people when they open the site. The loudest one; save it for a
+                          launch or a festival sale.
+                        </span>
+                        <span className="block">
+                          <b className="text-body">Show in cart</b> — a button on the bag page that
+                          puts the code in for the shopper, so they never type it.
+                        </span>
+                      </span>
+                    </>
+                  ),
+                },
+                {
+                  title: "Save, count to five, then refresh the site",
+                  detail:
+                    "Shopify takes a few seconds to pass the change along. Refreshing the instant you hit save almost always shows the old offer — that's the delay, not a mistake.",
+                },
+              ]}
+              note="This is the part worth remembering: a small everyday discount can sit in Shopify forever and appear NOWHERE on the website. It only shows up in the places you tick. So the home page ticker never turns into a list of every code you've ever made."
+              goodToKnow={[
+                {
+                  q: "How do I stop an offer?",
+                  a: "Untick “Active” on the Promo entry. Everything disappears from the site straight away. Don't delete the entry — unticking keeps all your wording, so you can switch the same offer back on later without retyping it.",
+                },
+                {
+                  q: "Can I set up the next sale in advance?",
+                  a: "Yes. Press “Add entry” and fill in the new one while the current offer is still running. Fill in its “Starts” date — when two offers are both active, the one with the later start date is the one shoppers see. Switching over is then a single tick.",
+                },
+                {
+                  q: "A customer says the code isn't working?",
+                  a: "Usually their bag is under the minimum order value you set in step 1. Open the discount in Shopify and check. Shopify doesn't tell us WHY a code was refused, so the website just says it isn't valid for that bag — it can't be more specific than that.",
+                },
+                {
+                  q: "I made the discount but it's not on the website?",
+                  a: "You've done step 1 and not step 3. Go to Content → Metaobjects → Promo and add it there.",
+                },
+                {
+                  q: "Do I have to fill in every box?",
+                  a: "No. Only “Discount code” is required. The poster wording only matters if you've ticked the poster, and leaving “Link” blank simply sends people to the shop page.",
+                },
+              ]}
+              link={{ label: "Open the Promo page in Shopify", href: `${SHOP_ADMIN}/content/entries/promo` }}
+            />
           )}
 
           {tab === "orders" && (
