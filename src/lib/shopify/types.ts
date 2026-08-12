@@ -93,6 +93,20 @@ export interface SFPromo {
   endsAt: SFPromoField | null;
 }
 
+/** One discount Shopify has applied, and what it took off. Deliberately just
+ *  the amount — see the note in CART_FRAGMENT. */
+export interface SFDiscountAllocation {
+  discountedAmount: SFMoney;
+}
+
+export interface SFCartDiscountCode {
+  code: string;
+  /** False when Shopify accepted the code onto the cart but won't honour it —
+   *  unknown, expired, customer-specific, or a minimum this cart doesn't meet.
+   *  Shopify does not say which. */
+  applicable: boolean;
+}
+
 export interface SFCartLine {
   id: string;
   quantity: number;
@@ -100,6 +114,7 @@ export interface SFCartLine {
     totalAmount: SFMoney;
     amountPerQuantity: SFMoney;
   };
+  discountAllocations: SFDiscountAllocation[];
   merchandise: {
     id: string;
     title: string;
@@ -120,5 +135,7 @@ export interface SFCart {
     totalTaxAmount: SFMoney | null;
     totalDutyAmount: SFMoney | null;
   };
+  discountCodes: SFCartDiscountCode[];
+  discountAllocations: SFDiscountAllocation[];
   lines: { nodes: SFCartLine[] };
 }

@@ -4,6 +4,7 @@ import { FALLBACK_PROMO } from "@/config/launchOffer";
 import type {
   SFCart,
   SFCollection,
+  SFDiscountAllocation,
   SFMoney,
   SFProduct,
   SFPromo,
@@ -224,6 +225,9 @@ export function toPromo(p: SFPromo, now = Date.now()): Promo | null {
 
 const emptyMoney = (currencyCode: string): Money => ({ amount: 0, currencyCode });
 
+const sumAllocations = (allocations: SFDiscountAllocation[]): number =>
+  allocations.reduce((total, a) => total + Number.parseFloat(a.discountedAmount.amount), 0);
+
 export function toCart(c: SFCart): Cart {
   const lines: CartLine[] = c.lines.nodes.map((l) => ({
     id: l.id,
@@ -241,17 +245,33 @@ export function toCart(c: SFCart): Cart {
     lineTotal: money(l.cost.totalAmount),
   }));
 
+  /* Split by where Shopify put it, because the two behave differently against
+     subtotalAmount: line-level allocations have already been taken out of it,
+     order-level ones have not. */
+  const lineSavings = c.lines.nodes.reduce((n, l) => n + sumAllocations(l.discountAllocations), 0);
+  const savings = lineSavings + sumAllocations(c.discountAllocations);
+  const subtotal = money(c.cost.subtotalAmount);
+
   return {
     id: c.id,
     checkoutUrl: c.checkoutUrl,
     totalQuantity: c.totalQuantity,
     lines,
     cost: {
-      subtotal: money(c.cost.subtotalAmount),
+      subtotal,
+      subtotalBeforeDiscount: { ...subtotal, amount: subtotal.amount + lineSavings },
       total: money(c.cost.totalAmount),
       totalTax: c.cost.totalTaxAmount ? money(c.cost.totalTaxAmount) : null,
       totalShipping: null,
     },
+    /* A cart with no codes has no discount state at all, rather than a zero —
+       "nothing applied" and "a code worth ₹0" should not render the same. */
+    discount: c.discountCodes.length
+      ? {
+          codes: c.discountCodes.map((d) => ({ code: d.code, applicable: d.applicable })),
+          savings: { ...subtotal, amount: savings },
+        }
+      : null,
   };
 }
 
@@ -262,8 +282,10 @@ export const emptyCart = (currencyCode = "INR"): Cart => ({
   lines: [],
   cost: {
     subtotal: emptyMoney(currencyCode),
+    subtotalBeforeDiscount: emptyMoney(currencyCode),
     total: emptyMoney(currencyCode),
     totalTax: null,
     totalShipping: null,
   },
+  discount: null,
 });

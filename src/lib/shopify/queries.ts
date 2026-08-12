@@ -96,6 +96,15 @@ export const CART_FRAGMENT = /* GraphQL */ `
       totalTaxAmount { amount currencyCode }
       totalDutyAmount { amount currencyCode }
     }
+    # Shopify's own verdict on each code. A code it cannot honour comes back
+    # here with applicable:false and NO userError — see applyDiscount.
+    discountCodes { code applicable }
+    # Order-level discounts. Only discountedAmount on purpose: this fragment
+    # backs the cart query AND all five mutations, so a field that fails to
+    # resolve breaks add-to-cart on every page. The code that earned the money
+    # is already in discountCodes above, and inline fragments on the allocation
+    # interface shift between API versions.
+    discountAllocations { discountedAmount { amount currencyCode } }
     lines(first: 100) {
       nodes {
         id
@@ -104,6 +113,9 @@ export const CART_FRAGMENT = /* GraphQL */ `
           totalAmount { amount currencyCode }
           amountPerQuantity { amount currencyCode }
         }
+        # Product-scoped discounts land here instead, and Shopify has already
+        # taken them out of cost.totalAmount and cart.cost.subtotalAmount.
+        discountAllocations { discountedAmount { amount currencyCode } }
         merchandise {
           ... on ProductVariant {
             id

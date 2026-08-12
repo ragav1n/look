@@ -173,10 +173,30 @@ export interface CartLine {
 
 export interface CartCost {
   subtotal: Money;
+  /** `subtotal` restated before Shopify's line-level allocations — two Shopify
+   *  figures added, not a figure of ours.
+   *
+   *  It exists so the summary column adds up for BOTH kinds of discount.
+   *  Shopify's `subtotalAmount` is already net of product-scoped discounts but
+   *  gross of order-level ones, so printing it beside a single "Discount" row
+   *  would visibly fail to add up on a product-scoped code. Equal to `subtotal`
+   *  whenever no line-level discount exists, which is the usual case. */
+  subtotalBeforeDiscount: Money;
   total: Money;
   /** null until Shopify returns them at checkout */
   totalTax: Money | null;
   totalShipping: Money | null;
+}
+
+/** Discount state exactly as Shopify reports it. We never compute a percentage
+ *  or an amount: `savings` is the sum of Shopify's own discountedAmounts, at
+ *  both cart and line level. */
+export interface CartDiscount {
+  /** Codes on the cart. An entry with `applicable: false` is one Shopify won't
+   *  honour — it can appear without us asking, when editing the cart drops it
+   *  below a discount's minimum. */
+  codes: { code: string; applicable: boolean }[];
+  savings: Money;
 }
 
 export interface Cart {
@@ -187,6 +207,8 @@ export interface Cart {
   totalQuantity: number;
   lines: CartLine[];
   cost: CartCost;
+  /** null when no code has been applied. */
+  discount: CartDiscount | null;
   /** A recoverable problem Shopify reported alongside an otherwise-successful
    *  mutation — e.g. a line clamped to available stock. The cart is valid; this
    *  just explains why it may not match what was asked for. */

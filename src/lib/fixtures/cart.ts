@@ -43,10 +43,13 @@ const build = (lines: CartLine[]): Cart => {
     lines,
     cost: {
       subtotal: money(subtotal),
+      // No discount engine here, so there is never anything taken off the lines.
+      subtotalBeforeDiscount: money(subtotal),
       total: money(subtotal),
       totalTax: null,
       totalShipping: null,
     },
+    discount: null,
   };
 };
 
