@@ -409,6 +409,114 @@ body {
   display: none;
 }
 
+/* ===== TEMPORARY: launch-offer poster (the "GO LIVE Sale" popup) ============
+   The client's launch artwork rebuilt as layout rather than shipped as the
+   1280x720 JPEG it came as. The original puts its type in the right third of a
+   16:9 canvas, so on a phone it either letterboxes to a ~60px strip or crops
+   the offer off the edge; built out of gradients it reads the same at 340px as
+   at 520px, and the code stays selectable text rather than pixels.
+
+   Four layers, back to front: dusk (black falling to red), the grid, the sun,
+   and the treeline. The sun goes ON TOP of the grid, which is the whole reason
+   the grid doesn't read as a starburst: every rail converges on the vanishing
+   point, and that point sits directly behind the button. Under the bloom, the
+   rails come out of the light at the edges instead of pointing at it — the same
+   thing the artwork's own glow does to its grid.
+
+   `--horizon` is the one place the height of that horizon is stated — the dusk
+   gradient, the sun, both grid bands and the ridge all measure from it.
+
+   It's stated as a distance up from the BOTTOM edge, not as a percentage of the
+   height, and that is the whole trick to this thing surviving two breakpoints:
+   the horizon has to land in the gap between the CTA and the domain line, and
+   at 76% it landed there on a phone and straight through the button on a
+   desktop, because only the display type changes size between the two. Pinned
+   to the bottom edge, the ground band is the same 152px either way. */
+.launch-stage {
+  --ground: 152px;
+  --horizon: calc(100% - var(--ground));
+  background-color: #070607;
+  /* Dusk: black at the top edge, falling into red at the horizon, then straight
+     back to black for the ground. */
+  background-image: linear-gradient(
+    to bottom,
+    #060607 0%,
+    #170609 20%,
+    #3a080e 48%,
+    #740d16 var(--horizon),
+    #0a0607 calc(var(--horizon) + 22px),
+    #070607 100%
+  );
+}
+/* The sun, centred just below the horizon so its glow rises through it. */
+.launch-sun {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(
+    66% 108px at 50% calc(var(--horizon) + 14px),
+    rgba(255, 96, 82, 0.92) 0%,
+    rgba(214, 25, 34, 0.6) 38%,
+    rgba(120, 12, 22, 0.22) 68%,
+    transparent 84%
+  );
+}
+
+/* The grid, in two bands that meet at the horizon: the ground below it, the
+   fanned "ceiling" above it. Both are drawn as SVG in LaunchOfferPopup, with
+   the convergence worked out in the markup — see the note there.
+
+   The first cut of this tipped two flat, grid-gradient rectangles about the
+   horizon with `perspective` + `rotateX`, which is the usual recipe for a
+   synthwave floor. It renders as a plain uniform grid in WebKit: measured on
+   the ground band, the cross lines came out evenly spaced (~26px apart on a
+   518px dialog) where a real projection puts them at 9, 20, 33, 50, 73…px from
+   the horizon. Flipping the tilt, bounding the plane's depth inside the eye
+   distance, and dropping every mask each changed the scale and none of them
+   restored the convergence, so the transform is being flattened to an affine
+   one somewhere in that path. Don't reach for perspective here again. */
+.launch-grid {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.launch-grid > svg {
+  position: absolute;
+  left: 0;
+  width: 100%;
+}
+/* Ground: the band below the horizon, fading out before the bottom edge — a
+   grid that reaches the frame reads as wallpaper, and the domain line sits down
+   there on what should be plain black. */
+.launch-floor {
+  bottom: 0;
+  height: var(--ground);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, rgba(0, 0, 0, 0.5) 42%, transparent 78%);
+  mask-image: linear-gradient(to bottom, #000 0%, rgba(0, 0, 0, 0.5) 42%, transparent 78%);
+}
+/* Sky: everything above the horizon. Fades out fast going up, so the fan reads
+   behind the offer copy and the headline keeps a clean black field. */
+.launch-sky {
+  top: 0;
+  height: var(--horizon);
+  -webkit-mask-image: linear-gradient(to top, #000 0%, rgba(0, 0, 0, 0.42) 34%, transparent 72%);
+  mask-image: linear-gradient(to top, #000 0%, rgba(0, 0, 0, 0.42) 34%, transparent 72%);
+}
+/* Treeline. Straddles the horizon: the peaks break the sun, the body blends
+   into the ground, and between them they hide the seam where the floor plane's
+   far edge stops. */
+.launch-ridge {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 34px;
+  top: calc(var(--horizon) - 20px);
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(to bottom, #000 62%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 62%, transparent 100%);
+}
+
 /* Rich product description (Shopify `descriptionHtml`) — styles the admin's raw
    HTML (tables, lists, headings) for the black theme. Shopify's rich-text editor
    emits unstyled markup, so without this a <table> renders as browser-default

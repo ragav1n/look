@@ -4,6 +4,8 @@ import Navbar from "./Navbar";
 import Footer from "./Footer";
 import ChatWidget from "@/components/chat/ChatWidget";
 import NewsletterPopup from "@/components/NewsletterPopup";
+import LaunchOfferPopup from "@/components/LaunchOfferPopup";
+import { launchOffer } from "@/config/launchOffer";
 
 /* The whole site follows the black theme, so the navbar is always dark. */
 export default function PageShell() {
@@ -35,7 +37,13 @@ export default function PageShell() {
       </div>
       <Footer />
       <ChatWidget />
-      <NewsletterPopup />
+      {/* TEMPORARY: the launch offer greets every visit, so it takes the one
+          modal a visit gets and the newsletter invite stands down. Nothing is
+          lost by that — the newsletter prompt only ever fires once per browser
+          and it doesn't burn that chance while it's disarmed, so it goes back
+          to normal (and this prop can go) the moment the promo is retired. */}
+      <NewsletterPopup armed={!launchOffer.live} />
+      <LaunchOfferPopup />
       <ScrollRestoration />
     </div>
   );

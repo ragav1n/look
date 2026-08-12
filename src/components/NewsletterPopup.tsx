@@ -7,17 +7,24 @@ import { useUser } from "@/context/UserProvider";
 /** How long a visitor lingers before we invite them to subscribe. */
 const DELAY_MS = 15_000;
 
+interface Props {
+  /** Set false to hold the invite back entirely — used while a temporary promo
+   *  popup owns the visit. Nothing is spent while disarmed: the prompt is only
+   *  marked seen once it has actually been shown. */
+  armed?: boolean;
+}
+
 /* Site-wide newsletter invite: the same capture as the home band, surfaced as a
    modal after the visitor has spent a little time on the site. Shown at most
    once per browser (a dismissal or a subscribe both retire it), and never to a
    signed-in customer — they're likely already on the list. Mounted once in
    PageShell. */
-export default function NewsletterPopup() {
+export default function NewsletterPopup({ armed = true }: Props) {
   const { ready, isAuthenticated } = useUser();
   const [prompt, setPrompt] = useLocalStorage("look.newsletterPrompt", { seen: false });
   const [open, setOpen] = useState(false);
 
-  const suppressed = prompt.seen || isAuthenticated;
+  const suppressed = prompt.seen || isAuthenticated || !armed;
 
   // Arm the timer only once the session is known (avoids briefly counting down
   // for a logged-in customer whose session is still hydrating) and only if we
