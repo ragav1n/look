@@ -142,8 +142,8 @@ export const CART_QUERY = /* GraphQL */ `
 
 export const CART_CREATE_MUTATION = /* GraphQL */ `
   ${CART_FRAGMENT}
-  mutation CartCreate($lines: [CartLineInput!], $discountCodes: [String!]) {
-    cartCreate(input: { lines: $lines, discountCodes: $discountCodes }) {
+  mutation CartCreate($lines: [CartLineInput!]) {
+    cartCreate(input: { lines: $lines }) {
       cart { ...CartFields }
       userErrors { message }
     }

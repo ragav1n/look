@@ -84,7 +84,11 @@ read the entries and quietly falls back to the built-in campaign.
 1. Create the discount in **Discounts** as usual, and note the code.
 2. Add a **Promo** entry. Fill in `code`, tick `active`, and tick **only the
    surfaces you want it on**.
-3. Save. The site picks it up on the next page load. No deploy.
+3. Save, wait a few seconds, then reload the site.
+
+**Give it ~5 seconds.** Metaobject edits take a moment to reach the Storefront
+API — measured at **3.4s** on this store. Reload immediately after saving and
+you'll still see the old offer, which looks exactly like a bug and isn't.
 
 A promo is live when `active` is ticked, `code` is filled in, and today is inside
 `starts_at`/`ends_at` (leave either blank for "no limit"). If more than one entry

@@ -201,6 +201,7 @@ function DiscountBox() {
   const submit = async (code: string) => {
     setBusy(true);
     setError(null);
+    setAnnounced("");
     const outcome = await applyDiscount(code);
     setBusy(false);
     if (outcome === "applied") {
@@ -219,101 +220,112 @@ function DiscountBox() {
     }
   };
 
-  if (applied) {
-    return (
-      <div className="mt-5 flex items-center justify-between gap-3 rounded-btn border border-dashed border-white/25 bg-black/30 px-4 py-3">
-        <span className="font-ui text-[14px] font-medium tracking-[0.06em] text-white">
-          {applied.code}
-        </span>
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => void removeDiscount()}
-          className="cursor-pointer text-[13px] text-muted underline-offset-2 hover:text-sale hover:underline disabled:cursor-default disabled:opacity-50"
-        >
-          Remove
-        </button>
-      </div>
-    );
-  }
+  const drop = async () => {
+    /* Clear the announcement BEFORE the state that unmounts it, or the live
+       region comes back holding "Code X applied" the moment the form returns —
+       announcing a success immediately after the shopper undid it. */
+    setAnnounced("");
+    await removeDiscount();
+  };
 
   return (
     <div className="mt-5">
-      {stale && (
-        <div className="mb-3 flex items-center justify-between gap-3 rounded-btn border border-line-strong bg-black/30 px-4 py-3">
-          <p className="text-[13px] text-muted">
-            <span className="font-ui font-medium text-white">{stale.code}</span> no longer applies
-            to this bag.
-          </p>
+      {/* Outside both branches on purpose. Nested inside the form, this
+          unmounted in the same render that applying the code swapped the form
+          for the applied chip — so it never got the chance to say anything.
+          Empty at rest, so it only ever speaks on a change. */}
+      <span role="status" className="sr-only">
+        {announced}
+      </span>
+
+      {applied ? (
+        <div className="flex items-center justify-between gap-3 rounded-btn border border-dashed border-white/25 bg-black/30 px-4 py-3">
+          <span className="font-ui text-[14px] font-medium tracking-[0.06em] text-white">
+            {applied.code}
+          </span>
           <button
             type="button"
-            onClick={() => void removeDiscount()}
-            className="shrink-0 cursor-pointer text-[13px] text-muted underline-offset-2 hover:text-sale hover:underline"
+            disabled={busy}
+            onClick={() => void drop()}
+            className="cursor-pointer text-[13px] text-muted underline-offset-2 hover:text-sale hover:underline disabled:cursor-default disabled:opacity-50"
           >
             Remove
           </button>
         </div>
-      )}
+      ) : (
+        <>
+          {stale && (
+            <div className="mb-3 flex items-center justify-between gap-3 rounded-btn border border-line-strong bg-black/30 px-4 py-3">
+              <p className="text-[13px] text-muted">
+                <span className="font-ui font-medium text-white">{stale.code}</span> no longer
+                applies to this bag.
+              </p>
+              <button
+                type="button"
+                onClick={() => void drop()}
+                className="shrink-0 cursor-pointer text-[13px] text-muted underline-offset-2 hover:text-sale hover:underline"
+              >
+                Remove
+              </button>
+            </div>
+          )}
 
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          void submit(input);
-        }}
-      >
-        <label htmlFor="promo-code" className="text-[13px] text-body">
-          Have a code?
-        </label>
-        <div className="mt-2 flex gap-2">
-          <input
-            id="promo-code"
-            value={input}
-            onChange={(e) => {
-              setInput(e.target.value);
-              setError(null);
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void submit(input);
             }}
-            autoComplete="off"
-            autoCapitalize="characters"
-            spellCheck={false}
-            aria-invalid={error ? true : undefined}
-            aria-describedby={error ? "promo-code-error" : undefined}
-            /* min-w-0 or the input refuses to shrink below its content width
-               and pushes Apply off the panel at 360px. */
-            className="h-[46px] min-w-0 flex-1 rounded-btn border border-white/15 bg-black px-4 text-[15px] text-white outline-none placeholder:text-muted focus:border-accent"
-          />
-          <button
-            type="submit"
-            disabled={busy || !input.trim()}
-            className="h-[46px] shrink-0 cursor-pointer rounded-btn border border-line-strong px-5 text-[14px] font-medium text-white transition-colors hover:border-accent disabled:cursor-default disabled:opacity-50"
           >
-            {busy ? "Applying…" : "Apply"}
-          </button>
-        </div>
-        {error && (
-          <p id="promo-code-error" className="mt-2 text-[13px] text-sale">
-            {error}
-          </p>
-        )}
-      </form>
+            <label htmlFor="promo-code" className="text-[13px] text-body">
+              Have a code?
+            </label>
+            <div className="mt-2 flex gap-2">
+              <input
+                id="promo-code"
+                value={input}
+                onChange={(e) => {
+                  setInput(e.target.value);
+                  setError(null);
+                }}
+                autoComplete="off"
+                autoCapitalize="characters"
+                spellCheck={false}
+                aria-invalid={error ? true : undefined}
+                aria-describedby={error ? "promo-code-error" : undefined}
+                /* min-w-0 or the input refuses to shrink below its content width
+                   and pushes Apply off the panel at 360px. */
+                className="h-[46px] min-w-0 flex-1 rounded-btn border border-white/15 bg-black px-4 text-[15px] text-white outline-none placeholder:text-muted focus:border-accent"
+              />
+              <button
+                type="submit"
+                disabled={busy || !input.trim()}
+                className="h-[46px] shrink-0 cursor-pointer rounded-btn border border-line-strong px-5 text-[14px] font-medium text-white transition-colors hover:border-accent disabled:cursor-default disabled:opacity-50"
+              >
+                {busy ? "Applying…" : "Apply"}
+              </button>
+            </div>
+            {error && (
+              <p id="promo-code-error" className="mt-2 text-[13px] text-sale">
+                {error}
+              </p>
+            )}
+          </form>
 
-      {/* The running promo, one tap. Only for a promo the store has cleared for
-          the cart — a discount existing in Shopify is not a reason to advertise
-          it here. */}
-      {promo?.surfaces.cart && !stale && (
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => void submit(promo.code)}
-          className="mt-3 w-full cursor-pointer rounded-btn border border-dashed border-accent/60 px-4 py-2.5 text-[13px] text-body transition-colors hover:border-accent hover:text-white disabled:cursor-default disabled:opacity-50"
-        >
-          Apply <span className="font-ui font-medium text-white">{promo.code}</span>
-        </button>
+          {/* The running promo, one tap. Only for a promo the store has cleared
+              for the cart — a discount existing in Shopify is not a reason to
+              advertise it here. */}
+          {promo?.surfaces.cart && !stale && (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => void submit(promo.code)}
+              className="mt-3 w-full cursor-pointer rounded-btn border border-dashed border-accent/60 px-4 py-2.5 text-[13px] text-body transition-colors hover:border-accent hover:text-white disabled:cursor-default disabled:opacity-50"
+            >
+              Apply <span className="font-ui font-medium text-white">{promo.code}</span>
+            </button>
+          )}
+        </>
       )}
-
-      {/* Empty at rest, so it announces the success and nothing else. */}
-      <span role="status" className="sr-only">
-        {announced}
-      </span>
     </div>
   );
 }

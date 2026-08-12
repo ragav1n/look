@@ -46,15 +46,23 @@ export const stashPendingCode = (code: string): void => {
   }
 };
 
-const takePendingCode = (): string | null => {
+const peekPendingCode = (): string | null => {
   try {
-    const code = localStorage.getItem(PENDING_CODE_KEY);
-    // One shot, whatever the verdict: a code Shopify won't honour must not sit
-    // in storage re-attaching itself to every cart the shopper ever starts.
-    localStorage.removeItem(PENDING_CODE_KEY);
-    return code;
+    return localStorage.getItem(PENDING_CODE_KEY);
   } catch {
     return null;
+  }
+};
+
+/* One shot, but only once Shopify has actually answered: a code Shopify won't
+   honour must not sit in storage re-attaching itself to every cart the shopper
+   ever starts, and a code we promised to remember must not vanish because the
+   request that would have claimed it never landed. */
+const clearPendingCode = (): void => {
+  try {
+    localStorage.removeItem(PENDING_CODE_KEY);
+  } catch {
+    /* storage unavailable */
   }
 };
 
@@ -98,24 +106,15 @@ export async function hydrate(): Promise<Cart> {
   return toCart(data.cart);
 }
 
-/** Create a fresh cart seeded with `line`, replacing whatever id we held. Any
- *  code stashed from a promo surface is claimed here, in the same request. */
+/** Create a fresh cart seeded with `line`, replacing whatever id we held. */
 async function createWith(line: { merchandiseId: string; quantity: number }): Promise<Cart> {
-  const pending = takePendingCode();
   const data = await storefront<{
     cartCreate: { cart: SFCart | null; userErrors?: { message: string }[] };
-  }>(CART_CREATE_MUTATION, { lines: [line], discountCodes: pending ? [pending] : null });
+  }>(CART_CREATE_MUTATION, { lines: [line] });
   const cart = data.cartCreate.cart;
   if (!cart) throw new Error(firstUserError(data.cartCreate.userErrors) ?? "Could not create cart.");
   writeId(cart.id);
-  /* The stashed code may no longer be honourable by the time the bag exists
-     (expired, or this item doesn't qualify). Strip it rather than leave a dead
-     code sitting on the cart the shopper is about to look at. */
-  if (pending && cart.discountCodes.some((d) => !d.applicable)) {
-    const cleaned = await setCodes(cart.id, applicableCodes(cart));
-    return toCart(cleaned);
-  }
-  return withNotice(cart, data.cartCreate.userErrors);
+  return claimPendingCode(cart, data.cartCreate.userErrors);
 }
 
 export async function addLine(input: AddToCartInput): Promise<Cart> {
@@ -133,7 +132,7 @@ export async function addLine(input: AddToCartInput): Promise<Cart> {
     discardDeadCart();
     return createWith(line);
   }
-  return withNotice(cart, data.cartLinesAdd.userErrors);
+  return claimPendingCode(cart, data.cartLinesAdd.userErrors);
 }
 
 export async function updateLine(lineId: string, quantity: number): Promise<Cart> {
@@ -184,6 +183,38 @@ async function setCodes(cartId: string, codes: string[]): Promise<SFCart> {
     throw new CartError("Your cart expired. Refresh the page to start a new one.");
   }
   return cart;
+}
+
+/** Put a stashed promo code onto a cart that now has something in it.
+ *
+ *  Runs after BOTH ways a line can land — a fresh cartCreate, and a
+ *  cartLinesAdd onto a cart that already existed. That second case is not
+ *  hypothetical: emptying a bag item by item leaves the cart id in place, so a
+ *  shopper in exactly that state would take a promo chip, get told the code was
+ *  saved, add something, and never see it applied.
+ *
+ *  A cart with no lines is left alone: Shopify marks even a valid code
+ *  inapplicable on an empty cart, so claiming it there would burn the code on a
+ *  guaranteed rejection. */
+async function claimPendingCode(cart: SFCart, errors?: { message: string }[]): Promise<Cart> {
+  const pending = peekPendingCode();
+  if (!pending || cart.totalQuantity === 0) return withNotice(cart, errors);
+
+  let settled: SFCart;
+  try {
+    settled = await setCodes(cart.id, [pending]);
+  } catch {
+    /* The line IS in the bag, and that is what the shopper asked for. Keep the
+       code stashed for the next attempt rather than failing the whole add. */
+    return withNotice(cart, errors);
+  }
+  clearPendingCode();
+
+  // Same rule as applyDiscount: never leave a code Shopify won't honour.
+  if (settled.discountCodes.some((d) => !d.applicable)) {
+    return withNotice(await setCodes(cart.id, applicableCodes(settled)), errors);
+  }
+  return withNotice(settled, errors);
 }
 
 /** Outcome of a code attempt. `rejected` is the code Shopify took onto the cart

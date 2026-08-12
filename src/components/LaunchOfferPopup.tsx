@@ -331,37 +331,73 @@ export default function LaunchOfferPopup({ onDismiss }: Props) {
               Decorative, all three: the offer is carried by the copy, and the
               button below leads to these same pieces. */}
           <div
-            className="launch-lineup animate-fade-up relative mt-8 mb-5 flex h-[142px] items-end justify-center sm:h-[190px]"
-            style={{ animationDelay: "0.5s" }}
+            className="launch-lineup relative mt-8 mb-5 flex h-[142px] items-end justify-center sm:h-[190px]"
             aria-hidden
           >
-            {/* Contact shadow, so the group sits on the floor instead of
-                hovering above it. */}
-            <span className="absolute bottom-[-6px] left-1/2 h-[16px] w-[64%] -translate-x-1/2 rounded-[50%] bg-black/50 blur-[7px]" />
-            <img
-              src={outfitShort}
-              alt=""
-              width={315}
-              height={420}
-              decoding="async"
-              className="relative -mr-4 h-[76%] w-auto drop-shadow-[0_10px_16px_rgba(0,0,0,0.5)] sm:-mr-5"
-            />
-            <img
-              src={outfitGown}
-              alt=""
-              width={264}
-              height={420}
-              decoding="async"
-              className="relative z-10 h-[93%] w-auto drop-shadow-[0_12px_20px_rgba(0,0,0,0.55)]"
-            />
-            <img
-              src={outfitMaxi}
-              alt=""
-              width={186}
-              height={420}
-              decoding="async"
-              className="relative -ml-4 h-full w-auto drop-shadow-[0_10px_16px_rgba(0,0,0,0.5)] sm:-ml-5"
-            />
+            {/* Three garments standing at three depths on the floor the grid
+                describes, rather than three cut-outs in a row. Every cue that
+                says "further away" moves together, which is what makes it read
+                as depth instead of as bad alignment: smaller, hem higher up the
+                floor toward the horizon, a tighter and fainter pool of shade,
+                and hazier in the dusk. The gown is nearest and overlaps both
+                neighbours, which settles the order.
+
+                The flanking pair is deliberately unequal — different depths,
+                gaps and tilts — because a symmetric flank reads as a product
+                row again however far back it stands.
+
+                Sizes and lifts stay in percentages: .launch-lineup is given a
+                shorter height on a short viewport (index.css), and the group
+                has to come down with it rather than hang off the stage. A lift
+                is a percentage of the piece's own height, so it scales too.
+
+                They walk on back-to-front, the gown landing last and in front.
+                Tailwind v4 writes `translate`/`rotate` as their own properties
+                while fade-up animates `transform`, so a piece can carry its
+                depth and its entrance at once without one wiping the other. */}
+            {/* Furthest: the knee-length piece, a step back and to the left. */}
+            <span
+              className="animate-fade-up relative -mr-[7%] h-[62%] origin-bottom -translate-y-[15%] -rotate-[4deg] brightness-[0.82] blur-[0.4px]"
+              style={{ animationDelay: "0.44s" }}
+            >
+              <img src={outfitShort} alt="" width={315} height={420} decoding="async" className="h-full w-auto" />
+              <img
+                src={outfitShort}
+                alt=""
+                aria-hidden
+                className="absolute top-full left-0 h-full w-auto -scale-y-100 opacity-[0.16] blur-[2px]"
+              />
+              <span className="absolute -bottom-[3px] left-1/2 h-[7px] w-[95%] -translate-x-1/2 rounded-[50%] bg-black/45 blur-[4px]" />
+            </span>
+
+            {/* Nearest, and centre: full height, hem lowest, no haze. z-20 puts
+                it over both neighbours without reordering the row. */}
+            <span className="animate-fade-up relative z-20 h-full origin-bottom" style={{ animationDelay: "0.62s" }}>
+              <img src={outfitGown} alt="" width={264} height={420} decoding="async" className="h-full w-auto" />
+              <img
+                src={outfitGown}
+                alt=""
+                aria-hidden
+                className="absolute top-full left-0 h-full w-auto -scale-y-100 opacity-[0.2] blur-[2px]"
+              />
+              <span className="absolute -bottom-[5px] left-1/2 h-[13px] w-[120%] -translate-x-1/2 rounded-[50%] bg-black/55 blur-[7px]" />
+            </span>
+
+            {/* Mid depth: the maxi, nearer than the knee-length piece and
+                tilted the other way, so the pair doesn't mirror. */}
+            <span
+              className="animate-fade-up relative z-10 -ml-[9%] h-[86%] origin-bottom -translate-y-[7%] rotate-[3deg] brightness-[0.92]"
+              style={{ animationDelay: "0.52s" }}
+            >
+              <img src={outfitMaxi} alt="" width={186} height={420} decoding="async" className="h-full w-auto" />
+              <img
+                src={outfitMaxi}
+                alt=""
+                aria-hidden
+                className="absolute top-full left-0 h-full w-auto -scale-y-100 opacity-[0.16] blur-[2px]"
+              />
+              <span className="absolute -bottom-[4px] left-1/2 h-[9px] w-[135%] -translate-x-1/2 rounded-[50%] bg-black/50 blur-[5px]" />
+            </span>
           </div>
         </div>
       </div>

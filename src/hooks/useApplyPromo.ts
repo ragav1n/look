@@ -30,10 +30,12 @@ export function useApplyPromo(promo: Promo | null) {
   const apply = async (): Promise<PromoApplyResult> => {
     if (!promo) return "failed";
     if (alreadyApplied) return "applied";
-    /* No bag to put it on, and Shopify marks even a good code inapplicable on
-       an empty cart — so asking would only produce a false rejection. Park it;
-       the next add-to-cart hands it to cartCreate in the same request. */
-    if (!cart.id) {
+    /* Nothing to put it on. Shopify marks even a good code inapplicable on an
+       EMPTY cart, so asking would produce a rejection that says nothing true
+       about the code — park it instead, and the next add-to-cart claims it.
+       Keyed on the quantity, not on `cart.id`: emptying a bag item by item
+       leaves the id behind, and that cart is just as empty as no cart at all. */
+    if (!cart.id || cart.totalQuantity === 0) {
       stashDiscount(promo.code);
       return "saved";
     }
