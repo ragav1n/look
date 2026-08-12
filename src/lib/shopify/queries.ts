@@ -142,8 +142,25 @@ export const CART_QUERY = /* GraphQL */ `
 
 export const CART_CREATE_MUTATION = /* GraphQL */ `
   ${CART_FRAGMENT}
-  mutation CartCreate($lines: [CartLineInput!]) {
-    cartCreate(input: { lines: $lines }) {
+  mutation CartCreate($lines: [CartLineInput!], $discountCodes: [String!]) {
+    cartCreate(input: { lines: $lines, discountCodes: $discountCodes }) {
+      cart { ...CartFields }
+      userErrors { message }
+    }
+  }
+`;
+
+/** Replace the cart's discount codes; [] clears them.
+ *
+ *  Always SETS the list rather than appending to it. Shopify allows one code
+ *  per order unless the discounts are configured to combine, and appending to a
+ *  cart that already has one silently flips the earlier code to
+ *  applicable:false instead of refusing — so a shopper would watch their first
+ *  discount evaporate with no explanation. */
+export const CART_DISCOUNT_CODES_UPDATE_MUTATION = /* GraphQL */ `
+  ${CART_FRAGMENT}
+  mutation CartDiscountCodesUpdate($cartId: ID!, $discountCodes: [String!]) {
+    cartDiscountCodesUpdate(cartId: $cartId, discountCodes: $discountCodes) {
       cart { ...CartFields }
       userErrors { message }
     }

@@ -26,6 +26,11 @@ import { useUser } from "./UserProvider";
  * cart is kept. Callers get a boolean so they can avoid showing success UI
  * (an "Added ✓" flash, a redirect to checkout) for something that failed.
  */
+/** Why a code attempt ended. The split matters: "failed" is a system problem
+ *  and gets the usual toast, "invalid" is a form problem and must NOT — a
+ *  rejected code belongs next to the field that rejected it (see ToastContext). */
+export type DiscountOutcome = "applied" | "invalid" | "failed";
+
 interface CartContextValue {
   cart: Cart;
   /** true once the persisted cart has hydrated */
@@ -37,6 +42,12 @@ interface CartContextValue {
   updateQty: (lineId: string, quantity: number) => Promise<boolean>;
   remove: (lineId: string) => Promise<boolean>;
   clear: () => Promise<boolean>;
+  applyDiscount: (code: string) => Promise<DiscountOutcome>;
+  removeDiscount: () => Promise<boolean>;
+  /** Hold a code for a bag that doesn't exist yet; the next add-to-cart claims
+   *  it. Lets a promo chip keep its one-tap promise before anything is in the
+   *  cart, without a round trip that has nothing to act on. */
+  stashDiscount: (code: string) => void;
 }
 
 const CartContext = createContext<CartContextValue | null>(null);
@@ -83,6 +94,33 @@ export function CartProvider({ children }: { children: ReactNode }) {
           return false;
         } finally {
           if (lineId) setBusyLines((prev) => prev.filter((id) => id !== lineId));
+        }
+      });
+      queueRef.current = task;
+      return task;
+    },
+    [applyCart, push],
+  );
+
+  /* Shares `run`'s queue but not its boolean, since a rejected code is neither
+     success nor failure: the mutation worked, Shopify just won't honour the
+     code. Queued all the same — a code landing between a stepper click and its
+     response would otherwise resolve against a cart that no longer exists. */
+  const applyDiscount = useCallback(
+    (code: string): Promise<DiscountOutcome> => {
+      const task = queueRef.current.then(async (): Promise<DiscountOutcome> => {
+        try {
+          const { cart: next, rejected } = await cartBackend.applyDiscount(code);
+          applyCart(next);
+          return rejected ? "invalid" : "applied";
+        } catch (err) {
+          console.error("Discount apply failed:", err);
+          push(
+            err instanceof Error && err.name === "CartError"
+              ? err.message
+              : "We couldn't apply that code. Please try again.",
+          );
+          return "failed";
         }
       });
       queueRef.current = task;
@@ -177,8 +215,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
           lineId,
         ),
       clear: () => run(() => cartBackend.clear(), "We couldn't clear your cart. Please try again."),
+      applyDiscount,
+      removeDiscount: () =>
+        run(() => cartBackend.removeDiscount(), "We couldn't remove that code. Please try again."),
+      stashDiscount: cartBackend.stashPendingCode,
     }),
-    [cart, ready, busyLines, run, push],
+    [cart, ready, busyLines, run, push, applyDiscount],
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

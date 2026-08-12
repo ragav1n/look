@@ -2,6 +2,7 @@ import type { AddToCartInput, Cart } from "@/types";
 import { storefront } from "./client";
 import {
   CART_CREATE_MUTATION,
+  CART_DISCOUNT_CODES_UPDATE_MUTATION,
   CART_LINES_ADD_MUTATION,
   CART_LINES_REMOVE_MUTATION,
   CART_LINES_UPDATE_MUTATION,
@@ -15,6 +16,10 @@ import type { SFCart } from "./types";
  *  Shopify-hosted `checkoutUrl`. */
 
 const CART_ID_KEY = "look.cartId";
+/** A code tapped from a promo surface before there was a cart to put it on. It
+ *  waits here and rides along on the cartCreate that the first add-to-cart has
+ *  to make anyway, so the one-tap promise costs no extra request. */
+const PENDING_CODE_KEY = "look.promoCode";
 
 const readId = (): string | null => {
   try {
@@ -30,6 +35,26 @@ const writeId = (id: string | null): void => {
     else localStorage.removeItem(CART_ID_KEY);
   } catch {
     /* storage unavailable */
+  }
+};
+
+export const stashPendingCode = (code: string): void => {
+  try {
+    localStorage.setItem(PENDING_CODE_KEY, code);
+  } catch {
+    /* storage unavailable — the shopper can still type the code in the cart */
+  }
+};
+
+const takePendingCode = (): string | null => {
+  try {
+    const code = localStorage.getItem(PENDING_CODE_KEY);
+    // One shot, whatever the verdict: a code Shopify won't honour must not sit
+    // in storage re-attaching itself to every cart the shopper ever starts.
+    localStorage.removeItem(PENDING_CODE_KEY);
+    return code;
+  } catch {
+    return null;
   }
 };
 
@@ -73,14 +98,23 @@ export async function hydrate(): Promise<Cart> {
   return toCart(data.cart);
 }
 
-/** Create a fresh cart seeded with `line`, replacing whatever id we held. */
+/** Create a fresh cart seeded with `line`, replacing whatever id we held. Any
+ *  code stashed from a promo surface is claimed here, in the same request. */
 async function createWith(line: { merchandiseId: string; quantity: number }): Promise<Cart> {
+  const pending = takePendingCode();
   const data = await storefront<{
     cartCreate: { cart: SFCart | null; userErrors?: { message: string }[] };
-  }>(CART_CREATE_MUTATION, { lines: [line] });
+  }>(CART_CREATE_MUTATION, { lines: [line], discountCodes: pending ? [pending] : null });
   const cart = data.cartCreate.cart;
   if (!cart) throw new Error(firstUserError(data.cartCreate.userErrors) ?? "Could not create cart.");
   writeId(cart.id);
+  /* The stashed code may no longer be honourable by the time the bag exists
+     (expired, or this item doesn't qualify). Strip it rather than leave a dead
+     code sitting on the cart the shopper is about to look at. */
+  if (pending && cart.discountCodes.some((d) => !d.applicable)) {
+    const cleaned = await setCodes(cart.id, applicableCodes(cart));
+    return toCart(cleaned);
+  }
   return withNotice(cart, data.cartCreate.userErrors);
 }
 
@@ -129,6 +163,65 @@ export async function removeLine(lineId: string): Promise<Cart> {
     throw new CartError("Your cart expired. Refresh the page to start a new one.");
   }
   return withNotice(cart, data.cartLinesRemove.userErrors);
+}
+
+/* ---------------------------------------------------------------- *
+ * Discount codes                                                     *
+ * ---------------------------------------------------------------- */
+
+const applicableCodes = (cart: SFCart): string[] =>
+  cart.discountCodes.filter((d) => d.applicable).map((d) => d.code);
+
+/** Set the cart's codes, replacing whatever was there. Shared by apply, remove
+ *  and the stashed-code cleanup so they all handle a dead cart the same way. */
+async function setCodes(cartId: string, codes: string[]): Promise<SFCart> {
+  const data = await storefront<{
+    cartDiscountCodesUpdate: { cart: SFCart | null; userErrors?: { message: string }[] };
+  }>(CART_DISCOUNT_CODES_UPDATE_MUTATION, { cartId, discountCodes: codes });
+  const cart = data.cartDiscountCodesUpdate.cart;
+  if (!cart) {
+    discardDeadCart();
+    throw new CartError("Your cart expired. Refresh the page to start a new one.");
+  }
+  return cart;
+}
+
+/** Outcome of a code attempt. `rejected` is the code Shopify took onto the cart
+ *  and then marked applicable:false — unknown, expired, customer-specific, or
+ *  an eligible code whose minimum this bag doesn't meet. Shopify reports all of
+ *  those as a SUCCESSFUL mutation with an empty userErrors (verified against the
+ *  live store), so `applicable` is the only signal there is, and there is no way
+ *  to tell the four apart. */
+export interface DiscountResult {
+  cart: Cart;
+  rejected: string | null;
+}
+
+export async function applyDiscount(code: string): Promise<DiscountResult> {
+  const wanted = code.trim();
+  if (!wanted) throw new CartError("Enter a discount code.");
+  const id = readId();
+  /* Shopify marks even a perfectly good code inapplicable on an empty cart, so
+     there is nothing useful to do here — and nothing to apply it to. */
+  if (!id) throw new CartError("Add something to your bag before applying a code.");
+
+  const cart = await setCodes(id, [wanted]);
+  const verdict = cart.discountCodes.find((d) => d.code.toLowerCase() === wanted.toLowerCase());
+  if (verdict && !verdict.applicable) {
+    /* Roll it straight back off. Left on, it would either park a permanent
+       "not applied" row the shopper reads as a bug, or ride into Shopify's
+       hosted checkout looking half-applied. The caller shows one inline
+       message instead. */
+    const reverted = await setCodes(id, applicableCodes(cart));
+    return { cart: toCart(reverted), rejected: wanted };
+  }
+  return { cart: toCart(cart), rejected: null };
+}
+
+export async function removeDiscount(): Promise<Cart> {
+  const id = readId();
+  if (!id) return emptyCart();
+  return toCart(await setCodes(id, []));
 }
 
 /** Empty the cart on Shopify too, so an explicitly-cleared cart can't linger
