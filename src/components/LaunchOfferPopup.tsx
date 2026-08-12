@@ -361,12 +361,6 @@ export default function LaunchOfferPopup({ onDismiss }: Props) {
               style={{ animationDelay: "0.44s" }}
             >
               <img src={outfitShort} alt="" width={315} height={420} decoding="async" className="h-full w-auto" />
-              <img
-                src={outfitShort}
-                alt=""
-                aria-hidden
-                className="absolute top-full left-0 h-full w-auto -scale-y-100 opacity-[0.16] blur-[2px]"
-              />
               <span className="absolute -bottom-[3px] left-1/2 h-[7px] w-[95%] -translate-x-1/2 rounded-[50%] bg-black/45 blur-[4px]" />
             </span>
 
@@ -374,12 +368,6 @@ export default function LaunchOfferPopup({ onDismiss }: Props) {
                 it over both neighbours without reordering the row. */}
             <span className="animate-fade-up relative z-20 h-full origin-bottom" style={{ animationDelay: "0.62s" }}>
               <img src={outfitGown} alt="" width={264} height={420} decoding="async" className="h-full w-auto" />
-              <img
-                src={outfitGown}
-                alt=""
-                aria-hidden
-                className="absolute top-full left-0 h-full w-auto -scale-y-100 opacity-[0.2] blur-[2px]"
-              />
               <span className="absolute -bottom-[5px] left-1/2 h-[13px] w-[120%] -translate-x-1/2 rounded-[50%] bg-black/55 blur-[7px]" />
             </span>
 
@@ -390,12 +378,6 @@ export default function LaunchOfferPopup({ onDismiss }: Props) {
               style={{ animationDelay: "0.52s" }}
             >
               <img src={outfitMaxi} alt="" width={186} height={420} decoding="async" className="h-full w-auto" />
-              <img
-                src={outfitMaxi}
-                alt=""
-                aria-hidden
-                className="absolute top-full left-0 h-full w-auto -scale-y-100 opacity-[0.16] blur-[2px]"
-              />
               <span className="absolute -bottom-[4px] left-1/2 h-[9px] w-[135%] -translate-x-1/2 rounded-[50%] bg-black/50 blur-[5px]" />
             </span>
           </div>
