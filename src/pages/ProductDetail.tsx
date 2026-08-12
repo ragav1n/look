@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
-import { Heart, RefreshCw, ShieldCheck, Users, Ruler, X } from "lucide-react";
+import { Heart, RefreshCw, ShieldCheck, Ruler, X } from "lucide-react";
 import type { Product } from "@/types";
 import { getProductByHandle, getBestSellers } from "@/lib/catalog";
 import { formatPrice, discountPercent } from "@/lib/format";
@@ -27,10 +27,12 @@ import sizeChart from "@/assets/size-chart.jpg";
    the PDP opens this in a modal. */
 const SIZE_CHART_SRC: string | null = sizeChart;
 
+/* "Trusted by 10K+ Customers" was removed (2026-08-12, client's call): the shop
+   opened this month and the number wasn't ours to make. Both remaining claims
+   are ones the store can actually keep. */
 const trustItems = [
   { icon: RefreshCw, label: "Easy Replacement" },
   { icon: ShieldCheck, label: "Secure Payment" },
-  { icon: Users, label: "Trusted by 10K+ Customers" },
 ];
 
 export default function ProductDetail() {
@@ -298,8 +300,8 @@ function PdpContent({ product }: { product: Product }) {
             </p>
           ) : null}
 
-          {/* Trust info */}
-          <div className="mt-7 grid grid-cols-3 gap-3 border-t border-line pt-6">
+          {/* Trust info. Two columns, not three with a hole in it. */}
+          <div className="mt-7 grid grid-cols-2 gap-3 border-t border-line pt-6">
             {trustItems.map(({ icon: Icon, label }) => (
               <div key={label} className="flex flex-col items-center gap-2 text-center">
                 <span className="grid size-11 place-items-center rounded-full border border-line-strong text-accent">
