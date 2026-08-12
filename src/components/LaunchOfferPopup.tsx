@@ -120,7 +120,9 @@ export default function LaunchOfferPopup() {
 
   return (
     <Modal
-      open={open && launchOffer.live}
+      /* `open` is the whole gate — the effect above never arms the timer when
+         the promo is retired, so it can only ever be true while it's live. */
+      open={open}
       onClose={() => setOpen(false)}
       label={`LOOK launch offer — use code ${launchOffer.code}`}
       maxWidth="max-w-[520px]"
@@ -172,10 +174,12 @@ export default function LaunchOfferPopup() {
                   screen reader should hear it as one: "Go Live Sale". */}
               <span className="sr-only"> {launchOffer.script}</span>
             </h2>
-            {/* Overlapping the wordmark's baseline, but only just: Great Vibes
-                has a tall S and l, and any more than this crosses the E. */}
+            {/* Clear of the wordmark, not tucked under it. Great Vibes carries
+                a tall S and l on `leading-none`, so the ascenders reach up into
+                the line above and cross the LIVE — this sits the script down far
+                enough that the two words read as two words. */}
             <p
-              className="-mt-1 font-script text-[42px] leading-none [text-shadow:0_3px_22px_rgba(0,0,0,0.5)] sm:-mt-1.5 sm:text-[56px]"
+              className="mt-2.5 font-script text-[42px] leading-none [text-shadow:0_3px_22px_rgba(0,0,0,0.5)] sm:mt-3.5 sm:text-[56px]"
               aria-hidden
             >
               {launchOffer.script}
@@ -226,14 +230,20 @@ export default function LaunchOfferPopup() {
                 />
               )}
             </button>
-            <p
-              className="mt-2.5 font-display text-[13px] italic text-white/70"
-              /* Live region: the copy confirmation replaces this line, so a
-                 screen-reader user hears the result of their own click. */
-              aria-live="polite"
-            >
+            {/* The visible line swaps to the confirmation and back, but it is NOT
+                the live region. Announcing it would say "Code copied" on the
+                click and then "Before it's gone" 2.2s later when the timer
+                restores it, with nothing having happened in between — a status
+                region can't have marketing copy as its resting state. The
+                announcement lives in the empty region below instead: it has
+                something to say only while `copied` holds, and clearing text
+                back out is silent. */}
+            <p className="mt-2.5 font-display text-[13px] italic text-white/70" aria-hidden>
               {copied ? "Code copied" : "Before it’s gone"}
             </p>
+            <span role="status" className="sr-only">
+              {copied ? "Code copied" : ""}
+            </span>
           </div>
 
           <Link

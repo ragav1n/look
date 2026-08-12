@@ -1,9 +1,12 @@
 import { Link } from "react-router-dom";
 import { launchOffer } from "@/config/launchOffer";
 
-/** Phrases per marquee group. The group has to be wider than the viewport or
- *  the loop shows a gap at the seam, and one phrase is nowhere near 1512px. */
-const PER_GROUP = 5;
+/** Phrases per marquee group. Seven fills ~2550px on their own, which covers
+ *  everything up to a 27" screen at natural spacing; past that the group's own
+ *  min-width takes over and `justify-around` stretches the gaps (see the note
+ *  on the seam below). Seven rather than five purely so an ultra-wide doesn't
+ *  end up with 320px of air between phrases. */
+const PER_GROUP = 7;
 
 /* TEMPORARY — launch-offer ticker, directly under the hero.
    The announcement the client asked for, as moving text. Retire it from
@@ -13,7 +16,16 @@ const PER_GROUP = 5;
    (i.e. exactly one group) on a linear loop, so the moment the animation
    restarts the second group is sitting where the first one began and the seam
    is invisible. Duplicate copy is hidden from assistive tech — the band's
-   accessible name is on the link, said once. */
+   accessible name is on the link, said once.
+
+   That only holds while ONE group is at least as wide as the viewport. Five
+   phrases measure ~1820px, which covers a laptop and quietly fails above it:
+   at 1920px the track's right edge came into view for the last fraction of
+   every cycle (95px of bare red), and at 2560px for ~14s of the 34s — the band
+   simply ran out of text. Hence `min-w-[100vw]` on each group: it can never be
+   narrower than the screen it's scrolling across, whatever the screen is, and
+   `justify-around` spends the slack on wider gaps between phrases instead of
+   leaving it at the end. Adding more phrases would only move the breakpoint. */
 export default function LaunchTicker() {
   if (!launchOffer.live) return null;
 
@@ -44,7 +56,10 @@ export default function LaunchTicker() {
         style={{ animationDuration: "34s" }}
       >
         {[0, 1].map((group) => (
-          <div key={group} className="flex shrink-0 items-center">
+          <div
+            key={group}
+            className="flex min-w-[100vw] shrink-0 items-center justify-around"
+          >
             {Array.from({ length: PER_GROUP }, (_, i) => phrase(i))}
           </div>
         ))}
