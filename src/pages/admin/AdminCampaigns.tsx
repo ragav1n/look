@@ -485,13 +485,13 @@ function Console({ onSignedOut }: { onSignedOut: () => void }) {
         <div className="relative mt-10">
           <span className="animate-glow pointer-events-none absolute -top-10 -left-8 size-52 rounded-full bg-accent/12 blur-3xl" />
           <div className="relative">
-            <Eyebrow>Community email</Eyebrow>
+            <Eyebrow>Owner console</Eyebrow>
             <h1 className="mt-2 font-display text-[32px] leading-[1.1] font-medium text-white">
-              Emails to your shoppers
+              Reaching your shoppers
             </h1>
             <p className="mt-2 max-w-[560px] text-[14px] leading-[22px] text-muted">
-              Everything LOOK sends to customers lives here. Most of it runs on its own; the
-              Campaigns tab is the one you send by hand.
+              Your emails and your offers. Most of it runs on its own; Campaigns is the one you send
+              by hand, and Offers is the one to read before your next sale.
             </p>
           </div>
         </div>
