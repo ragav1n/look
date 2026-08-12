@@ -207,12 +207,14 @@ export default function LaunchOfferPopup() {
               type="button"
               onClick={copyCode}
               aria-label={`Copy discount code ${launchOffer.code}`}
-              className="group inline-flex items-center gap-3 rounded-full border border-dashed border-white/55 bg-black/35 px-5 py-3 backdrop-blur-[2px] transition-colors hover:border-white hover:bg-black/50"
+              className="group inline-flex items-center gap-2.5 rounded-full border border-dashed border-white/55 bg-black/35 px-4 py-3 backdrop-blur-[2px] transition-colors hover:border-white hover:bg-black/50 sm:gap-3 sm:px-5"
             >
-              <span className="font-ui text-[10px] tracking-[0.22em] text-white/65 uppercase">
+              {/* nowrap: at 320px the label otherwise breaks over two lines and
+                  takes the chip with it. */}
+              <span className="font-ui text-[10px] tracking-[0.22em] whitespace-nowrap text-white/65 uppercase">
                 Use code
               </span>
-              <span className="font-ui text-[17px] font-medium tracking-[0.1em] text-white sm:text-[19px]">
+              <span className="font-ui text-[16px] font-medium tracking-[0.08em] whitespace-nowrap text-white sm:text-[19px] sm:tracking-[0.1em]">
                 {launchOffer.code}
               </span>
               {copied ? (
