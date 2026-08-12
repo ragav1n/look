@@ -1,4 +1,5 @@
 import Hero from "./home/Hero";
+import LaunchTicker from "./home/LaunchTicker";
 import LookCollections from "./home/LookCollections";
 import FeaturedEdit from "./home/FeaturedEdit";
 import InstaReels from "./home/InstaReels";
@@ -18,6 +19,9 @@ export default function Home() {
   return (
     <>
       <Hero />
+      {/* TEMPORARY launch announcement, sitting on the hero's bottom edge.
+          Retire it from src/config/launchOffer.ts. */}
+      <LaunchTicker />
       <FeaturedEdit />
       <LookCollections />
       <InstaReels />
