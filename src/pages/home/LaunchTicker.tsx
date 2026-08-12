@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useApplyPromo } from "@/hooks/useApplyPromo";
 import { usePromo } from "@/hooks/usePromo";
 
 /** Phrases per marquee group. Seven fills ~2550px on their own, which covers
@@ -31,6 +32,7 @@ const PER_GROUP = 7;
    leaving it at the end. Adding more phrases would only move the breakpoint. */
 export default function LaunchTicker() {
   const promo = usePromo();
+  const { apply } = useApplyPromo(promo);
   if (!promo?.surfaces.ticker) return null;
 
   const phrase = (key: number) => (
@@ -49,7 +51,16 @@ export default function LaunchTicker() {
   return (
     <Link
       to={promo.ctaPath}
-      aria-label={`${promo.tickerText} — shop the offer with code ${promo.code}`}
+      /* Applies the code on the way through, rather than putting a button
+         inside the link: interactive content nested in an <a> is invalid, and
+         splitting the band into a link plus a target would hand the shopper a
+         second, smaller thing to hit for the same intent. The band stays one
+         tap — the offer AND the shop. (The band itself doesn't move; only the
+         text inside it scrolls, so the target is stationary and full width.)
+         Fire-and-forget by design: the mutation resolves against CartContext,
+         which lives above this route, so navigating away can't strand it. */
+      onClick={() => void apply()}
+      aria-label={`${promo.tickerText} — shop the offer and apply code ${promo.code}`}
       className="group block overflow-hidden border-y border-black/15 bg-accent py-2.5 text-white"
     >
       <div

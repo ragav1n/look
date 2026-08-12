@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Check, Copy } from "lucide-react";
+import { ArrowRight, Check, Tag } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import { POSTER_DOMAIN } from "@/config/launchOffer";
+import { useApplyPromo, type PromoApplyResult } from "@/hooks/useApplyPromo";
 import { usePromo } from "@/hooks/usePromo";
 /* The three pieces from the client's artwork, as cut-outs. WebP rather than the
    PNGs they arrived as: alpha survives, and the set went from 364KB to 44KB,
@@ -15,8 +16,9 @@ import outfitGown from "@/assets/launch-outfit-3.webp";
 /** Long enough for the page underneath to have painted, short enough that it
  *  still reads as the greeting it is rather than as an interruption. */
 const OPEN_DELAY_MS = 800;
-/** How long the code chip holds its "copied" state. */
-const COPIED_MS = 2200;
+/** How long the code chip holds its confirmation before returning to the
+ *  marketing line. */
+const TAKEN_MS = 2200;
 
 interface Props {
   /** Fired once the poster is out of the way, however it left — the newsletter
@@ -112,9 +114,10 @@ function SkyGrid() {
    reload, not on in-app navigation, since PageShell mounts this once. */
 export default function LaunchOfferPopup({ onDismiss }: Props) {
   const promo = usePromo();
+  const { apply, busy } = useApplyPromo(promo);
   const [open, setOpen] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const copiedTimer = useRef(0);
+  const [taken, setTaken] = useState<PromoApplyResult | null>(null);
+  const takenTimer = useRef(0);
   const showPoster = Boolean(promo?.surfaces.poster);
 
   /* Waits on the promo rather than racing it: the timer is only armed once we
@@ -126,7 +129,7 @@ export default function LaunchOfferPopup({ onDismiss }: Props) {
     return () => window.clearTimeout(t);
   }, [showPoster]);
 
-  useEffect(() => () => window.clearTimeout(copiedTimer.current), []);
+  useEffect(() => () => window.clearTimeout(takenTimer.current), []);
 
   /* After every hook, so the order stays stable while the promo resolves from
      null to a campaign (or stays null, which is how a retired promo and a store
@@ -141,18 +144,29 @@ export default function LaunchOfferPopup({ onDismiss }: Props) {
     onDismiss?.();
   };
 
-  const copyCode = async () => {
+  /* The chip puts the code on the bag rather than only on the clipboard: a
+     poster that greets a visit almost always finds an empty bag, so "apply"
+     here means parking it for the first add-to-cart (see useApplyPromo), and
+     the shopper never has to carry it anywhere.
+     It still copies, best-effort, for anyone who wants it elsewhere. */
+  const takeCode = async () => {
+    const result = await apply();
+    if (result === "failed") return;
     try {
       await navigator.clipboard.writeText(promo.code);
-      setCopied(true);
-      window.clearTimeout(copiedTimer.current);
-      copiedTimer.current = window.setTimeout(() => setCopied(false), COPIED_MS);
     } catch {
       /* Clipboard denied or unavailable (insecure context, Safari without a
-         user gesture it recognises). The code is on screen in full either way,
-         so there is nothing to report and nothing to recover from. */
+         user gesture it recognises). The code is on the bag and on screen in
+         full either way, so there is nothing to report. */
     }
+    setTaken(result);
+    window.clearTimeout(takenTimer.current);
+    takenTimer.current = window.setTimeout(() => setTaken(null), TAKEN_MS);
   };
+
+  /* "Saved for your bag" while it's parked, "Applied" once it's on a real
+     cart — the difference is the whole reason the shopper can stop reading. */
+  const takenLabel = taken === "saved" ? "Saved for your bag" : "Applied to your bag";
 
   return (
     <Modal
@@ -249,15 +263,16 @@ export default function LaunchOfferPopup({ onDismiss }: Props) {
             ))}
           </div>
 
-          {/* Code. A chip rather than a line of copy: it is the one thing on
-              here a shopper has to carry to checkout, so it gets a target and
-              copies itself. */}
+          {/* Code. A chip rather than a line of copy: it used to be the one
+              thing on here a shopper had to carry to checkout, so it got a
+              target — and now the target puts it on the bag for them. */}
           <div className="launch-chip animate-fade-up mt-7" style={{ animationDelay: "0.3s" }}>
             <button
               type="button"
-              onClick={copyCode}
-              aria-label={`Copy discount code ${promo.code}`}
-              className="group inline-flex items-center gap-2.5 rounded-full border border-dashed border-white/55 bg-black/35 px-4 py-3 backdrop-blur-[2px] transition-colors hover:border-white hover:bg-black/50 sm:gap-3 sm:px-5"
+              disabled={busy}
+              onClick={() => void takeCode()}
+              aria-label={`Apply discount code ${promo.code} to your bag`}
+              className="group inline-flex items-center gap-2.5 rounded-full border border-dashed border-white/55 bg-black/35 px-4 py-3 backdrop-blur-[2px] transition-colors hover:border-white hover:bg-black/50 disabled:opacity-70 sm:gap-3 sm:px-5"
             >
               {/* nowrap: at 320px the label otherwise breaks over two lines and
                   takes the chip with it. */}
@@ -267,33 +282,33 @@ export default function LaunchOfferPopup({ onDismiss }: Props) {
               <span className="font-ui text-[16px] font-medium tracking-[0.08em] whitespace-nowrap text-white sm:text-[19px] sm:tracking-[0.1em]">
                 {promo.code}
               </span>
-              {copied ? (
+              {taken ? (
                 <Check className="size-[17px] text-white" strokeWidth={2} />
               ) : (
-                <Copy
+                <Tag
                   className="size-[17px] text-white/60 transition-colors group-hover:text-white"
                   strokeWidth={1.7}
                 />
               )}
             </button>
             {/* The visible line swaps to the confirmation and back, but it is NOT
-                the live region. Announcing it would say "Code copied" on the
-                click and then "Before it's gone" 2.2s later when the timer
+                the live region. Announcing it would say "Applied to your bag" on
+                the click and then "Before it's gone" 2.2s later when the timer
                 restores it, with nothing having happened in between — a status
                 region can't have marketing copy as its resting state. The
                 announcement lives in the empty region below instead: it has
-                something to say only while `copied` holds, and clearing text
+                something to say only while `taken` holds, and clearing text
                 back out is silent. */}
             <p className="mt-2.5 font-display text-[13px] italic text-white/70" aria-hidden>
-              {copied ? "Code copied" : "Before it’s gone"}
+              {taken ? takenLabel : "Before it’s gone"}
             </p>
             <span role="status" className="sr-only">
-              {copied ? "Code copied" : ""}
+              {taken ? takenLabel : ""}
             </span>
           </div>
 
           <Link
-            to="/shop"
+            to={promo.ctaPath}
             onClick={dismiss}
             className="launch-cta animate-fade-up group mt-7 inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-[15px] font-medium text-black transition-opacity duration-300 hover:opacity-90"
             style={{ animationDelay: "0.38s" }}

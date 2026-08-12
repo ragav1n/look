@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useCart } from "@/context/CartContext";
 import { useToast } from "@/context/ToastContext";
+import { useApplyPromo } from "@/hooks/useApplyPromo";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { usePromo } from "@/hooks/usePromo";
 
@@ -19,47 +19,32 @@ import { usePromo } from "@/hooks/usePromo";
    wraps at 360px, and again the moment it's dismissed. */
 export default function PromoBar() {
   const promo = usePromo();
-  const { cart, applyDiscount, stashDiscount } = useCart();
+  const { apply, busy, alreadyApplied } = useApplyPromo(promo);
   const { push } = useToast();
   const navigate = useNavigate();
   /* Keyed on the CODE rather than a boolean. The store switches campaigns from
      Shopify with no deploy, and a new offer has to come back for everyone who
      dismissed the last one. */
   const [dismissed, setDismissed] = useLocalStorage("look.promoBar", { code: "" });
-  const [busy, setBusy] = useState(false);
   const [announced, setAnnounced] = useState("");
 
   if (!promo?.surfaces.bar || dismissed.code === promo.code) return null;
 
-  const alreadyApplied = cart.discount?.codes.some(
-    (c) => c.applicable && c.code.toLowerCase() === promo.code.toLowerCase(),
-  );
-
-  const apply = async () => {
-    if (alreadyApplied) {
-      navigate("/cart");
-      return;
-    }
-    /* Nothing to apply a code to yet, and Shopify marks even a good code
-       inapplicable on an empty cart. Park it instead: the next add-to-cart
-       hands it to cartCreate in the same request. */
-    if (!cart.id) {
-      stashDiscount(promo.code);
-      push(`${promo.code} saved — it'll be waiting in your bag.`);
-      navigate(promo.ctaPath);
-      return;
-    }
-    setBusy(true);
-    const outcome = await applyDiscount(promo.code);
-    setBusy(false);
-    if (outcome === "applied") {
+  const onTap = async () => {
+    const result = await apply();
+    if (result === "applied") {
       setAnnounced(`Code ${promo.code} applied`);
       push(`${promo.code} applied to your bag.`);
-    } else if (outcome === "invalid") {
-      // The store's own advertised code isn't earned by what's in the bag —
-      // a minimum, most likely. Send them to the cart, where the field and the
-      // totals can say more than a bar this size can.
+      navigate("/cart");
+    } else if (result === "saved") {
+      push(`${promo.code} saved — it'll be waiting in your bag.`);
+      navigate(promo.ctaPath);
+    } else if (result === "rejected") {
+      // The store's own advertised code isn't earned by this bag — a minimum,
+      // most likely. Send them to the cart, where the totals and the field can
+      // say more than a bar this size can.
       push(`${promo.code} doesn't apply to your bag yet.`);
+      navigate("/cart");
     }
   };
 
@@ -74,7 +59,7 @@ export default function PromoBar() {
         <button
           type="button"
           disabled={busy}
-          onClick={() => void apply()}
+          onClick={() => void onTap()}
           aria-label={
             alreadyApplied
               ? `${promo.code} is already applied — view your bag`
