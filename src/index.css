@@ -428,12 +428,17 @@ body {
 
    It's stated as a distance up from the BOTTOM edge, not as a percentage of the
    height, and that is the whole trick to this thing surviving two breakpoints:
-   the horizon has to land in the gap between the CTA and the domain line, and
-   at 76% it landed there on a phone and straight through the button on a
-   desktop, because only the display type changes size between the two. Pinned
-   to the bottom edge, the ground band is the same 152px either way. */
+   the horizon has to land at a particular point in the garment lineup that
+   stands on it, and at 76% it landed at their hips on a phone and over their
+   heads on a desktop, because only the display type changes size between the
+   two. Pinned to the bottom edge, the ground band is the same either way.
+
+   100px puts it across the group's skirts, where the artwork has it: high
+   enough that they're standing on the plane rather than in front of a backdrop,
+   low enough that the sun's brightest band lights the fabric instead of being
+   hidden behind it. At 116px the treeline ran across their busts. */
 .launch-stage {
-  --ground: 152px;
+  --ground: 100px;
   --horizon: calc(100% - var(--ground));
   background-color: #070607;
   /* Dusk: black at the top edge, falling into red at the horizon, then straight
@@ -515,6 +520,43 @@ body {
   pointer-events: none;
   -webkit-mask-image: linear-gradient(to bottom, #000 62%, transparent 100%);
   mask-image: linear-gradient(to bottom, #000 62%, transparent 100%);
+}
+
+/* Short viewports. The poster stands 745px tall at `sm`, and the dialog is
+   capped at 90vh, so on a 720p laptop (646px of panel) ~100px went missing —
+   straight through the garments, cutting them off at the shoulders, which reads
+   as broken rather than as cropped. Everything gives up a little so the whole
+   poster fits: measured 745 -> 637px, inside the 646 available.
+
+   Two blocks because the mobile type is already smaller than the compact
+   desktop type — applied unconditionally, `font-size: 58px` would make the
+   headline BIGGER on a 667px-tall phone than the 52px it has now.
+
+   Two-class selectors so these beat the utilities they override on specificity
+   rather than on order, which a utility framework doesn't promise. */
+@media (max-height: 800px) {
+  .launch-stage .launch-lineup {
+    height: 132px;
+    margin-top: 20px;
+  }
+}
+@media (max-height: 800px) and (min-width: 640px) {
+  .launch-stage .launch-copy {
+    padding-top: 26px;
+  }
+  .launch-stage .launch-head {
+    font-size: 58px;
+  }
+  .launch-stage .launch-script {
+    font-size: 44px;
+  }
+  .launch-stage .launch-chip,
+  .launch-stage .launch-cta {
+    margin-top: 20px;
+  }
+  .launch-stage .launch-lineup {
+    height: 150px;
+  }
 }
 
 /* Rich product description (Shopify `descriptionHtml`) — styles the admin's raw

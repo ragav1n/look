@@ -3,6 +3,13 @@ import { Link } from "react-router-dom";
 import { ArrowRight, Check, Copy } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import { launchOffer } from "@/config/launchOffer";
+/* The three pieces from the client's artwork, as cut-outs. WebP rather than the
+   PNGs they arrived as: alpha survives, and the set went from 364KB to 44KB,
+   which matters because this dialog greets every visit. Trimmed to 420px tall,
+   twice the height they're drawn at. */
+import outfitShort from "@/assets/launch-outfit-1.webp";
+import outfitMaxi from "@/assets/launch-outfit-2.webp";
+import outfitGown from "@/assets/launch-outfit-3.webp";
 
 /** Long enough for the page underneath to have painted, short enough that it
  *  still reads as the greeting it is rather than as an interruption. */
@@ -163,12 +170,22 @@ export default function LaunchOfferPopup() {
         </button>
 
         {/* ===== THE OFFER ===== */}
-        <div className="relative px-6 pt-11 pb-9 text-center sm:px-10 sm:pt-12 sm:pb-10">
+        <div className="launch-copy relative px-6 pt-9 pb-0 text-center sm:px-10 sm:pt-10">
+          {/* The artwork signs itself off at the bottom, which is where the
+              garments now stand, so it moves up here and becomes the credit
+              line it always read as. */}
+          <p
+            className="animate-fade-up font-ui text-[11px] tracking-[0.3em] text-white/45"
+            style={{ animationDelay: "0.02s" }}
+          >
+            {launchOffer.domain}
+          </p>
+
           {/* Headline + script, overlapping the way the artwork has them. The
               pair is one block so the script can hang off the wordmark's
               baseline without a magic offset per breakpoint. */}
-          <div className="animate-fade-up" style={{ animationDelay: "0.06s" }}>
-            <h2 className="font-display text-[52px] leading-[0.9] font-semibold tracking-[-0.02em] uppercase [text-shadow:0_4px_30px_rgba(0,0,0,0.55)] sm:text-[72px]">
+          <div className="animate-fade-up mt-3" style={{ animationDelay: "0.06s" }}>
+            <h2 className="launch-head font-display text-[52px] leading-[0.9] font-semibold tracking-[-0.02em] uppercase [text-shadow:0_4px_30px_rgba(0,0,0,0.55)] sm:text-[72px]">
               {launchOffer.headline}
               {/* The script line below is the second half of this heading, and a
                   screen reader should hear it as one: "Go Live Sale". */}
@@ -179,7 +196,7 @@ export default function LaunchOfferPopup() {
                 the line above and cross the LIVE — this sits the script down far
                 enough that the two words read as two words. */}
             <p
-              className="mt-2.5 font-script text-[42px] leading-none [text-shadow:0_3px_22px_rgba(0,0,0,0.5)] sm:mt-3.5 sm:text-[56px]"
+              className="launch-script mt-2.5 font-script text-[42px] leading-none [text-shadow:0_3px_22px_rgba(0,0,0,0.5)] sm:mt-3.5 sm:text-[56px]"
               aria-hidden
             >
               {launchOffer.script}
@@ -206,7 +223,7 @@ export default function LaunchOfferPopup() {
           {/* Code. A chip rather than a line of copy: it is the one thing on
               here a shopper has to carry to checkout, so it gets a target and
               copies itself. */}
-          <div className="animate-fade-up mt-7" style={{ animationDelay: "0.3s" }}>
+          <div className="launch-chip animate-fade-up mt-7" style={{ animationDelay: "0.3s" }}>
             <button
               type="button"
               onClick={copyCode}
@@ -249,21 +266,59 @@ export default function LaunchOfferPopup() {
           <Link
             to="/shop"
             onClick={() => setOpen(false)}
-            /* mt-10, not mt-7: this gap is where the treeline crosses, and the
-               peaks need clearance from the line above them. */
-            className="animate-fade-up group mt-10 inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-[15px] font-medium text-black transition-opacity duration-300 hover:opacity-90"
+            className="launch-cta animate-fade-up group mt-7 inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-[15px] font-medium text-black transition-opacity duration-300 hover:opacity-90"
             style={{ animationDelay: "0.38s" }}
           >
             Shop Now
             <ArrowRight className="size-[18px] transition-transform duration-300 group-hover:translate-x-1" />
           </Link>
 
-          <p
-            className="animate-fade-up mt-8 font-ui text-[11px] tracking-[0.3em] text-white/50"
-            style={{ animationDelay: "0.46s" }}
+          {/* ===== THE LINEUP =====
+              The garments stand on the ground the grid describes, hems lifted
+              clear of the frame so the floor reads underneath them. In flow
+              rather than absolute: the stage grows to fit them, so nothing has
+              to be kept in sync with a reserved padding.
+
+              Heights are proportional to the real garments — the knee-length
+              piece can't stand as tall as the maxi or the whole group reads as
+              a size chart. The gown is centre and in front, being the one that
+              holds up against a red sky.
+
+              Decorative, all three: the offer is carried by the copy, and the
+              button below leads to these same pieces. */}
+          <div
+            className="launch-lineup animate-fade-up relative mt-8 mb-5 flex h-[142px] items-end justify-center sm:h-[190px]"
+            style={{ animationDelay: "0.5s" }}
+            aria-hidden
           >
-            {launchOffer.domain}
-          </p>
+            {/* Contact shadow, so the group sits on the floor instead of
+                hovering above it. */}
+            <span className="absolute bottom-[-6px] left-1/2 h-[16px] w-[64%] -translate-x-1/2 rounded-[50%] bg-black/50 blur-[7px]" />
+            <img
+              src={outfitShort}
+              alt=""
+              width={315}
+              height={420}
+              decoding="async"
+              className="relative -mr-4 h-[76%] w-auto drop-shadow-[0_10px_16px_rgba(0,0,0,0.5)] sm:-mr-5"
+            />
+            <img
+              src={outfitGown}
+              alt=""
+              width={264}
+              height={420}
+              decoding="async"
+              className="relative z-10 h-[93%] w-auto drop-shadow-[0_12px_20px_rgba(0,0,0,0.55)]"
+            />
+            <img
+              src={outfitMaxi}
+              alt=""
+              width={186}
+              height={420}
+              decoding="async"
+              className="relative -ml-4 h-full w-auto drop-shadow-[0_10px_16px_rgba(0,0,0,0.5)] sm:-ml-5"
+            />
+          </div>
         </div>
       </div>
     </Modal>
