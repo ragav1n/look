@@ -3,31 +3,37 @@ import { BadgeCheck } from "lucide-react";
 import { reviews } from "@/data/reviews";
 import RatingStars from "@/components/ui/RatingStars";
 import Reveal from "@/components/ui/Reveal";
-import avAnanya from "@/assets/review-ananya.jpg";
+import avPriya from "@/assets/review-priya.jpg";
 import avShraddha from "@/assets/review-shraddha.jpg";
 import avMeera from "@/assets/review-meera.jpg";
 import avSaara from "@/assets/review-saara.jpg";
 import avDivya from "@/assets/review-divya.jpg";
-import avRitika from "@/assets/review-ritika.jpg";
+import avBala from "@/assets/review-bala.jpg";
 import avShobhana from "@/assets/review-shobhana.jpg";
-import avTanvi from "@/assets/review-tanvi.jpg";
+import avSwathi from "@/assets/review-swathi.jpg";
 import avNandini from "@/assets/review-nandini.jpg";
 import avPreethi from "@/assets/review-preethi.jpg";
 
 /* "LOOK's Customer Diaries": real customer words on white note/diary cards,
    each with a customer picture, laid out as a masonry note-wall on the black
-   theme (client request: white note style + customer pictures). Avatars are
-   face crops of the catalog's own model shots, keyed by review id so the wall
-   can be re-ordered or filtered without a note picking up a stranger's face. */
+   theme (client request: white note style + customer pictures). Keyed by review
+   id rather than by name, so the wall can be re-ordered or filtered without a
+   note picking up a stranger's face.
+
+   The pictures are photos the customers sent in, cropped square to the face;
+   Meera and Saara are still crops of the catalog's own model shots. Nandini,
+   Preethi and Shobhana sent photos with the face covered (a phone, a raised
+   arm), so those three are framed head-and-shoulders — there is no face in the
+   source to crop to, and the client asked to run them as they are. */
 const avatars: Record<string, string> = {
-  "r-1": avAnanya,
+  "r-1": avPriya,
   "r-2": avShraddha,
   "r-3": avMeera,
   "r-4": avSaara,
   "r-5": avDivya,
-  "r-6": avRitika,
+  "r-6": avBala,
   "r-7": avShobhana,
-  "r-8": avTanvi,
+  "r-8": avSwathi,
   "r-9": avNandini,
   "r-10": avPreethi,
 };
@@ -45,9 +51,9 @@ const avatars: Record<string, string> = {
    in the middle and right of the second row. The tail of each column is picked
    to keep the three columns close in height. */
 const WALL_ORDER = [
-  "r-1", "r-2", "r-9", // Ananya, Shraddha, Nandini
-  "r-5", "r-4", "r-6", // Divya, Saara, Ritika
-  "r-8", "r-7", "r-10", // Tanvi, Shobhana, Preethi
+  "r-1", "r-2", "r-9", // Priya, Shraddha, Nandini
+  "r-5", "r-4", "r-6", // Divya, Saara, Bala
+  "r-8", "r-7", "r-10", // Swathi, Shobhana, Preethi
 ];
 const wall = WALL_ORDER.flatMap((id) => reviews.find((r) => r.id === id) ?? []);
 
