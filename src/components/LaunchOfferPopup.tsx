@@ -17,6 +17,14 @@ const OPEN_DELAY_MS = 800;
 /** How long the code chip holds its "copied" state. */
 const COPIED_MS = 2200;
 
+interface Props {
+  /** Fired once the poster is out of the way, however it left — the newsletter
+   *  invite waits on this before it starts its own clock. Never fired when the
+   *  promo is retired, since there is no poster to leave: whoever is waiting
+   *  has to start armed in that case (see PageShell). */
+  onDismiss?: () => void;
+}
+
 /* ===== THE GRID =========================================================
    The artwork's sunset grid, drawn rather than transformed. CSS `perspective`
    on a tipped plane is the usual way to do this and it does not survive WebKit
@@ -99,7 +107,7 @@ function SkyGrid() {
    reload, not on in-app navigation, since PageShell mounts this once.
 
    Retire the whole promo from src/config/launchOffer.ts. */
-export default function LaunchOfferPopup() {
+export default function LaunchOfferPopup({ onDismiss }: Props) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const copiedTimer = useRef(0);
@@ -111,6 +119,14 @@ export default function LaunchOfferPopup() {
   }, []);
 
   useEffect(() => () => window.clearTimeout(copiedTimer.current), []);
+
+  /* One way out, used by all three of them (the close button, the backdrop and
+     Escape via Modal, and Shop Now), so the poster cannot leave the screen
+     without releasing whatever is queued behind it. */
+  const dismiss = () => {
+    setOpen(false);
+    onDismiss?.();
+  };
 
   const copyCode = async () => {
     try {
@@ -130,7 +146,7 @@ export default function LaunchOfferPopup() {
       /* `open` is the whole gate — the effect above never arms the timer when
          the promo is retired, so it can only ever be true while it's live. */
       open={open}
-      onClose={() => setOpen(false)}
+      onClose={dismiss}
       label={`LOOK launch offer — use code ${launchOffer.code}`}
       maxWidth="max-w-[520px]"
     >
@@ -160,7 +176,7 @@ export default function LaunchOfferPopup() {
 
         <button
           type="button"
-          onClick={() => setOpen(false)}
+          onClick={dismiss}
           aria-label="Close"
           className="absolute top-3 right-3 z-10 flex size-9 items-center justify-center rounded-full text-white/70 transition-colors hover:bg-white/15 hover:text-white"
         >
@@ -265,7 +281,7 @@ export default function LaunchOfferPopup() {
 
           <Link
             to="/shop"
-            onClick={() => setOpen(false)}
+            onClick={dismiss}
             className="launch-cta animate-fade-up group mt-7 inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-[15px] font-medium text-black transition-opacity duration-300 hover:opacity-90"
             style={{ animationDelay: "0.38s" }}
           >

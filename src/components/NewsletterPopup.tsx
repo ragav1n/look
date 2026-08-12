@@ -4,13 +4,14 @@ import NewsletterForm from "@/components/NewsletterForm";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useUser } from "@/context/UserProvider";
 
-/** How long a visitor lingers before we invite them to subscribe. */
+/** How long a visitor lingers, once nothing else is in front of them, before we
+ *  invite them to subscribe. Counted from the moment the invite is armed. */
 const DELAY_MS = 15_000;
 
 interface Props {
-  /** Set false to hold the invite back entirely — used while a temporary promo
-   *  popup owns the visit. Nothing is spent while disarmed: the prompt is only
-   *  marked seen once it has actually been shown. */
+  /** Set false to hold the invite back — it waits in line behind the temporary
+   *  promo poster, which arms it on dismissal (see PageShell). Nothing is spent
+   *  while it waits: the prompt is only marked seen once actually shown. */
   armed?: boolean;
 }
 

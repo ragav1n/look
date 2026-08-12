@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Outlet, ScrollRestoration, useLocation, useNavigationType } from "react-router-dom";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
@@ -29,6 +29,17 @@ export default function PageShell() {
   const animKey = useRef(target);
   if (navigationType !== "REPLACE") animKey.current = target;
 
+  /* TEMPORARY: the two dialogs a visit can get, queued rather than raced. The
+     launch poster greets the visit and the newsletter invite waits for it to be
+     dismissed, so they're never open together — which matters more than it
+     sounds, because Modal locks body scroll and traps Tab per instance: two at
+     once would fight over focus, and closing either would hand scrolling back
+     while the other was still up. Waiting also makes the invite's delay mean
+     what it says, 15s of actual browsing rather than 15s of reading the poster.
+     With the promo retired there is nothing to wait for, so it starts armed and
+     this whole handoff (and the launchOffer import) can go. */
+  const [posterDismissed, setPosterDismissed] = useState(!launchOffer.live);
+
   return (
     <div className="flex min-h-screen flex-col">
       <Navbar />
@@ -37,13 +48,8 @@ export default function PageShell() {
       </div>
       <Footer />
       <ChatWidget />
-      {/* TEMPORARY: the launch offer greets every visit, so it takes the one
-          modal a visit gets and the newsletter invite stands down. Nothing is
-          lost by that — the newsletter prompt only ever fires once per browser
-          and it doesn't burn that chance while it's disarmed, so it goes back
-          to normal (and this prop can go) the moment the promo is retired. */}
-      <NewsletterPopup armed={!launchOffer.live} />
-      <LaunchOfferPopup />
+      <NewsletterPopup armed={posterDismissed} />
+      <LaunchOfferPopup onDismiss={() => setPosterDismissed(true)} />
       <ScrollRestoration />
     </div>
   );
