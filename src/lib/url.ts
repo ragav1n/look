@@ -18,3 +18,14 @@ export function safeHttpUrl(url: string | null | undefined): string | undefined 
   }
   return undefined;
 }
+
+/** Same idea as `safeHttpUrl`, for a Shopify-authored value used as an in-app
+ *  route (`<Link to>`, `navigate()`). Only a single-slash absolute path is
+ *  allowed: `//evil.com` is a protocol-relative URL that the router would
+ *  happily follow off-site, and a bare `javascript:...` would be treated as a
+ *  relative path but still ends up in an href. Anything else takes `fallback`. */
+export function safeAppPath(path: string | null | undefined, fallback = "/shop"): string {
+  const trimmed = path?.trim();
+  if (!trimmed || !trimmed.startsWith("/") || trimmed.startsWith("//")) return fallback;
+  return trimmed;
+}

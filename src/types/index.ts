@@ -92,6 +92,47 @@ export interface Reel {
   link: string;
 }
 
+/** Which surfaces a promotion is allowed to appear on. Every one defaults to
+ *  OFF: creating a discount in Shopify must never publish it to the site by
+ *  itself, and the ticker in particular is not a list of every code that
+ *  happens to exist. The admin ticks the places they want it. */
+export interface PromoSurfaces {
+  /** The slim bar above the navbar, site-wide. */
+  bar: boolean;
+  /** The marquee under the home hero. */
+  ticker: boolean;
+  /** The full poster that greets a visit. */
+  poster: boolean;
+  /** The one-tap Apply chip above Proceed to Checkout. */
+  cart: boolean;
+}
+
+/** The store's current promotion. Shopify: the `promo` metaobject, so the admin
+ *  owns the code, the copy and where it shows without a deploy.
+ *
+ *  Carries NO percentage on purpose. The only discount figure this app ever
+ *  prints is the amount Shopify itself allocates to the cart — see CartDiscount.
+ *  Everything but `code` is optional in the admin and falls back to the built-in
+ *  campaign's wording rather than rendering a surface blank. */
+export interface Promo {
+  /** Upper-cased for display. Shopify matches codes case-insensitively, but a
+   *  code shown in two casings invites a shopper to wonder which is real. */
+  code: string;
+  /** One line for the site-wide bar. */
+  barText: string;
+  /** The phrase the marquee repeats. */
+  tickerText: string;
+  /** Poster wordmark, e.g. "Go Live". */
+  headline: string;
+  /** Poster script word, set below the wordmark, e.g. "Sale". */
+  script: string;
+  /** Poster body, one entry per line. */
+  lines: string[];
+  /** Where the chips navigate. Always an in-app path beginning "/". */
+  ctaPath: string;
+  surfaces: PromoSurfaces;
+}
+
 export interface Review {
   id: string;
   productId: string;

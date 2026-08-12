@@ -7,9 +7,10 @@
  * Do NOT scatter this data into components or treat it as the source of truth:
  * products, prices, and images live in Shopify.
  */
-import type { Collection, Product, ProductSort, ProductVariant, Reel } from "@/types";
+import type { Collection, Product, ProductSort, ProductVariant, Promo, Reel } from "@/types";
 import { DEFAULT_CURRENCY } from "../format";
 import { site } from "@/config/site";
+import { fallbackPromo } from "@/config/launchOffer";
 import heroModel1 from "@/assets/hero-model-1.jpg";
 import heroModel2 from "@/assets/hero-model-2.jpg";
 import product17 from "@/assets/product-17.jpg";
@@ -380,6 +381,12 @@ export async function getReels(): Promise<Reel[]> {
     { id: "fixture:reel:3", image: heroModel2, imageAlt: "", caption: "New drop: try-on haul", link: site.instagram },
     { id: "fixture:reel:4", image: promoM6, imageAlt: "", caption: "Short kurta, long day", link: site.instagram },
   ];
+}
+
+/** Dev has no metaobjects, so it renders exactly what a live store renders
+ *  before anyone has created a `promo` entry: the built-in campaign. */
+export async function getPromo(): Promise<Promo | null> {
+  return fallbackPromo();
 }
 
 export async function getNewArrivals(): Promise<Product[]> {

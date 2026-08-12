@@ -1,4 +1,5 @@
-import type { Collection, Product, ProductSort, Reel } from "@/types";
+import type { Collection, Product, ProductSort, Promo, Reel } from "@/types";
+import { fallbackPromo } from "@/config/launchOffer";
 import { storefront } from "./client";
 import {
   COLLECTION_PRODUCTS_QUERY,
@@ -6,10 +7,11 @@ import {
   PRODUCT_BY_HANDLE_QUERY,
   PRODUCT_HANDLES_QUERY,
   PRODUCTS_QUERY,
+  PROMO_QUERY,
   REELS_QUERY,
 } from "./queries";
-import { toCollection, toProduct, toReel } from "./transform";
-import type { SFCollection, SFProduct, SFReel } from "./types";
+import { promoStartedAt, toCollection, toProduct, toPromo, toReel } from "./transform";
+import type { SFCollection, SFProduct, SFPromo, SFReel } from "./types";
 
 /** Live Storefront API catalog. Product order always comes from Shopify's own
  *  sort keys (or a collection's admin-configured order) — never re-sorted here. */
@@ -81,6 +83,33 @@ export async function getReels(first = 12): Promise<Reel[]> {
     .sort((a, b) => (Number.isNaN(a.pos) ? Infinity : a.pos) - (Number.isNaN(b.pos) ? Infinity : b.pos))
     .map(({ n }) => toReel(n))
     .filter((r): r is Reel => r !== null);
+}
+
+/** The one live promotion, or null when the store has switched them all off.
+ *
+ *  An EMPTY result is not "no promo". A metaobject type that doesn't exist yet —
+ *  and a definition whose Storefront access was never switched on — comes back
+ *  as `nodes: []` rather than as an error (learned the hard way on
+ *  `email_template`), which is indistinguishable from a store that has retired
+ *  its campaign. So empty hands back the built-in campaign, and NON-empty makes
+ *  Shopify authoritative, including "every entry is off". Without that split,
+ *  deploying this would silently pull down the live launch promo, and the admin
+ *  would have no way to turn one off.
+ *
+ *  Several entries can be live at once while the next campaign is being staged;
+ *  the one that started most recently wins, so switching over is a single tick. */
+export async function getPromo(): Promise<Promo | null> {
+  const data = await storefront<{ metaobjects: { nodes: SFPromo[] } }>(PROMO_QUERY, { first: 10 });
+  const nodes = data.metaobjects.nodes;
+  if (!nodes.length) return fallbackPromo();
+
+  const now = Date.now();
+  return (
+    nodes
+      .map((n) => ({ promo: toPromo(n, now), startedAt: promoStartedAt(n) }))
+      .filter((c): c is { promo: Promo; startedAt: number } => c.promo !== null)
+      .sort((a, b) => b.startedAt - a.startedAt)[0]?.promo ?? null
+  );
 }
 
 export async function getNewArrivals(): Promise<Product[]> {

@@ -68,6 +68,31 @@ export interface SFReel {
   position: { value: string | null } | null;
 }
 
+/** A `promo` metaobject node. Same aliased-field shape as SFReel — and note
+ *  that Shopify hands back every value as a string, booleans ("true"/"false")
+ *  and dates (ISO 8601) included. */
+export interface SFPromoField {
+  value: string | null;
+}
+
+export interface SFPromo {
+  id: string;
+  active: SFPromoField | null;
+  code: SFPromoField | null;
+  showBar: SFPromoField | null;
+  showTicker: SFPromoField | null;
+  showPoster: SFPromoField | null;
+  showCart: SFPromoField | null;
+  barText: SFPromoField | null;
+  tickerText: SFPromoField | null;
+  headline: SFPromoField | null;
+  script: SFPromoField | null;
+  lines: SFPromoField | null;
+  ctaPath: SFPromoField | null;
+  startsAt: SFPromoField | null;
+  endsAt: SFPromoField | null;
+}
+
 export interface SFCartLine {
   id: string;
   quantity: number;

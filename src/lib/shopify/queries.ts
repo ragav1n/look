@@ -204,3 +204,35 @@ export const REELS_QUERY = /* GraphQL */ `
     }
   }
 `;
+
+/** The store's promotions, from the `promo` metaobject, so the admin owns the
+ *  code, every word of the campaign and which surfaces carry it. Like `reel`,
+ *  the definition must have Storefront access enabled or this query errors.
+ *
+ *  All of them are fetched rather than "the live one": Shopify can't filter
+ *  metaobjects by field value, so `getPromo` picks the winner. Ten is more
+ *  entries than a store this size will ever keep around, and it leaves room to
+ *  stage the next campaign beside the current one. */
+export const PROMO_QUERY = /* GraphQL */ `
+  query Promo($first: Int!) {
+    metaobjects(type: "promo", first: $first) {
+      nodes {
+        id
+        active: field(key: "active") { value }
+        code: field(key: "code") { value }
+        showBar: field(key: "show_bar") { value }
+        showTicker: field(key: "show_ticker") { value }
+        showPoster: field(key: "show_poster") { value }
+        showCart: field(key: "show_cart") { value }
+        barText: field(key: "bar_text") { value }
+        tickerText: field(key: "ticker_text") { value }
+        headline: field(key: "headline") { value }
+        script: field(key: "script") { value }
+        lines: field(key: "lines") { value }
+        ctaPath: field(key: "cta_path") { value }
+        startsAt: field(key: "starts_at") { value }
+        endsAt: field(key: "ends_at") { value }
+      }
+    }
+  }
+`;

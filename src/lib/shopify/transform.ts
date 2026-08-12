@@ -1,6 +1,16 @@
-import type { Cart, CartLine, Collection, Money, Product, ProductVariant, Reel } from "@/types";
-import { safeHttpUrl } from "@/lib/url";
-import type { SFCart, SFCollection, SFMoney, SFProduct, SFReel, SFVariant } from "./types";
+import type { Cart, CartLine, Collection, Money, Product, ProductVariant, Promo, Reel } from "@/types";
+import { safeAppPath, safeHttpUrl } from "@/lib/url";
+import { FALLBACK_PROMO } from "@/config/launchOffer";
+import type {
+  SFCart,
+  SFCollection,
+  SFMoney,
+  SFProduct,
+  SFPromo,
+  SFPromoField,
+  SFReel,
+  SFVariant,
+} from "./types";
 
 const money = (m: SFMoney): Money => ({
   amount: Number.parseFloat(m.amount),
@@ -147,6 +157,68 @@ export function toReel(r: SFReel): Reel | null {
     imageAlt: img.altText ?? "",
     caption: r.caption?.value?.trim() ?? "",
     link,
+  };
+}
+
+/* Metaobject values all arrive as strings, so each reader below states what it
+   expects and what a blank means. A missing field and a blank one are the same
+   thing: the admin left it alone. */
+const fieldFlag = (f?: SFPromoField | null): boolean =>
+  f?.value?.trim().toLowerCase() === "true";
+
+const fieldText = (f: SFPromoField | null | undefined, fallback: string): string =>
+  f?.value?.trim() || fallback;
+
+/** ISO 8601 → epoch ms, or null for blank/unparseable. Null means "unbounded"
+ *  at both ends of the window, so a promo with neither date simply runs. */
+const fieldTime = (f?: SFPromoField | null): number | null => {
+  const t = Date.parse(f?.value?.trim() ?? "");
+  return Number.isFinite(t) ? t : null;
+};
+
+/** When a `promo` entry started, for ordering. Entries with no start date sort
+ *  oldest, so an explicitly-scheduled campaign always beats an open-ended one. */
+export const promoStartedAt = (p: SFPromo): number => fieldTime(p.startsAt) ?? 0;
+
+/** Map a `promo` metaobject node, or null when it isn't live right now —
+ *  switched off, outside its window, or missing the one field it can't do
+ *  without. Every surface renders nothing for a null promo, so that IS the
+ *  retirement path; there's no separate "hidden" state to keep in sync.
+ *
+ *  Blank optional fields fall back to the built-in campaign's wording rather
+ *  than blanking a surface out: a half-filled entry should read as unfinished
+ *  copy, not as a broken band of empty red. */
+export function toPromo(p: SFPromo, now = Date.now()): Promo | null {
+  const code = fieldText(p.code, "").toUpperCase();
+  if (!code || !fieldFlag(p.active)) return null;
+
+  const startsAt = fieldTime(p.startsAt);
+  const endsAt = fieldTime(p.endsAt);
+  if (startsAt !== null && now < startsAt) return null;
+  if (endsAt !== null && now >= endsAt) return null;
+
+  const lines = fieldText(p.lines, "")
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+
+  return {
+    code,
+    barText: fieldText(p.barText, FALLBACK_PROMO.barText),
+    tickerText: fieldText(p.tickerText, FALLBACK_PROMO.tickerText),
+    headline: fieldText(p.headline, FALLBACK_PROMO.headline),
+    script: fieldText(p.script, FALLBACK_PROMO.script),
+    lines: lines.length ? lines : [...FALLBACK_PROMO.lines],
+    // A metaobject value must not be able to steer the router off-site.
+    ctaPath: safeAppPath(p.ctaPath?.value, FALLBACK_PROMO.ctaPath),
+    /* Unticked (or absent, on a definition that predates one of these fields)
+       means OFF. A new discount stays invisible until it's placed on purpose. */
+    surfaces: {
+      bar: fieldFlag(p.showBar),
+      ticker: fieldFlag(p.showTicker),
+      poster: fieldFlag(p.showPoster),
+      cart: fieldFlag(p.showCart),
+    },
   };
 }
 

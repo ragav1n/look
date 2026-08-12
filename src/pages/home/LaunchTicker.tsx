@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { launchOffer } from "@/config/launchOffer";
+import { usePromo } from "@/hooks/usePromo";
 
 /** Phrases per marquee group. Seven fills ~2550px on their own, which covers
  *  everything up to a 27" screen at natural spacing; past that the group's own
@@ -8,9 +8,12 @@ import { launchOffer } from "@/config/launchOffer";
  *  end up with 320px of air between phrases. */
 const PER_GROUP = 7;
 
-/* TEMPORARY — launch-offer ticker, directly under the hero.
-   The announcement the client asked for, as moving text. Retire it from
-   src/config/launchOffer.ts.
+/* Promo ticker, directly under the hero.
+   The announcement the client asked for, as moving text. Which campaign runs
+   here — and whether one runs here at all — is Shopify's to say: the band only
+   appears for a promo whose "Show in home ticker" is ticked. It is deliberately
+   NOT a list of live discount codes; the store can have a dozen and show none
+   of them here.
 
    Mechanics: two identical groups side by side, translated by -50% of the pair
    (i.e. exactly one group) on a linear loop, so the moment the animation
@@ -27,15 +30,16 @@ const PER_GROUP = 7;
    `justify-around` spends the slack on wider gaps between phrases instead of
    leaving it at the end. Adding more phrases would only move the breakpoint. */
 export default function LaunchTicker() {
-  if (!launchOffer.live) return null;
+  const promo = usePromo();
+  if (!promo?.surfaces.ticker) return null;
 
   const phrase = (key: number) => (
     <span key={key} className="flex shrink-0 items-center gap-3 pr-7 sm:gap-4 sm:pr-9">
       <span className="text-[12px] font-medium tracking-[0.2em] whitespace-nowrap uppercase sm:text-[13px]">
-        LOOK goes live
+        {promo.tickerText}
       </span>
       <span className="rounded-full bg-white px-2.5 py-[3px] font-ui text-[11px] font-medium tracking-[0.1em] whitespace-nowrap text-accent sm:text-[12px]">
-        Use code {launchOffer.code}
+        Use code {promo.code}
       </span>
       {/* Diamond, not a bullet: at 12px a middot on red all but disappears. */}
       <span aria-hidden className="size-[5px] rotate-45 bg-white/70" />
@@ -44,8 +48,8 @@ export default function LaunchTicker() {
 
   return (
     <Link
-      to="/shop"
-      aria-label={`LOOK goes live — shop the launch offer with code ${launchOffer.code}`}
+      to={promo.ctaPath}
+      aria-label={`${promo.tickerText} — shop the offer with code ${promo.code}`}
       className="group block overflow-hidden border-y border-black/15 bg-accent py-2.5 text-white"
     >
       <div

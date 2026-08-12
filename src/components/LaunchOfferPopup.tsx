@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Check, Copy } from "lucide-react";
 import Modal from "@/components/ui/Modal";
-import { launchOffer } from "@/config/launchOffer";
+import { POSTER_DOMAIN } from "@/config/launchOffer";
+import { usePromo } from "@/hooks/usePromo";
 /* The three pieces from the client's artwork, as cut-outs. WebP rather than the
    PNGs they arrived as: alpha survives, and the set went from 364KB to 44KB,
    which matters because this dialog greets every visit. Trimmed to 420px tall,
@@ -94,7 +95,7 @@ function SkyGrid() {
   );
 }
 
-/* TEMPORARY — launch-offer greeting.
+/* The promo greeting.
    ────────────────────────────────────────────────────────────────────────
    The client's "GO LIVE Sale" artwork rebuilt as a dialog: same sunset grid,
    same words, but as type and gradients (see .launch-stage in index.css) so it
@@ -102,23 +103,35 @@ function SkyGrid() {
    text here, which means it can be copied, read aloud by a screen reader, and
    set in caps — the artwork lowercased it.
 
+   The campaign and its every word come from Shopify (the `promo` metaobject),
+   and the poster only runs for one with "Show in popup poster" ticked. The
+   stage, the grid and the garments are the artwork and stay in code.
+
    Shown on every visit by design (the client asked for it), which is why
    nothing is written to storage: a page load is a visit. It reappears on
-   reload, not on in-app navigation, since PageShell mounts this once.
-
-   Retire the whole promo from src/config/launchOffer.ts. */
+   reload, not on in-app navigation, since PageShell mounts this once. */
 export default function LaunchOfferPopup({ onDismiss }: Props) {
+  const promo = usePromo();
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const copiedTimer = useRef(0);
+  const showPoster = Boolean(promo?.surfaces.poster);
 
+  /* Waits on the promo rather than racing it: the timer is only armed once we
+     know there is a poster to show, so a slow lookup delays the greeting
+     instead of opening an empty one. */
   useEffect(() => {
-    if (!launchOffer.live) return;
+    if (!showPoster) return;
     const t = window.setTimeout(() => setOpen(true), OPEN_DELAY_MS);
     return () => window.clearTimeout(t);
-  }, []);
+  }, [showPoster]);
 
   useEffect(() => () => window.clearTimeout(copiedTimer.current), []);
+
+  /* After every hook, so the order stays stable while the promo resolves from
+     null to a campaign (or stays null, which is how a retired promo and a store
+     that has never had one both look). */
+  if (!promo) return null;
 
   /* One way out, used by all three of them (the close button, the backdrop and
      Escape via Modal, and Shop Now), so the poster cannot leave the screen
@@ -130,7 +143,7 @@ export default function LaunchOfferPopup({ onDismiss }: Props) {
 
   const copyCode = async () => {
     try {
-      await navigator.clipboard.writeText(launchOffer.code);
+      await navigator.clipboard.writeText(promo.code);
       setCopied(true);
       window.clearTimeout(copiedTimer.current);
       copiedTimer.current = window.setTimeout(() => setCopied(false), COPIED_MS);
@@ -143,11 +156,11 @@ export default function LaunchOfferPopup({ onDismiss }: Props) {
 
   return (
     <Modal
-      /* `open` is the whole gate — the effect above never arms the timer when
-         the promo is retired, so it can only ever be true while it's live. */
+      /* `open` is the whole gate — the effect above only arms the timer for a
+         promo cleared to run here, so it can never be true without one. */
       open={open}
       onClose={dismiss}
-      label={`LOOK launch offer — use code ${launchOffer.code}`}
+      label={`LOOK offer — use code ${promo.code}`}
       maxWidth="max-w-[520px]"
     >
       <div className="launch-stage relative overflow-hidden text-white">
@@ -194,7 +207,7 @@ export default function LaunchOfferPopup({ onDismiss }: Props) {
             className="animate-fade-up font-ui text-[11px] tracking-[0.3em] text-white/45"
             style={{ animationDelay: "0.02s" }}
           >
-            {launchOffer.domain}
+            {POSTER_DOMAIN}
           </p>
 
           {/* Headline + script, overlapping the way the artwork has them. The
@@ -202,10 +215,10 @@ export default function LaunchOfferPopup({ onDismiss }: Props) {
               baseline without a magic offset per breakpoint. */}
           <div className="animate-fade-up mt-3" style={{ animationDelay: "0.06s" }}>
             <h2 className="launch-head font-display text-[52px] leading-[0.9] font-semibold tracking-[-0.02em] uppercase [text-shadow:0_4px_30px_rgba(0,0,0,0.55)] sm:text-[72px]">
-              {launchOffer.headline}
+              {promo.headline}
               {/* The script line below is the second half of this heading, and a
                   screen reader should hear it as one: "Go Live Sale". */}
-              <span className="sr-only"> {launchOffer.script}</span>
+              <span className="sr-only"> {promo.script}</span>
             </h2>
             {/* Clear of the wordmark, not tucked under it. Great Vibes carries
                 a tall S and l on `leading-none`, so the ascenders reach up into
@@ -215,7 +228,7 @@ export default function LaunchOfferPopup({ onDismiss }: Props) {
               className="launch-script mt-2.5 font-script text-[42px] leading-none [text-shadow:0_3px_22px_rgba(0,0,0,0.5)] sm:mt-3.5 sm:text-[56px]"
               aria-hidden
             >
-              {launchOffer.script}
+              {promo.script}
             </p>
           </div>
 
@@ -226,7 +239,7 @@ export default function LaunchOfferPopup({ onDismiss }: Props) {
           />
 
           <div className="animate-fade-up mt-6" style={{ animationDelay: "0.22s" }}>
-            {launchOffer.lines.map((line) => (
+            {promo.lines.map((line) => (
               <p
                 key={line}
                 className="font-display text-[16px] leading-[26px] italic [text-shadow:0_2px_14px_rgba(0,0,0,0.6)] sm:text-[18px] sm:leading-[30px]"
@@ -243,7 +256,7 @@ export default function LaunchOfferPopup({ onDismiss }: Props) {
             <button
               type="button"
               onClick={copyCode}
-              aria-label={`Copy discount code ${launchOffer.code}`}
+              aria-label={`Copy discount code ${promo.code}`}
               className="group inline-flex items-center gap-2.5 rounded-full border border-dashed border-white/55 bg-black/35 px-4 py-3 backdrop-blur-[2px] transition-colors hover:border-white hover:bg-black/50 sm:gap-3 sm:px-5"
             >
               {/* nowrap: at 320px the label otherwise breaks over two lines and
@@ -252,7 +265,7 @@ export default function LaunchOfferPopup({ onDismiss }: Props) {
                 Use code
               </span>
               <span className="font-ui text-[16px] font-medium tracking-[0.08em] whitespace-nowrap text-white sm:text-[19px] sm:tracking-[0.1em]">
-                {launchOffer.code}
+                {promo.code}
               </span>
               {copied ? (
                 <Check className="size-[17px] text-white" strokeWidth={2} />
