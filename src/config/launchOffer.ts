@@ -28,7 +28,12 @@ export const POSTER_DOMAIN = "look.ind.in";
 
 export const FALLBACK_PROMO: Promo = {
   code: "LOOK@12",
-  barText: "LOOK is live — shop the launch offer",
+  /* Deliberately NOT the wording the `promo` metaobject carries. This line is
+     the one cheap way to tell, from the front of the site, whether Shopify is
+     being read at all: see this and the lookup came back empty or failed. Keep
+     it shopper-ready rather than a debug string — a shopper is who sees it when
+     the Storefront is unreachable — but don't re-sync it with the admin copy. */
+  barText: "Shop the launch offer while it lasts",
   tickerText: "LOOK goes live",
   /* Poster copy, as supplied by the client. */
   headline: "Go Live",
