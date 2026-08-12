@@ -5,6 +5,7 @@ import Footer from "./Footer";
 import ChatWidget from "@/components/chat/ChatWidget";
 import NewsletterPopup from "@/components/NewsletterPopup";
 import LaunchOfferPopup from "@/components/LaunchOfferPopup";
+import PromoBar from "@/components/PromoBar";
 import { usePromo } from "@/hooks/usePromo";
 
 /* The whole site follows the black theme, so the navbar is always dark. */
@@ -49,6 +50,9 @@ export default function PageShell() {
 
   return (
     <div className="flex min-h-screen flex-col">
+      {/* Above the navbar and outside the page-animation wrapper, so it scrolls
+          away on its own and doesn't replay on every route change. */}
+      <PromoBar />
       <Navbar />
       <div key={animKey.current} className="animate-page-in flex-1">
         <Outlet />
