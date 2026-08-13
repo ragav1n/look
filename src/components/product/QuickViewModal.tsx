@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import type { Product } from "@/types";
 import { formatPrice, discountPercent } from "@/lib/format";
+import { sanitizeHtml } from "@/lib/sanitize";
 import { cartLimitNotice, lowStockLeft, lowStockNotice, roomToAdd } from "@/lib/stock";
 import { useCart } from "@/context/CartContext";
 import Modal from "@/components/ui/Modal";
@@ -42,6 +43,20 @@ export default function QuickViewModal({ product, onClose }: Props) {
     const t = setTimeout(() => setAdded(false), 2000);
     return () => clearTimeout(t);
   }, [added]);
+
+  /* Same rich HTML as the PDP's Description tab (see ProductTabs) — the
+     plain-text `description` Shopify derives from it flattens a spec table into
+     one run-on paragraph ("Feature Details Garment Type Dreamy cotton…"), which
+     is what this modal used to show. Sanitised with DOMPurify before injection. */
+  /* Read off `product` first: memoising on `product?.descriptionHtml` while the
+     callback reads `product.descriptionHtml` makes the React Compiler infer a
+     broader dependency than the one written down, and it then skips optimising
+     the whole component. */
+  const descriptionHtml = product?.descriptionHtml;
+  const safeDescription = useMemo(
+    () => (descriptionHtml ? sanitizeHtml(descriptionHtml) : ""),
+    [descriptionHtml],
+  );
 
   const hasColorOpt = (product?.colors.length ?? 0) > 0;
   const hasSizeOpt = (product?.sizes.length ?? 0) > 0;
@@ -155,7 +170,18 @@ export default function QuickViewModal({ product, onClose }: Props) {
               <DiscountPill percent={off} variant="inline" />
             </div>
 
-            <p className="text-[15px] leading-[22px] text-body">{product.description}</p>
+            {/* Capped and scrollable: a full spec table is taller than this
+                column, and quick view has to keep Size and Add to Cart within
+                reach. The dev fixtures carry no HTML, so they fall back to the
+                plain-text paragraph. */}
+            {safeDescription ? (
+              <div
+                className="product-prose max-h-[260px] overflow-y-auto pr-1"
+                dangerouslySetInnerHTML={{ __html: safeDescription }}
+              />
+            ) : (
+              <p className="text-[15px] leading-[22px] text-body">{product.description}</p>
+            )}
 
             {product.colors.length > 0 && (
               <div className="flex flex-col gap-2">
