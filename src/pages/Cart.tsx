@@ -64,8 +64,10 @@ export default function Cart() {
                     {/* Capped at what Shopify says is left for this variant, so
                         the cart can't quietly climb past the stock the product
                         page just promised. A line that already exceeds it (stock
-                        fell after it was added) simply can't go up, and the note
-                        below says why the "+" has gone dead. */}
+                        fell after it was added) simply can't go up. Below the
+                        low-stock threshold the note underneath says why the "+"
+                        has gone dead; above it the cap is silent, and the add
+                        itself explains the refusal (see cartLimitNotice). */}
                     <div className="flex flex-col gap-1.5">
                       <QuantityStepper
                         value={line.quantity}

@@ -226,7 +226,7 @@ body {
   animation: auth-panel-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.08s both;
 }
 
-/* PDP info tabs — the active panel fades/rises in on tab change */
+/* Tabbed panels (the owner console) — the active panel fades/rises in on change */
 @keyframes tab-panel-in {
   from {
     opacity: 0;

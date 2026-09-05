@@ -114,10 +114,10 @@ export default function ProductAccordion({
                 aria-expanded={isOpen}
                 aria-controls={`${baseId}-panel-${key}`}
                 onClick={() => setOpen(isOpen ? null : key)}
-                className="flex w-full cursor-pointer items-center justify-between gap-4 py-5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
+                className="group flex w-full cursor-pointer items-center justify-between gap-4 py-5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
               >
                 <span
-                  className={`text-[16px] leading-[24px] font-medium transition-colors ${
+                  className={`text-[16px] leading-[24px] font-medium transition-colors group-hover:text-white motion-reduce:transition-none ${
                     isOpen ? "text-white" : "text-body"
                   }`}
                 >
@@ -126,8 +126,8 @@ export default function ProductAccordion({
                 <ChevronRight
                   aria-hidden
                   strokeWidth={1.6}
-                  className={`size-5 shrink-0 transition-transform duration-300 ease-out ${
-                    isOpen ? "rotate-90 text-accent" : "text-muted"
+                  className={`size-5 shrink-0 transition-transform duration-300 ease-out motion-reduce:transition-none ${
+                    isOpen ? "rotate-90 text-accent" : "text-muted group-hover:text-body"
                   }`}
                 />
               </button>
@@ -136,8 +136,16 @@ export default function ProductAccordion({
               id={`${baseId}-panel-${key}`}
               role="region"
               aria-labelledby={`${baseId}-btn-${key}`}
-              className={`grid transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-                isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+              /* `invisible` while collapsed, not just zero-height: clipping with
+                 overflow alone leaves every word in the accessibility tree and
+                 in find-in-page, so a screen reader would read all three
+                 sections aloud under buttons that say aria-expanded="false" —
+                 the opposite of collapsing them. Visibility is a transitioned
+                 property here, so it holds `visible` for the length of the
+                 close before flipping, and the content stays in the DOM either
+                 way for crawlers. */
+              className={`grid transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${
+                isOpen ? "grid-rows-[1fr] opacity-100" : "invisible grid-rows-[0fr] opacity-0"
               }`}
             >
               <div className="overflow-hidden">

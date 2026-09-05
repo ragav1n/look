@@ -57,8 +57,10 @@ type RawProduct = Omit<Product, "variants" | "currencyCode">;
 
 /** Per-variant stock for the fixture catalogue, cycled by colour×size position
  *  so a handful of sizes sit under the low-stock threshold and the rest sit
- *  well clear of it. Deterministic on purpose: dev should render the same
- *  "Only N left in stock" lines on every reload.
+ *  clear of it. Deterministic on purpose: dev should render the same
+ *  "Only N left in stock" lines on every reload. 7 is kept deliberately: it
+ *  falls between the notice threshold and the per-order cap, which is the one
+ *  window where stock limits the stepper without saying so.
  *
  *  Length is deliberately coprime with the 9-size scale — at 9 entries the
  *  cycle aliased against `sizes.length` and every colour got an identical run. */
