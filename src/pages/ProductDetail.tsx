@@ -185,7 +185,13 @@ function PdpContent({ product }: { product: Product }) {
               <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5">
                 <RatingStars rating={product.rating} size={15} />
                 <span className="text-[13px] font-semibold text-white">{product.rating}</span>
-                <span className="text-[13px] text-muted">· {product.reviewCount} reviews</span>
+                {/* A reviews app that has written a rating but no count yet
+                    would otherwise read "· 0 reviews" beside four stars. */}
+                {product.reviewCount > 0 && (
+                  <span className="text-[13px] text-muted">
+                    · {product.reviewCount} {product.reviewCount === 1 ? "review" : "reviews"}
+                  </span>
+                )}
               </div>
             ) : (
               <span className="text-[14px] text-muted">No reviews yet</span>

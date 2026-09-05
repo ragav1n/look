@@ -21,6 +21,12 @@ export const PRODUCT_FRAGMENT = /* GraphQL */ `
     options { name values }
     collections(first: 50) { nodes { handle } }
     heroTagline: metafield(namespace: "custom", key: "hero_tagline") { value }
+    # Shopify's STANDARD review metafields, not any one app's own namespace:
+    # Judge.me, Loox and Okendo all write this same pair, so swapping review
+    # apps later needs no change here. Both read null until an app populates
+    # them AND the definition has Storefront access enabled in the admin.
+    reviewRating: metafield(namespace: "reviews", key: "rating") { value }
+    reviewCount: metafield(namespace: "reviews", key: "rating_count") { value }
     # 250 is the Storefront maximum. At 50, the unbounded "options" field still
     # rendered the full size/colour grid while "variants" was truncated, so
     # valid combinations resolved to undefined and the product could not be

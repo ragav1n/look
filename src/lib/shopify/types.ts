@@ -48,6 +48,12 @@ export interface SFProduct {
   variants: { nodes: SFVariant[] };
   /** `custom.hero_tagline` — null on products that don't set it. */
   heroTagline: { value: string } | null;
+  /** `reviews.rating` — a rating-type metafield, so `value` is JSON:
+   *  `{"value":"4.3","scale_min":"1.0","scale_max":"5.0"}`. Null until a
+   *  reviews app writes it. */
+  reviewRating: { value: string } | null;
+  /** `reviews.rating_count` — an integer as a string, e.g. `"125"`. */
+  reviewCount: { value: string } | null;
 }
 
 export interface SFCollection {

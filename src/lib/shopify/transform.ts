@@ -69,6 +69,33 @@ const optionValue = (v: SFVariant, name: string): string =>
 const findOption = (p: SFProduct, name: string) =>
   p.options.find((o) => o.name.toLowerCase() === name.toLowerCase());
 
+/**
+ * `reviews.rating` is a rating-type metafield, so its value arrives as JSON
+ * (`{"value":"4.3","scale_min":"1.0","scale_max":"5.0"}`) rather than a bare
+ * number. A plain number is accepted too, since not every app writes the full
+ * object. Anything unreadable counts as "no rating" — 0 renders as "No reviews
+ * yet", never as zero stars.
+ */
+function parseRating(raw: string | undefined): number {
+  if (raw) {
+    try {
+      const n = Number((JSON.parse(raw) as { value?: string | number }).value);
+      if (Number.isFinite(n)) return n;
+    } catch {
+      // Not JSON — fall through and read the raw string as a number.
+    }
+    const n = Number(raw);
+    if (Number.isFinite(n)) return n;
+  }
+  return 0;
+}
+
+/** `reviews.rating_count` is an integer as a string. Anything else means none. */
+function parseCount(raw: string | undefined): number {
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? Math.trunc(n) : 0;
+}
+
 export function toProduct(p: SFProduct): Product {
   const price = Number.parseFloat(p.priceRange.minVariantPrice.amount);
   const compareAt = Number.parseFloat(p.compareAtPriceRange.minVariantPrice.amount);
@@ -117,9 +144,11 @@ export function toProduct(p: SFProduct): Product {
     colors,
     sizes,
     variants,
-    // Ratings/reviews come from a reviews app/metafield — 0 until wired.
-    rating: 0,
-    reviewCount: 0,
+    // Fed by whichever reviews app the store runs, through Shopify's standard
+    // `reviews.*` metafields. Both stay 0 until one is installed, which is the
+    // same "No reviews yet" state the PDP already renders.
+    rating: parseRating(p.reviewRating?.value),
+    reviewCount: parseCount(p.reviewCount?.value),
     description: p.description,
     // The store admin authors one rich description in Shopify (tables, lists).
     // Render that HTML directly; the old `details` split was a plain-text copy
