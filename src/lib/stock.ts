@@ -1,13 +1,13 @@
 /**
  * At or below this many units of a single size, the storefront tells the shopper
- * how few are left. Shopify supplies the count; this only decides how early we
- * start repeating it back.
+ * how few are left — i.e. the notice appears at five or fewer. Shopify supplies
+ * the count; this only decides how early we start repeating it back.
  *
  * Worth revisiting as the catalogue grows: the notice earns its keep by being
  * rare, so if most sizes start carrying it, lower this rather than leave a
  * scarcity line on every chip.
  */
-export const LOW_STOCK_THRESHOLD = 10;
+export const LOW_STOCK_THRESHOLD = 5;
 
 /** Per-order ceiling for one variant, independent of what's in stock. */
 export const MAX_QTY_PER_ORDER = 10;
@@ -15,8 +15,8 @@ export const MAX_QTY_PER_ORDER = 10;
 /**
  * Units left, when that number is worth showing. Returns undefined — meaning
  * "say nothing" — in the two cases where a count would mislead: Shopify reports
- * none (inventory untracked, or the token lacks the inventory scope), or there
- * is comfortably more than anyone would buy in one order.
+ * none (inventory untracked, or the token lacks the inventory scope), or the
+ * shelf is deep enough that the count isn't news.
  *
  * Takes the bare count rather than a variant so the cart, which holds a line
  * and not a variant, can ask the same question. Callers holding a variant are
