@@ -44,7 +44,7 @@ export default function QuickViewModal({ product, onClose }: Props) {
     return () => clearTimeout(t);
   }, [added]);
 
-  /* Same rich HTML as the PDP's Description tab (see ProductTabs) — the
+  /* Same rich HTML as the PDP's Description panel (see ProductAccordion) — the
      plain-text `description` Shopify derives from it flattens a spec table into
      one run-on paragraph ("Feature Details Garment Type Dreamy cotton…"), which
      is what this modal used to show. Sanitised with DOMPurify before injection. */

@@ -379,7 +379,7 @@ function Console({ onSignedOut }: { onSignedOut: () => void }) {
   const [busy, setBusy] = useState<Busy>(null);
   const [confirmSend, setConfirmSend] = useState(false);
 
-  // WAI-ARIA tabs: roving tabindex + arrow/Home/End nav, mirroring ProductTabs.
+  // WAI-ARIA tabs: roving tabindex + arrow/Home/End nav.
   const baseId = useId();
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const onTabKey = (e: KeyboardEvent, index: number) => {

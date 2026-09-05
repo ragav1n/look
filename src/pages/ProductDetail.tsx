@@ -12,7 +12,7 @@ import { useWishlist } from "@/context/WishlistContext";
 import { reviewsFor } from "@/data/reviews";
 import ImageGallery from "@/components/product/ImageGallery";
 import ProductCard, { ProductCardSkeleton } from "@/components/product/ProductCard";
-import ProductTabs from "@/components/product/ProductTabs";
+import ProductAccordion from "@/components/product/ProductAccordion";
 import { ColorSwatches, SizeChips, QuantityStepper } from "@/components/product/PurchaseControls";
 import RatingStars from "@/components/ui/RatingStars";
 import DiscountPill from "@/components/ui/DiscountPill";
@@ -314,8 +314,8 @@ function PdpContent({ product }: { product: Product }) {
         </div>
       </div>
 
-      {/* Description / Reviews / Exchange & Returns — tabbed to keep the page short */}
-      <ProductTabs product={product} reviews={reviews} />
+      {/* Description / Reviews / Exchange & Returns — collapsed disclosures so the page reads short */}
+      <ProductAccordion product={product} reviews={reviews} />
 
       <RelatedProducts currentId={product.id} category={product.category} />
 
