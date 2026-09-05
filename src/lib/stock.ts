@@ -67,9 +67,10 @@ const limitedByStock = (quantityAvailable: number | undefined): boolean =>
  */
 export function cartLimitNotice(quantityAvailable: number | undefined, added: number): string {
   const ceiling = maxOrderableQty(quantityAvailable);
-  const limit = limitedByStock(quantityAvailable)
-    ? `all ${ceiling} we have left`
-    : `the ${ceiling} we allow per item`;
+  // "all 1 we have left" is not a sentence, and one unit is exactly when a
+  // shopper is most likely to be reading this line.
+  const shelf = ceiling === 1 ? "the only one we have left" : `all ${ceiling} we have left`;
+  const limit = limitedByStock(quantityAvailable) ? shelf : `the ${ceiling} we allow per item`;
   return added > 0
     ? `We added ${added}. Your cart now has ${limit}.`
     : `Your cart already has ${limit}.`;
