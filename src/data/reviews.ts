@@ -1,12 +1,32 @@
 import type { Review } from "@/types";
+import avPriya from "@/assets/review-priya.jpg";
+import avShraddha from "@/assets/review-shraddha.jpg";
+import avMeera from "@/assets/review-meera.jpg";
+import avSaara from "@/assets/review-saara.jpg";
+import avDivya from "@/assets/review-divya.jpg";
+import avBala from "@/assets/review-bala.jpg";
+import avShobhana from "@/assets/review-shobhana.jpg";
+import avSwathi from "@/assets/review-swathi.jpg";
+import avNandini from "@/assets/review-nandini.jpg";
+import avPreethi from "@/assets/review-preethi.jpg";
 
-/* Editorial/customer reviews. Reviews are not core Shopify catalog data. In
-   production these come from a reviews app (e.g. Judge.me) or a product
-   metafield. `productName` is denormalised so cards need no product lookup. */
-export const reviews: Review[] = [
+/* The hand-written notes on the homepage's Customer Diaries wall — real words
+   and photos customers sent in over Instagram and WhatsApp, typed up here.
+   They are the wall's backfill: Sushmitha's curated picks fill positions from
+   the top and these take whatever is left, so the section can never be empty.
+
+   `productId` is deliberately EMPTY on every one of them. They were once keyed
+   to invented ids ("p-ivory-knot-gown"), which matched no real product and so
+   never appeared anywhere but this wall — but a fake slug-shaped id is a trap:
+   the day one collides with a real product handle, fabricated reviews would
+   surface on that product's page. Attributing a review to a garment it wasn't
+   written about is exactly what the e-commerce rules on non-genuine reviews are
+   about, so real, product-attributed reviews come from the database instead
+   (see src/lib/reviews.ts). `productName` stays as the chip the wall prints. */
+export const dummyReviews: Review[] = [
   {
     id: "r-1",
-    productId: "p-ivory-knot-gown",
+    productId: "",
     productName: "Ivory Knot Gown",
     author: "Priya",
     rating: 5,
@@ -17,7 +37,7 @@ export const reviews: Review[] = [
   },
   {
     id: "r-2",
-    productId: "p-cherry-picnic-skirt",
+    productId: "",
     productName: "Cherry Picnic Skirt",
     author: "Shraddha",
     rating: 4.5,
@@ -28,7 +48,7 @@ export const reviews: Review[] = [
   },
   {
     id: "r-3",
-    productId: "p-wisteria-top",
+    productId: "",
     productName: "Wisteria Top",
     author: "Meera",
     rating: 4,
@@ -39,7 +59,7 @@ export const reviews: Review[] = [
   },
   {
     id: "r-4",
-    productId: "p-blanc-top",
+    productId: "",
     productName: "Blanc Top",
     author: "Saara",
     rating: 5,
@@ -50,7 +70,7 @@ export const reviews: Review[] = [
   },
   {
     id: "r-5",
-    productId: "p-daisy-marigold-set",
+    productId: "",
     productName: "Daisy Marigold Set",
     author: "Divya",
     rating: 4.5,
@@ -61,7 +81,7 @@ export const reviews: Review[] = [
   },
   {
     id: "r-6",
-    productId: "p-alba-gingham-gown",
+    productId: "",
     productName: "Alba Gingham Gown",
     author: "Bala",
     rating: 5,
@@ -72,7 +92,7 @@ export const reviews: Review[] = [
   },
   {
     id: "r-7",
-    productId: "p-marigold-skirt",
+    productId: "",
     productName: "Marigold Skirt",
     author: "Shobhana",
     rating: 5,
@@ -83,7 +103,7 @@ export const reviews: Review[] = [
   },
   {
     id: "r-8",
-    productId: "p-meadow-gingham-gown",
+    productId: "",
     productName: "Meadow Gingham Gown",
     author: "Swathi",
     rating: 5,
@@ -94,7 +114,7 @@ export const reviews: Review[] = [
   },
   {
     id: "r-9",
-    productId: "p-wisteria-mauve-set",
+    productId: "",
     productName: "Wisteria Mauve Set",
     author: "Nandini",
     rating: 4.5,
@@ -105,7 +125,7 @@ export const reviews: Review[] = [
   },
   {
     id: "r-10",
-    productId: "p-daisy-top",
+    productId: "",
     productName: "Daisy Top",
     author: "Preethi",
     rating: 5,
@@ -116,4 +136,51 @@ export const reviews: Review[] = [
   },
 ];
 
-export const reviewsFor = (productId: string) => reviews.filter((r) => r.productId === productId);
+/* The faces on the notes, keyed by review id rather than by name so the wall
+   can be re-ordered or filtered without a note picking up a stranger's face.
+   Bundled assets, because these ten are fixtures — a review from the database
+   carries its own `avatar`/`photos` URL from cdn.shopify.com instead.
+
+   The pictures are photos the customers sent in, cropped square to the face;
+   Meera and Saara are still crops of the catalog's own model shots. Nandini,
+   Preethi and Shobhana sent photos with the face covered (a phone, a raised
+   arm), so those three are framed head-and-shoulders — there is no face in the
+   source to crop to, and the client asked to run them as they are. */
+export const dummyAvatars: Record<string, string> = {
+  "r-1": avPriya,
+  "r-2": avShraddha,
+  "r-3": avMeera,
+  "r-4": avSaara,
+  "r-5": avDivya,
+  "r-6": avBala,
+  "r-7": avShobhana,
+  "r-8": avSwathi,
+  "r-9": avNandini,
+  "r-10": avPreethi,
+};
+
+/* The nine that backfill the wall, in the order they are laid out.
+
+   The wall is a 3-column masonry, so it only bottoms out evenly on a multiple
+   of three. These nine are all verified buyers, which keeps the badge reading
+   consistently on every note, and the ratings stay mixed (two 4.5s among the
+   fives) so the wall doesn't look like a scrubbed all-perfect one. Meera (r-3)
+   is the one unverified review and is deliberately out — she appears nowhere,
+   since these fixtures no longer reach the product pages.
+
+   Order is art-directed, and a multi-column layout fills top-to-bottom before
+   it wraps, so this list reads as column one, then two, then three — NOT as
+   rows. Saara (r-4) and Shobhana (r-7) sit second in their columns to put them
+   in the middle and right of the second row. The tail of each column is picked
+   to keep the three columns close in height. That height balance is tuned to
+   these ten specific bodies and stops holding the moment real reviews take the
+   front positions; it is a nice-to-have, not an invariant. */
+const WALL_ORDER = [
+  "r-1", "r-2", "r-9", // Priya, Shraddha, Nandini
+  "r-5", "r-4", "r-6", // Divya, Saara, Bala
+  "r-8", "r-7", "r-10", // Swathi, Shobhana, Preethi
+];
+
+export const DUMMY_WALL: Review[] = WALL_ORDER.flatMap(
+  (id) => dummyReviews.find((r) => r.id === id) ?? [],
+);

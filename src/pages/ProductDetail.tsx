@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { Heart, RefreshCw, ShieldCheck, Ruler, X } from "lucide-react";
-import type { Product } from "@/types";
+import type { Product, Review } from "@/types";
 import { getProductByHandle, getBestSellers } from "@/lib/catalog";
 import { formatPrice, discountPercent } from "@/lib/format";
 import { cartLimitNotice, lowStockLeft, lowStockNotice, roomToAdd } from "@/lib/stock";
@@ -9,7 +9,6 @@ import { useAsyncData } from "@/hooks/useAsyncData";
 import LoadError from "@/components/ui/LoadError";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
-import { reviewsFor } from "@/data/reviews";
 import ImageGallery from "@/components/product/ImageGallery";
 import ProductCard, { ProductCardSkeleton } from "@/components/product/ProductCard";
 import ProductAccordion from "@/components/product/ProductAccordion";
@@ -107,7 +106,11 @@ function PdpContent({ product }: { product: Product }) {
      pre-clamped. Switching back to a roomier size restores what they picked. */
   const qty = Math.min(qtyChoice, maxQty);
   const wished = has(product.id);
-  const reviews = reviewsFor(product.id);
+  /* No reviews on a product page yet. The fixture lookup this replaced always
+     returned [] anyway — it searched hand-written notes keyed to invented ids —
+     so the panel has always read "Reviews (0)". Real ones, keyed on the Shopify
+     GID, arrive with the reviews endpoint. */
+  const reviews: Review[] = [];
 
   /* Price follows the chosen size once one is picked; until then we show the
      product's lowest variant price (Shopify's minVariantPrice) as a "from"

@@ -1,61 +1,17 @@
 import { useRef, useState } from "react";
 import { BadgeCheck } from "lucide-react";
-import { reviews } from "@/data/reviews";
+import { dummyAvatars } from "@/data/reviews";
+import { composeWall } from "@/data/reviewWall";
 import RatingStars from "@/components/ui/RatingStars";
 import Reveal from "@/components/ui/Reveal";
-import avPriya from "@/assets/review-priya.jpg";
-import avShraddha from "@/assets/review-shraddha.jpg";
-import avMeera from "@/assets/review-meera.jpg";
-import avSaara from "@/assets/review-saara.jpg";
-import avDivya from "@/assets/review-divya.jpg";
-import avBala from "@/assets/review-bala.jpg";
-import avShobhana from "@/assets/review-shobhana.jpg";
-import avSwathi from "@/assets/review-swathi.jpg";
-import avNandini from "@/assets/review-nandini.jpg";
-import avPreethi from "@/assets/review-preethi.jpg";
 
 /* "LOOK's Customer Diaries": real customer words on white note/diary cards,
    each with a customer picture, laid out as a masonry note-wall on the black
-   theme (client request: white note style + customer pictures). Keyed by review
-   id rather than by name, so the wall can be re-ordered or filtered without a
-   note picking up a stranger's face.
+   theme (client request: white note style + customer pictures).
 
-   The pictures are photos the customers sent in, cropped square to the face;
-   Meera and Saara are still crops of the catalog's own model shots. Nandini,
-   Preethi and Shobhana sent photos with the face covered (a phone, a raised
-   arm), so those three are framed head-and-shoulders — there is no face in the
-   source to crop to, and the client asked to run them as they are. */
-const avatars: Record<string, string> = {
-  "r-1": avPriya,
-  "r-2": avShraddha,
-  "r-3": avMeera,
-  "r-4": avSaara,
-  "r-5": avDivya,
-  "r-6": avBala,
-  "r-7": avShobhana,
-  "r-8": avSwathi,
-  "r-9": avNandini,
-  "r-10": avPreethi,
-};
-
-/* The wall is a 3-column masonry, so it only bottoms out evenly on a multiple
-   of three. These nine are all verified buyers, which keeps the badge reading
-   consistently on every note, and the ratings stay mixed (two 4.5s among the
-   fives) so the wall doesn't look like a scrubbed all-perfect one. Meera (r-3)
-   is the one unverified review and is deliberately out; every review stays in
-   `reviews` for the product pages.
-
-   Order is art-directed, and a multi-column layout fills top-to-bottom before
-   it wraps, so this list reads as column one, then two, then three — NOT as
-   rows. Saara (r-4) and Shobhana (r-7) sit second in their columns to put them
-   in the middle and right of the second row. The tail of each column is picked
-   to keep the three columns close in height. */
-const WALL_ORDER = [
-  "r-1", "r-2", "r-9", // Priya, Shraddha, Nandini
-  "r-5", "r-4", "r-6", // Divya, Saara, Bala
-  "r-8", "r-7", "r-10", // Swathi, Shobhana, Preethi
-];
-const wall = WALL_ORDER.flatMap((id) => reviews.find((r) => r.id === id) ?? []);
+   The nine notes are whatever composeWall() hands back — Sushmitha's curated
+   picks first, the hand-written fixtures backfilling the rest — so this
+   component owns the look and src/data/reviewWall.ts owns which notes appear. */
 
 /** Rail gap in px (gap-4), needed to work out which note is parked. */
 const GAP = 16;
@@ -65,6 +21,10 @@ export default function HomeReviews() {
      above sm doesn't scroll, so this stays at 0 and the dots stay hidden. */
   const railRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
+
+  /* No picks yet — the fixtures are the whole wall. Phase 2 passes the curated
+     reviews in here; composeWall returns nine either way. */
+  const wall = composeWall([]);
 
   const onRailScroll = () => {
     const rail = railRef.current;
@@ -99,7 +59,9 @@ export default function HomeReviews() {
           onScroll={onRailScroll}
           className="no-scrollbar -mx-6 mt-[28px] flex snap-x snap-mandatory scroll-px-6 items-start gap-4 overflow-x-auto px-6 pt-3 pb-2 sm:mx-0 sm:mt-[48px] sm:block sm:columns-2 sm:gap-5 sm:overflow-visible sm:px-0 sm:pt-0 lg:columns-3"
         >
-          {wall.map((r, i) => (
+          {wall.map((r, i) => {
+            const face = r.avatar ?? r.photos?.[0] ?? dummyAvatars[r.id];
+            return (
             <Reveal
               key={r.id}
               variant="up"
@@ -118,12 +80,24 @@ export default function HomeReviews() {
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <img
-                    src={avatars[r.id]}
-                    alt={r.author}
-                    loading="lazy"
-                    className="size-10 rounded-full object-cover object-top ring-2 ring-black/5 sm:size-12"
-                  />
+                  {face ? (
+                    <img
+                      src={face}
+                      alt={r.author}
+                      loading="lazy"
+                      className="size-10 rounded-full object-cover object-top ring-2 ring-black/5 sm:size-12"
+                    />
+                  ) : (
+                    /* A review with no photo at all — her own WhatsApp entries,
+                       usually. An initial reads as deliberate where a missing
+                       <img> would show a broken-image icon. */
+                    <span
+                      aria-hidden
+                      className="flex size-10 shrink-0 items-center justify-center rounded-full bg-neutral-100 font-display text-[17px] font-semibold text-neutral-400 ring-2 ring-black/5 sm:size-12 sm:text-[19px]"
+                    >
+                      {r.author.trim().charAt(0).toUpperCase()}
+                    </span>
+                  )}
                   <div className="min-w-0">
                     <figcaption className="flex items-center gap-1.5 text-[15px] font-semibold text-neutral-900">
                       {r.author}
@@ -153,7 +127,8 @@ export default function HomeReviews() {
                 )}
               </figure>
             </Reveal>
-          ))}
+            );
+          })}
         </div>
 
         {/* Position for the rail — without it, a phone can't tell how much of

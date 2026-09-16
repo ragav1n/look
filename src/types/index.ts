@@ -135,15 +135,24 @@ export interface Promo {
 
 export interface Review {
   id: string;
+  /** The Shopify product GID this review is about. EMPTY on the hand-written
+   *  wall fixtures, which belong to no real product — see src/data/reviews.ts. */
   productId: string;
   /** Product display name, denormalised so review cards need no product fetch */
   productName?: string;
+  /** Product handle, so a review can link to the piece it's about without a lookup. */
+  productHandle?: string;
   author: string;
   rating: number;
   date: string;
   title: string;
   body: string;
   verified?: boolean;
+  /** Photos the customer sent with the review — cdn.shopify.com URLs, stored at
+   *  1200px; ask the CDN for a smaller variant with cdnResize(). */
+  photos?: string[];
+  /** The face on the note. Falls back to the first photo, then to a monogram. */
+  avatar?: string;
 }
 
 /* ------------------------------------------------------------------ *
