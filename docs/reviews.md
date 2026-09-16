@@ -121,11 +121,20 @@ OWNER_EMAIL=…                    # optional; where "a review is waiting" goes,
                                  # defaults to EMAIL_REPLY_TO then support@look.ind.in
 ```
 
-Atlas: region `ap-south-1` (Mumbai), a `readWrite` user scoped to the one
-database, Network Access `0.0.0.0/0` — Hobby functions have no static egress IP
-and there is no narrower rule that works. A free M0 cluster **pauses after ~60
-days idle**; the driver's 5s server-selection timeout means a paused cluster
-degrades instead of hanging.
+Atlas: a `readWrite` user scoped to the one database, and Network Access
+**`0.0.0.0/0`** — Hobby functions have no static egress IP, so there is no
+narrower rule that works. A free M0 cluster **pauses after ~60 days idle**; the
+driver's 5s server-selection timeout means a paused cluster degrades instead of
+hanging.
+
+**Region: match the VERCEL FUNCTION, not the shoppers.** Nothing in a browser
+ever talks to Atlas — the function does, and the shopper only ever talks to
+Vercel. So the hop to optimise is Vercel → Atlas. Hobby functions default to
+`iad1` (Washington DC), which pairs with Atlas `us-east-1`. Putting the cluster
+in Mumbai to "be near the customers" would move the database *away* from the
+only thing that reads it and add a cross-Pacific round trip to every wall load.
+The live cluster is `us-east-1`, measured at ~21ms from a US east-coast laptop.
+(An M0 cluster cannot be moved; changing region means recreating it.)
 
 Indexes are created on first connect by `ensureIndexes()`. The one worth knowing
 about is `wall_rank_unique` — unique and partial on `wallRank: {$type:"number"}`,
