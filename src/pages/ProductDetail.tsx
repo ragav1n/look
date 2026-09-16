@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { Heart, RefreshCw, ShieldCheck, Ruler, X } from "lucide-react";
-import type { Product, Review } from "@/types";
+import type { Product } from "@/types";
 import { getProductByHandle, getBestSellers } from "@/lib/catalog";
 import { formatPrice, discountPercent } from "@/lib/format";
 import { cartLimitNotice, lowStockLeft, lowStockNotice, roomToAdd } from "@/lib/stock";
 import { useAsyncData } from "@/hooks/useAsyncData";
+import { getProductReviews } from "@/lib/reviews";
 import LoadError from "@/components/ui/LoadError";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
@@ -106,11 +107,13 @@ function PdpContent({ product }: { product: Product }) {
      pre-clamped. Switching back to a roomier size restores what they picked. */
   const qty = Math.min(qtyChoice, maxQty);
   const wished = has(product.id);
-  /* No reviews on a product page yet. The fixture lookup this replaced always
-     returned [] anyway — it searched hand-written notes keyed to invented ids —
-     so the panel has always read "Reviews (0)". Real ones, keyed on the Shopify
-     GID, arrive with the reviews endpoint. */
-  const reviews: Review[] = [];
+  /* Approved reviews for this piece, keyed on the Shopify GID — a product can be
+     renamed, which changes its handle, but never its GID. Loads after first
+     paint: the panel is a collapsed disclosure below the fold, so there is
+     nothing to skeleton. getProductReviews never rejects; an empty list is the
+     honest answer and reads as "Reviews (0)". */
+  const { data: reviewData } = useAsyncData(() => getProductReviews(product.id), [product.id]);
+  const reviews = reviewData ?? [];
 
   /* Price follows the chosen size once one is picked; until then we show the
      product's lowest variant price (Shopify's minVariantPrice) as a "from"

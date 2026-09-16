@@ -111,11 +111,10 @@ Two rules that are easy to break:
 
 ## The serverless layer
 
-Eleven functions, against Vercel's Hobby-plan ceiling of twelve. Adding a
-thirteenth is not possible, so a new endpoint means merging two existing ones
-behind a rewrite — `vercel.json` already does this for `/api/admin/*`,
-`/api/account/*` and `/api/auth/{session,logout}`. The free slot is being held
-for the reviews endpoint.
+Twelve functions, which is exactly Vercel's Hobby-plan ceiling. Adding a
+thirteenth means merging two existing ones behind a rewrite — `vercel.json`
+already does this for `/api/admin/*`, `/api/account/*` and
+`/api/auth/{session,logout}`.
 
 | Endpoint | Role |
 | --- | --- |
@@ -127,6 +126,7 @@ for the reviews endpoint.
 | `admin/console` | The owner's campaign console at `/admin`: compose, preview, test-send, send. |
 | `cron/new-drop` | Daily at 05:00 UTC (10:30 IST) — emails newly published products, then tags them so a re-fire announces nothing twice. |
 | `webhooks/delhivery` | Maps courier scans onto Shopify fulfillment events so the order tracker advances on its own. |
+| `reviews` | Self-hosted customer reviews: the homepage wall and a product's reviews, out of MongoDB Atlas. Degrades to an empty list when `MONGODB_URI` is unset, which is the feature's kill switch. |
 
 They fail closed: a missing secret makes the endpoint reject the request rather
 than fall back to an unauthenticated path. The one deliberate exception is the

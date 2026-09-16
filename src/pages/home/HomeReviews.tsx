@@ -2,6 +2,8 @@ import { useRef, useState } from "react";
 import { BadgeCheck } from "lucide-react";
 import { dummyAvatars } from "@/data/reviews";
 import { composeWall } from "@/data/reviewWall";
+import { cdnResize, getWallReviews } from "@/lib/reviews";
+import { useAsyncData } from "@/hooks/useAsyncData";
 import RatingStars from "@/components/ui/RatingStars";
 import Reveal from "@/components/ui/Reveal";
 
@@ -22,9 +24,12 @@ export default function HomeReviews() {
   const railRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
 
-  /* No picks yet — the fixtures are the whole wall. Phase 2 passes the curated
-     reviews in here; composeWall returns nine either way. */
-  const wall = composeWall([]);
+  /* The client's curated picks, backfilled to nine by the fixtures. No skeleton
+     and no loading state on purpose: the fixtures paint immediately and the real
+     picks swap in when they arrive, and the section is below the fold on every
+     viewport, so nobody watches it happen. getWallReviews never rejects. */
+  const { data: picks } = useAsyncData(() => getWallReviews(), []);
+  const wall = composeWall(picks ?? []);
 
   const onRailScroll = () => {
     const rail = railRef.current;
@@ -82,7 +87,7 @@ export default function HomeReviews() {
                 <div className="flex items-center gap-3">
                   {face ? (
                     <img
-                      src={face}
+                      src={cdnResize(face, 96)}
                       alt={r.author}
                       loading="lazy"
                       className="size-10 rounded-full object-cover object-top ring-2 ring-black/5 sm:size-12"
