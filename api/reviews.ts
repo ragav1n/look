@@ -480,9 +480,11 @@ async function submitHandler(req: VercelRequest, res: VercelResponse): Promise<v
       "pending",
       "customer",
     );
-    /* Answer the shopper first, then tell the owner. Awaited rather than
-       floated because the function may be frozen the moment the response is
-       flushed, and it is best-effort inside, so it cannot fail the submission. */
+    /* Answer the shopper BEFORE the mail round trip, so nobody waits on Resend
+       to be told their review was received. Still awaited rather than floated:
+       the invocation stays alive until this handler's promise settles, and a
+       dangling promise would be cut off. notifyOwnerOfReview swallows its own
+       errors, so it cannot turn a saved review into a failed one. */
     res.status(200).json({ ok: true, status: "pending" });
     await notifyOwnerOfReview({
       author: input.author,

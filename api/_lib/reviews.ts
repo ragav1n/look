@@ -435,7 +435,15 @@ async function writeWallOrder(ids: string[]): Promise<void> {
   const wanted = ids.slice(0, WALL_SIZE);
   await col.bulkWrite(
     [
-      { updateMany: { filter: {}, update: { $unset: { wallRank: "" } } } },
+      /* Filtered, not `{}`: an unfiltered updateMany would rewrite every review
+         in the collection on each reorder. This touches only the handful that
+         actually hold a position, and uses the partial index to find them. */
+      {
+        updateMany: {
+          filter: { wallRank: { $gte: 1, $lte: WALL_SIZE } },
+          update: { $unset: { wallRank: "" } },
+        },
+      },
       ...wanted.map((id, i) => ({
         updateOne: {
           filter: { _id: id, status: "approved" as const },
