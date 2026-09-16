@@ -37,7 +37,6 @@ export interface PublicReview {
   body: string;
   verified: boolean;
   photos?: string[];
-  avatar?: string;
 }
 
 /** Strip a stored document down to what may leave the server. */
@@ -55,7 +54,6 @@ export function toPublic(doc: ReviewDoc): PublicReview {
     body: doc.body,
     verified: doc.verified,
     photos: doc.photos?.length ? doc.photos : undefined,
-    avatar: doc.avatar,
   };
 }
 
@@ -232,13 +230,65 @@ function logErrors(op: string, json: unknown): void {
   }
 }
 
-/** Every product that currently has at least one review of any status — the
- *  repair tool's work list, so `resync` doesn't have to walk the whole catalog. */
-export async function productGidsWithReviews(): Promise<string[]> {
-  if (!isReviewsConfigured()) return [];
-  const col = await reviewsCollection();
-  const gids = await col.distinct("productGid", {});
-  return gids.filter((g): g is string => typeof g === "string" && g.length > 0);
+const PRODUCTS_WITH_AGGREGATE = /* GraphQL */ `
+  query ProductsWithReviewAggregate($cursor: String) {
+    products(first: 100, after: $cursor) {
+      pageInfo { hasNextPage endCursor }
+      nodes {
+        id
+        rating: metafield(namespace: "${MF_NS}", key: "${MF_RATING}") { id }
+        count: metafield(namespace: "${MF_NS}", key: "${MF_COUNT}") { id }
+      }
+    }
+  }
+`;
+
+/**
+ * The repair tool's work list.
+ *
+ * Products that still hold a review, UNION products that currently carry a
+ * rating metafield. The second half is the point: a product whose last review
+ * was deleted has no document left, so a Mongo-only list could never clear the
+ * stars it was left showing — which is exactly the drift `resync` exists to
+ * repair, since the aggregate write is best-effort and can fail silently.
+ */
+export async function productGidsToResync(): Promise<string[]> {
+  const gids = new Set<string>();
+
+  if (isReviewsConfigured()) {
+    const col = await reviewsCollection();
+    for (const g of await col.distinct("productGid", {})) {
+      if (typeof g === "string" && g) gids.add(g);
+    }
+  }
+
+  if (isAdminConfigured()) {
+    try {
+      let cursor: string | null = null;
+      for (let page = 0; page < 20; page++) {
+        const res = await adminGraphql(PRODUCTS_WITH_AGGREGATE, { cursor });
+        const json = (await res.json()) as {
+          data?: {
+            products?: {
+              pageInfo?: { hasNextPage?: boolean; endCursor?: string };
+              nodes?: { id: string; rating?: unknown; count?: unknown }[];
+            };
+          };
+        };
+        const conn = json.data?.products;
+        for (const n of conn?.nodes ?? []) {
+          if (n.rating || n.count) gids.add(n.id);
+        }
+        if (!conn?.pageInfo?.hasNextPage || !conn.pageInfo.endCursor) break;
+        cursor = conn.pageInfo.endCursor;
+      }
+    } catch (err) {
+      /* Still resync everything Mongo knows about. */
+      console.error("[reviews] resync could not list products with an aggregate:", err);
+    }
+  }
+
+  return [...gids];
 }
 
 /* --- Writes and moderation ------------------------------------------------ */
@@ -256,7 +306,6 @@ export interface ReviewInput {
   body: string;
   rating: number;
   photos?: { gid: string; url: string }[];
-  avatar?: string;
   verified?: boolean;
   email?: string;
   ipHash?: string;
@@ -281,9 +330,14 @@ export function readInput(body: Record<string, unknown>): { error: string } | Re
   const text = str(body.body, LIMITS.body);
   if (!author || !title || !text) return { error: "missing_fields" };
 
+  /* Reject anything below 1 rather than clamping it up. `Number(0)`, and the 0
+     that null/false/"" all coerce to, are finite — so a clamp turned "no rating
+     supplied" into a ONE-STAR review published under the customer's real name
+     and dragging that product's average down. Only the upper bound is clamped,
+     where rounding down is harmless. */
   const raw = Number(body.rating);
-  if (!Number.isFinite(raw)) return { error: "bad_rating" };
-  const rating = Math.min(5, Math.max(1, Math.round(raw * 2) / 2));
+  if (!Number.isFinite(raw) || raw < 1) return { error: "bad_rating" };
+  const rating = Math.min(5, Math.round(raw * 2) / 2);
 
   return {
     productGid,
@@ -319,7 +373,6 @@ export async function insertReview(
     verified: input.verified ?? false,
     photos: (input.photos ?? []).map((p) => p.url),
     photoGids: (input.photos ?? []).map((p) => p.gid),
-    avatar: input.avatar,
     createdAt: now,
     updatedAt: now,
     ...(status === "approved" ? { publishedAt: now } : {}),
@@ -360,11 +413,27 @@ function toAdmin(doc: ReviewDoc): AdminReview {
 export async function adminList(status?: ReviewDoc["status"]): Promise<AdminReview[]> {
   if (!isReviewsConfigured()) return [];
   const col = await reviewsCollection();
-  const docs = await col
-    .find(status ? { status } : {}, { sort: { createdAt: -1 }, limit: 300 })
-    .toArray();
+
+  /* Two queries, unioned, because the cap is otherwise dangerous rather than
+     merely limiting: the console derives the homepage wall from this list, and
+     the reorder buttons send back the ids they can see. A featured review that
+     had aged out of the newest N would be absent from that list, so writing the
+     order would clear its wallRank and drop it off the homepage with nobody
+     touching it. Featured reviews are at most WALL_SIZE, so asking for them
+     unconditionally costs nothing and makes that impossible. */
+  const [featured, recent] = await Promise.all([
+    col.find({ wallRank: { $gte: 1, $lte: WALL_SIZE } }, { sort: { wallRank: 1 } }).toArray(),
+    col.find(status ? { status } : {}, { sort: { createdAt: -1 }, limit: 500 }).toArray(),
+  ]);
+
+  const byId = new Map<string, ReviewDoc>();
+  for (const d of [...featured, ...recent]) byId.set(d._id, d);
+
+  /* Pending first — that's what she has to act on — then the rest newest-first. */
   const rank = { pending: 0, approved: 1, rejected: 2 };
-  return docs.sort((a, b) => rank[a.status] - rank[b.status]).map(toAdmin);
+  return [...byId.values()]
+    .sort((a, b) => rank[a.status] - rank[b.status] || +b.createdAt - +a.createdAt)
+    .map(toAdmin);
 }
 
 /** Load one review — used to find the product whose aggregate needs recomputing
@@ -497,4 +566,35 @@ export async function alreadyReviewed(email: string, productGid: string): Promis
     { projection: { _id: 1 } },
   );
   return existing !== null;
+}
+
+const PRODUCT_LABEL = /* GraphQL */ `
+  query ReviewProductLabel($id: ID!) {
+    product(id: $id) { handle title }
+  }
+`;
+
+/**
+ * The display name and handle for a product GID, straight from Shopify.
+ *
+ * Used so a public submission can't choose the label its words appear under, and
+ * so the stored label matches the catalog at the time of writing. Returns empty
+ * fields rather than throwing — a review is worth more than its chip.
+ */
+export async function lookUpProduct(
+  productGid: string,
+): Promise<{ name?: string; handle?: string }> {
+  if (!productGid || !isAdminConfigured()) return {};
+  try {
+    const res = await adminGraphql(PRODUCT_LABEL, { id: productGid });
+    const json = (await res.json()) as {
+      data?: { product?: { handle?: string | null; title?: string | null } | null };
+    };
+    const p = json.data?.product;
+    if (!p) return {};
+    return { name: p.title ?? undefined, handle: p.handle ?? undefined };
+  } catch (err) {
+    console.error("[reviews] product label lookup failed:", err);
+    return {};
+  }
 }

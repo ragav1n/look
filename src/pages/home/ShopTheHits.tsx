@@ -20,11 +20,16 @@ import StaggeredCarousel from "@/components/ui/staggered-carousel";
 const MIN_REVIEWS_TO_RANK = 3;
 
 const lovedness = (p: Product) => (p.reviewCount >= MIN_REVIEWS_TO_RANK ? p.rating : 0);
+/* The tiebreaker is gated too. Gating only the rating left the count raw, so a
+   piece with one review still sorted strictly above every piece with none — the
+   homepage reshuffling on a single note, which is exactly what the threshold
+   exists to stop. Below the threshold a piece is simply unranked. */
+const volume = (p: Product) => (p.reviewCount >= MIN_REVIEWS_TO_RANK ? p.reviewCount : 0);
 
 export default function ShopTheHits() {
   const { data } = useAsyncData(() => getAllProducts(), []);
   const hits = [...(data ?? [])]
-    .sort((a, b) => lovedness(b) - lovedness(a) || b.reviewCount - a.reviewCount)
+    .sort((a, b) => lovedness(b) - lovedness(a) || volume(b) - volume(a))
     .slice(0, 9);
 
   // Need at least a couple of pieces to make the wall worthwhile.

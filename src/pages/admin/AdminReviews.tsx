@@ -26,19 +26,23 @@ import {
   reorderWall,
   resyncRatings,
   unfeatureReview,
-  uploadReviewPhoto,
 } from "@/lib/admin";
 import { cdnResize } from "@/lib/reviews";
-import { preparePhoto, ACCEPTED_TYPES } from "@/lib/reviewPhoto";
+import { ACCEPTED_TYPES } from "@/lib/reviewPhoto";
+import { useReviewPhotos } from "@/hooks/useReviewPhotos";
+/* Imported, not re-declared: the wall is nine because of the homepage layout,
+   and that fact belongs in one place. (The BFF keeps its own copy only because
+   it cannot import from src/.) */
+import { WALL_SIZE } from "@/data/reviewWall";
 import { useToast } from "@/context/ToastContext";
 import RatingStars from "@/components/ui/RatingStars";
 import RatingInput from "@/components/ui/RatingInput";
 import { Eyebrow, Field, StatusBadge, StepHeader, cardCls, dangerBtn, inputCls, secondaryBtn } from "./ui";
 
-/** Matches WALL_SIZE on both the server and src/data/reviewWall.ts. */
-const WALL_SIZE = 9;
 /** Past this the note gets tall enough to unbalance the wall's columns. */
 const BODY_SOFT_LIMIT = 600;
+/** Hard cap on the body, matching LIMITS.body on the server. */
+const BODY_MAX = 1200;
 const MAX_PHOTOS = 5;
 
 const TONE = { pending: "pending", approved: "live", rejected: "hidden" } as const;
@@ -475,14 +479,6 @@ function DeleteButton({
   );
 }
 
-interface DraftPhoto {
-  /** data: URL for the preview. Never blob: — see src/lib/reviewPhoto.ts. */
-  preview: string;
-  token?: string;
-  error?: string;
-  uploading: boolean;
-}
-
 function OwnerReviewForm({
   products,
   onCreated,
@@ -496,40 +492,25 @@ function OwnerReviewForm({
   const [rating, setRating] = useState(5);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
-  const [photos, setPhotos] = useState<DraftPhoto[]>([]);
   const [saving, setSaving] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const product = products.find((p) => p.id === productId);
   const ready = productId && author.trim() && title.trim() && body.trim() && !saving;
 
-  async function addFiles(files: FileList | null) {
-    if (!files?.length) return;
-    const room = MAX_PHOTOS - photos.length;
-    if (room <= 0) return;
+  const onPhotoError = useCallback(
+    (message: string) => push(message, "error"),
+    [push],
+  );
+  const { photos, tokens, uploading, addFiles, remove, reset } = useReviewPhotos({
+    max: MAX_PHOTOS,
+    /* No invite token: her admin session is the proof. */
+    onError: onPhotoError,
+    errorText,
+  });
 
-    for (const file of Array.from(files).slice(0, room)) {
-      let prepared;
-      try {
-        prepared = await preparePhoto(file);
-      } catch (err) {
-        push(err instanceof Error ? err.message : "That photo couldn't be used.", "error");
-        continue;
-      }
-      const draft: DraftPhoto = { preview: prepared.dataUrl, uploading: true };
-      setPhotos((cur) => [...cur, draft]);
-
-      const res = await uploadReviewPhoto(prepared.dataUrl);
-      setPhotos((cur) =>
-        cur.map((p) =>
-          p.preview === draft.preview
-            ? "token" in res
-              ? { ...p, token: res.token, uploading: false }
-              : { ...p, error: errorText(res.error), uploading: false }
-            : p,
-        ),
-      );
-    }
+  async function pick(files: FileList | null) {
+    await addFiles(files);
     if (fileRef.current) fileRef.current.value = "";
   }
 
@@ -545,7 +526,7 @@ function OwnerReviewForm({
       body: body.trim(),
       rating,
       verified: true,
-      photoTokens: photos.map((p) => p.token).filter((t): t is string => Boolean(t)),
+      photoTokens: tokens,
     });
     setSaving(false);
     if (!res.ok) {
@@ -557,7 +538,7 @@ function OwnerReviewForm({
     setTitle("");
     setBody("");
     setRating(5);
-    setPhotos([]);
+    reset();
     await onCreated();
   }
 
@@ -632,7 +613,7 @@ function OwnerReviewForm({
         >
           <textarea
             value={body}
-            onChange={(e) => setBody(e.target.value.slice(0, 1200))}
+            onChange={(e) => setBody(e.target.value.slice(0, BODY_MAX))}
             rows={5}
             placeholder="Paste what they wrote, in their words."
             className={`${inputCls} h-auto py-3 leading-[22px] ${over ? "border-accent/50" : ""}`}
@@ -647,7 +628,7 @@ function OwnerReviewForm({
         >
           <div className="flex flex-wrap items-center gap-3">
             {photos.map((p) => (
-              <div key={p.preview} className="relative">
+              <div key={p.id} className="relative">
                 <img
                   src={p.preview}
                   alt=""
@@ -656,7 +637,7 @@ function OwnerReviewForm({
                 <button
                   type="button"
                   aria-label="Remove photo"
-                  onClick={() => setPhotos((cur) => cur.filter((x) => x.preview !== p.preview))}
+                  onClick={() => remove(p.id)}
                   className="absolute -top-2 -right-2 grid size-6 cursor-pointer place-items-center rounded-full border border-line bg-page text-[12px] text-body hover:text-white"
                 >
                   <span aria-hidden>×</span>
@@ -675,7 +656,7 @@ function OwnerReviewForm({
                      through a HEIC that the canvas can't decode. */
                   accept={ACCEPTED_TYPES}
                   multiple
-                  onChange={(e) => addFiles(e.target.files)}
+                  onChange={(e) => pick(e.target.files)}
                   className="sr-only"
                   id="owner-review-photos"
                 />
@@ -691,8 +672,13 @@ function OwnerReviewForm({
         </Field>
       </div>
 
-      <button type="button" disabled={!ready} onClick={submit} className={`mt-6 ${dangerBtn}`}>
-        {saving ? "Adding…" : "Add this review"}
+      <button
+        type="button"
+        disabled={!ready || uploading}
+        onClick={submit}
+        className={`mt-6 ${dangerBtn}`}
+      >
+        {saving ? "Adding…" : uploading ? "Waiting for photos…" : "Add this review"}
       </button>
       <p className="mt-3 text-[12px] text-faint">
         It appears on {product ? product.name : "the piece"}&rsquo;s page within a minute. Put it on
@@ -717,6 +703,8 @@ function errorText(code?: string): string {
       return "Choose which piece the review is about.";
     case "bad_rating":
       return "Pick a star rating.";
+    case "upload_pending":
+      return "Shopify is still processing that photo — add it again in a moment.";
     case "image_too_large":
       return "That photo is too big.";
     case "not_an_image":

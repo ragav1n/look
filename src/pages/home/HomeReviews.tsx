@@ -65,7 +65,9 @@ export default function HomeReviews() {
           className="no-scrollbar -mx-6 mt-[28px] flex snap-x snap-mandatory scroll-px-6 items-start gap-4 overflow-x-auto px-6 pt-3 pb-2 sm:mx-0 sm:mt-[48px] sm:block sm:columns-2 sm:gap-5 sm:overflow-visible sm:px-0 sm:pt-0 lg:columns-3"
         >
           {wall.map((r, i) => {
-            const face = r.avatar ?? r.photos?.[0] ?? dummyAvatars[r.id];
+            /* A stored review shows the first photo she sent; a fixture shows its
+               bundled portrait; anything else gets a monogram below. */
+            const face = r.photos?.[0] ?? dummyAvatars[r.id];
             return (
             <Reveal
               key={r.id}

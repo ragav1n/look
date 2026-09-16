@@ -164,7 +164,6 @@ export interface AdminReview {
   body: string;
   verified: boolean;
   photos?: string[];
-  avatar?: string;
   status: "pending" | "approved" | "rejected";
   source: "customer" | "owner";
   /** 1–9 when it's on the homepage wall. */
@@ -225,7 +224,3 @@ export const deleteReview = (id: string, password: string) =>
 /** Recompute every product's rating from scratch — the repair tool for when a
  *  Shopify write failed quietly during moderation. */
 export const resyncRatings = () => reviewOp({ op: "resync" });
-
-/* uploadReviewPhoto lives in src/lib/reviews.ts, not here: the shopper's form
-   and this console post to the same endpoint, and two copies would drift. */
-export { uploadReviewPhoto } from "./reviews";

@@ -149,10 +149,10 @@ export interface Review {
   body: string;
   verified?: boolean;
   /** Photos the customer sent with the review — cdn.shopify.com URLs, stored at
-   *  1200px; ask the CDN for a smaller variant with cdnResize(). */
+   *  1200px; ask the CDN for a smaller variant with cdnResize(). The first one
+   *  doubles as the face on the homepage wall's note; with none, the wall draws
+   *  an initial-letter monogram. */
   photos?: string[];
-  /** The face on the note. Falls back to the first photo, then to a monogram. */
-  avatar?: string;
 }
 
 /* ------------------------------------------------------------------ *

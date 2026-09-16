@@ -11,6 +11,7 @@ import ReviewForm from "@/components/product/ReviewForm";
 import LoadError from "@/components/ui/LoadError";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
+import { useUser } from "@/context/UserProvider";
 import ImageGallery from "@/components/product/ImageGallery";
 import ProductCard, { ProductCardSkeleton } from "@/components/product/ProductCard";
 import ProductAccordion from "@/components/product/ProductAccordion";
@@ -108,6 +109,7 @@ function PdpContent({ product }: { product: Product }) {
      pre-clamped. Switching back to a roomier size restores what they picked. */
   const qty = Math.min(qtyChoice, maxQty);
   const wished = has(product.id);
+  const { isAuthenticated } = useUser();
   /* Approved reviews for this piece, keyed on the Shopify GID — a product can be
      renamed, which changes its handle, but never its GID. Loads after first
      paint: the panel is a collapsed disclosure below the fold, so there is
@@ -126,9 +128,14 @@ function PdpContent({ product }: { product: Product }) {
      button at all, rather than a button that refuses them. */
   const [params] = useSearchParams();
   const inviteToken = params.get("review") ?? undefined;
+  /* Only ask when the answer could be yes. Without this gate an anonymous
+     visitor — the overwhelming majority — triggered an uncacheable function
+     invocation on every product view that could only ever answer "no", since
+     eligibility needs either an invite token or a session. */
+  const mayAsk = Boolean(inviteToken) || isAuthenticated;
   const { data: right } = useAsyncData(
-    () => canWriteReview(product.id, inviteToken),
-    [product.id, inviteToken],
+    () => (mayAsk ? canWriteReview(product.id, inviteToken) : Promise.resolve({ may: false })),
+    [product.id, inviteToken, mayAsk],
   );
   const [writing, setWriting] = useState(false);
 

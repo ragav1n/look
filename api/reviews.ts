@@ -35,6 +35,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { requireAdmin, verifyPassword } from "./_lib/admin.js";
 import { deleteFiles, sniffImage, uploadImage } from "./_lib/files.js";
+import { lookUpProduct } from "./_lib/reviews.js";
 import { firstQuery, isSameOrigin, isStrictSameOrigin, methodNotAllowed } from "./_lib/http.js";
 import { hashIp, isReviewsConfigured } from "./_lib/mongo.js";
 import { allow, clientIp } from "./_lib/ratelimit.js";
@@ -50,7 +51,7 @@ import {
   getWall,
   insertReview,
   listForProduct,
-  productGidsWithReviews,
+  productGidsToResync,
   readInput,
   recomputeAggregate,
   reorderWall,
@@ -225,9 +226,15 @@ async function photoHandler(req: VercelRequest, res: VercelResponse): Promise<vo
   try {
     const file = await uploadImage(bytes, `review-${Date.now()}.${kind.ext}`, kind.mime);
     if (!file.url) {
-      /* Shopify is still processing. The GID is enough to find it again, and the
-         moderation screen resolves a pending url lazily. */
-      res.status(202).json({ gid: file.gid, url: null });
+      /* Shopify accepted the bytes but hasn't finished processing, so there is no
+         url to sign — and without a signed token the review can never reference
+         this file. Delete it rather than leaving a File nothing will ever point
+         at: the caller retries and gets a fresh one. (This used to answer 202
+         with no token, which the client correctly read as a failure while the
+         file stayed in Shopify Files forever.) */
+      console.warn(`[reviews] upload still processing after poll, discarding ${file.gid}`);
+      await deleteFiles([file.gid]);
+      res.status(503).json({ error: "upload_pending" });
       return;
     }
     res.status(200).json({ ...file, token: signPhoto({ gid: file.gid, url: file.url }) });
@@ -341,7 +348,7 @@ async function adminHandler(req: VercelRequest, res: VercelResponse): Promise<vo
            Shopify hiccup during moderation leaves a product's stars stale; this
            recomputes every product that has a review, and is the answer to
            "the rating looks wrong" without anyone touching the database. */
-        const gids = await productGidsWithReviews();
+        const gids = await productGidsToResync();
         for (const gid of gids) await recomputeAggregate(gid);
         res.status(200).json({ ok: true, products: gids.length });
         return;
@@ -392,6 +399,13 @@ const str = (v: unknown): string => (typeof v === "string" ? v.trim() : "");
  */
 async function eligibilityHandler(req: VercelRequest, res: VercelResponse): Promise<void> {
   res.setHeader("Cache-Control", "no-store");
+  /* Rate-limited despite being a read: it cannot be edge-cached (the answer is
+     per person) and the signed-in branch costs a Customer Account API query, so
+     it is the one public read that can be made expensive by repetition. */
+  if (!allow(`eligibility:${clientIp(req)}`, 30, 60_000)) {
+    res.status(429).json({ may: false });
+    return;
+  }
   const right = await reviewRight(req, res, firstQuery(req.query.product), firstQuery(req.query.token));
   res.status(200).json({
     may: right.may,
@@ -454,6 +468,13 @@ async function submitHandler(req: VercelRequest, res: VercelResponse): Promise<v
     return;
   }
 
+  /* The name and handle the review is filed under come from Shopify, not from
+     the submitter. They are what the console and the homepage wall print, so a
+     body-supplied string let anyone holding a valid invite choose the label
+     shown beside their words — and it also went stale the moment a product was
+     renamed, which is the very thing keying on the GID was meant to prevent. */
+  const piece = await lookUpProduct(input.productGid);
+
   try {
     const email = (right.email ?? "").toLowerCase();
     if (email && (await alreadyReviewed(email, input.productGid))) {
@@ -470,6 +491,9 @@ async function submitHandler(req: VercelRequest, res: VercelResponse): Promise<v
     await insertReview(
       {
         ...input,
+        /* Resolved from the GID server-side, never taken from the body. */
+        productName: piece.name ?? input.productName,
+        productHandle: piece.handle ?? input.productHandle,
         photos: attached.photos,
         /* Earned by the proof, not claimed in the form. */
         verified: right.verified,
@@ -480,21 +504,21 @@ async function submitHandler(req: VercelRequest, res: VercelResponse): Promise<v
       "pending",
       "customer",
     );
-    /* Answer the shopper BEFORE the mail round trip, so nobody waits on Resend
-       to be told their review was received. Still awaited rather than floated:
-       the invocation stays alive until this handler's promise settles, and a
-       dangling promise would be cut off. notifyOwnerOfReview swallows its own
-       errors, so it cannot turn a saved review into a failed one. */
-    res.status(200).json({ ok: true, status: "pending" });
-    await notifyOwnerOfReview({
-      author: input.author,
-      rating: input.rating,
-      title: input.title,
-      body: input.body,
-      productName: input.productName,
-    });
   } catch (err) {
     console.error("[reviews] submit failed:", err);
     res.status(500).json({ error: "server_error" });
+    return;
   }
+
+  /* Answered OUTSIDE the try, and before the mail round trip: nobody should wait
+     on Resend to learn their review was received, and a throw in the notify must
+     not reach a catch that writes a second response onto a finished one. */
+  res.status(200).json({ ok: true, status: "pending" });
+  await notifyOwnerOfReview({
+    author: input.author,
+    rating: input.rating,
+    title: input.title,
+    body: input.body,
+    productName: piece.name ?? input.productName,
+  });
 }

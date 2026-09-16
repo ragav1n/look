@@ -12,22 +12,15 @@
  */
 import { useId, useRef, useState } from "react";
 import type { Product } from "@/types";
-import { submitReview, uploadReviewPhoto } from "@/lib/reviews";
-import { ACCEPTED_TYPES, preparePhoto } from "@/lib/reviewPhoto";
+import { submitReview } from "@/lib/reviews";
+import { ACCEPTED_TYPES } from "@/lib/reviewPhoto";
+import { useReviewPhotos } from "@/hooks/useReviewPhotos";
 import Modal from "@/components/ui/Modal";
 import RatingInput from "@/components/ui/RatingInput";
 import Button from "@/components/ui/Button";
 
 const MAX_PHOTOS = 5;
 const BODY_MAX = 1200;
-
-interface DraftPhoto {
-  /** A data: URL. Never blob: — see src/lib/reviewPhoto.ts for why. */
-  preview: string;
-  token?: string;
-  error?: string;
-  uploading: boolean;
-}
 
 export default function ReviewForm({
   product,
@@ -46,7 +39,6 @@ export default function ReviewForm({
   const [rating, setRating] = useState(0);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
-  const [photos, setPhotos] = useState<DraftPhoto[]>([]);
   const [honeypot, setHoneypot] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,32 +46,18 @@ export default function ReviewForm({
   const fileRef = useRef<HTMLInputElement>(null);
 
   const ready = author.trim() && title.trim() && body.trim() && rating > 0 && !busy;
-  const uploading = photos.some((p) => p.uploading);
 
-  async function addFiles(files: FileList | null) {
-    if (!files?.length) return;
+  const { photos, tokens, uploading, addFiles, remove, reset } = useReviewPhotos({
+    max: MAX_PHOTOS,
+    productGid: product.id,
+    inviteToken,
+    onError: setError,
+    errorText: shopperError,
+  });
+
+  async function pick(files: FileList | null) {
     setError(null);
-    for (const file of Array.from(files).slice(0, MAX_PHOTOS - photos.length)) {
-      let prepared;
-      try {
-        prepared = await preparePhoto(file);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "That photo couldn't be used.");
-        continue;
-      }
-      const draft: DraftPhoto = { preview: prepared.dataUrl, uploading: true };
-      setPhotos((cur) => [...cur, draft]);
-      const res = await uploadReviewPhoto(prepared.dataUrl, product.id, inviteToken);
-      setPhotos((cur) =>
-        cur.map((p) =>
-          p.preview === draft.preview
-            ? "token" in res
-              ? { ...p, token: res.token, uploading: false }
-              : { ...p, error: shopperError(res.error), uploading: false }
-            : p,
-        ),
-      );
-    }
+    await addFiles(files);
     if (fileRef.current) fileRef.current.value = "";
   }
 
@@ -98,7 +76,7 @@ export default function ReviewForm({
       token: inviteToken,
       /* Only photos that came back signed. A failed upload is dropped here
          rather than sent, since the server would refuse the whole review. */
-      photoTokens: photos.map((p) => p.token).filter((t): t is string => Boolean(t)),
+      photoTokens: tokens,
       honeypot,
     });
     setBusy(false);
@@ -116,7 +94,7 @@ export default function ReviewForm({
       setTitle("");
       setBody("");
       setRating(0);
-      setPhotos([]);
+      reset();
       setError(null);
     }
   }
@@ -208,7 +186,7 @@ export default function ReviewForm({
               </span>
               <div className="flex flex-wrap items-center gap-3">
                 {photos.map((p) => (
-                  <div key={p.preview} className="relative">
+                  <div key={p.id} className="relative">
                     <img
                       src={p.preview}
                       alt=""
@@ -217,7 +195,7 @@ export default function ReviewForm({
                     <button
                       type="button"
                       aria-label="Remove photo"
-                      onClick={() => setPhotos((cur) => cur.filter((x) => x.preview !== p.preview))}
+                      onClick={() => remove(p.id)}
                       className="absolute -top-2 -right-2 grid size-6 cursor-pointer place-items-center rounded-full border border-line bg-page text-[12px] text-body hover:text-white"
                     >
                       <span aria-hidden>×</span>
@@ -234,7 +212,7 @@ export default function ReviewForm({
                          a HEIC the canvas can't decode. */
                       accept={ACCEPTED_TYPES}
                       multiple
-                      onChange={(e) => addFiles(e.target.files)}
+                      onChange={(e) => pick(e.target.files)}
                       className="sr-only"
                     />
                     <label
@@ -301,6 +279,8 @@ function shopperError(code?: string): string {
       return "One of the photos didn't upload properly. Remove it and try again.";
     case "too_many_photos":
       return `Up to ${MAX_PHOTOS} photos, please.`;
+    case "upload_pending":
+      return "That photo is still being processed — please try adding it again.";
     case "image_too_large":
       return "That photo is too large, even after resizing.";
     case "not_an_image":

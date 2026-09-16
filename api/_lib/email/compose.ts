@@ -16,6 +16,17 @@ export interface ComposeOptions {
    *  needs it: its link carries a signature proving this person bought this
    *  piece, so it cannot live in a metaobject shared by every recipient. */
   ctaUrl?: string;
+  /**
+   * Send as TRANSACTIONAL: no unsubscribe link and no List-Unsubscribe headers.
+   *
+   * For mail that follows from an order rather than from a subscription. The
+   * review request is the case — it goes to everyone who received a garment,
+   * subscriber or not, so a marketing unsubscribe on it would be a control that
+   * cannot stop it. Offering one anyway would mean a recipient opts out, keeps
+   * getting review requests, and loses only the newsletter they might have
+   * wanted.
+   */
+  transactional?: boolean;
 }
 
 export async function composeEmail(
@@ -24,7 +35,7 @@ export async function composeEmail(
   opts: ComposeOptions = {},
 ): Promise<OutgoingEmail> {
   const content = await getEmailContent(key);
-  const unsub = unsubscribeUrl(to);
+  const unsub = opts.transactional ? undefined : unsubscribeUrl(to);
 
   const { html, text } = renderEmail({
     heading: content.heading,
@@ -43,7 +54,7 @@ export async function composeEmail(
     subject: content.subject,
     html,
     text,
-    headers: listUnsubscribeHeaders(unsub),
+    ...(unsub ? { headers: listUnsubscribeHeaders(unsub) } : {}),
   };
 }
 

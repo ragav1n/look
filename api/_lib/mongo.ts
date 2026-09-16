@@ -44,14 +44,22 @@ export const REVIEW_REQUESTS = "review_requests";
  */
 export const isReviewsConfigured = (): boolean => Boolean(uri);
 
-/* The one case that IS a security invariant, so it fails closed exactly the way
-   the COOKIE_SECRET check in shopify.ts does: credentials and customer email
+/* The one case that IS a security invariant: credentials and customer email
    addresses crossing the public internet in the clear. `mongodb+srv://` always
-   implies TLS; a plain `mongodb://` does not. Localhost is left alone. */
-if (uri && config.secureCookies && !isTlsUri(uri)) {
-  throw new Error(
-    "MONGODB_URI must use TLS on an https deployment — refusing to send credentials in the clear.",
-  );
+   implies TLS; a plain `mongodb://` does not. Localhost is left alone.
+ *
+ * Checked inside getDb() rather than at module scope, which is where it used to
+ * be. A module-load throw fires for every IMPORTER, and api/cron/new-drop.ts
+ * imports this file — so a misconfigured reviews URI would have 500'd the daily
+ * function before its handler ran, taking the new-products digest down with it
+ * and defeating the whole point of wrapping the sweep in its own try/catch.
+ * Failing inside getDb() is just as closed: no connection is ever opened. */
+function assertTls(): void {
+  if (uri && config.secureCookies && !isTlsUri(uri)) {
+    throw new Error(
+      "MONGODB_URI must use TLS on an https deployment — refusing to send credentials in the clear.",
+    );
+  }
 }
 
 function isTlsUri(u: string): boolean {
@@ -87,7 +95,6 @@ export interface ReviewDoc {
   photos: string[];
   /** The Shopify File GIDs behind `photos`, so deleting a review can delete them. */
   photoGids: string[];
-  avatar?: string;
   /** 1–9 when featured on the homepage wall, absent otherwise. See the partial
    *  unique index below: "one review per wall position" is a database
    *  invariant, not something every handler has to remember. */
@@ -110,6 +117,7 @@ export function getDb(): Promise<Db> {
   if (connecting) return connecting;
 
   connecting = (async () => {
+    assertTls();
     const client = new MongoClient(uri, {
       /* Small on purpose. Every warm function instance keeps its own pool, so
          the driver's default of 100 would burn through Atlas's limit with a
@@ -125,8 +133,25 @@ export function getDb(): Promise<Db> {
     await client.connect();
     const db = client.db(dbName);
     /* Inside the memoised promise, so it runs once per instance rather than
-       once per request. createIndex is idempotent. */
-    await ensureIndexes(db);
+       once per request. createIndexes is idempotent for identical specs.
+     *
+     * Its failure must NOT fail the connection. Changing any spec here makes
+       Mongo answer IndexOptionsConflict for the existing name, which would
+       otherwise reject this promise and degrade every read to an empty list —
+       the homepage wall silently back on fixtures and every PDP reading
+       "Reviews (0)", with the cause (one renamed index) many steps from the
+       symptom. Reviews work fine on the old indexes; they are a performance
+       structure, not a correctness one. The exception is wall_rank_unique,
+       whose absence would let two reviews share a wall position — so that one
+       is called out loudly in the log. */
+    try {
+      await ensureIndexes(db);
+    } catch (err) {
+      console.error(
+        "[reviews] ensureIndexes failed — reviews still work, but check wall_rank_unique exists:",
+        err,
+      );
+    }
     return db;
   })();
 

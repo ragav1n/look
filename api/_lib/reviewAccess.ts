@@ -87,9 +87,12 @@ const PURCHASED_QUERY = /* GraphQL */ `
   query DidTheyBuyIt {
     customer {
       emailAddress { emailAddress }
-      orders(first: 50, sortKey: PROCESSED_AT, reverse: true) {
+      orders(first: 25, sortKey: PROCESSED_AT, reverse: true) {
         nodes {
           id
+          cancelledAt
+          financialStatus
+          fulfillments(first: 10) { nodes { latestShipmentStatus } }
           lineItems(first: 50) { nodes { productId } }
         }
       }
@@ -97,13 +100,41 @@ const PURCHASED_QUERY = /* GraphQL */ `
   }
 `;
 
+interface PurchasedOrder {
+  id: string;
+  cancelledAt?: string | null;
+  financialStatus?: string | null;
+  fulfillments?: { nodes?: { latestShipmentStatus?: string | null }[] };
+  lineItems?: { nodes?: { productId?: string | null }[] };
+}
+
 interface PurchasedResponse {
   data?: {
     customer?: {
       emailAddress?: { emailAddress?: string | null } | null;
-      orders?: { nodes?: { id: string; lineItems?: { nodes?: { productId?: string | null }[] } }[] };
+      orders?: { nodes?: PurchasedOrder[] };
     } | null;
   };
+}
+
+/**
+ * Does this order actually entitle its owner to review what's in it?
+ *
+ * The emailed route only ever fires on a DELIVERED fulfillment three days on
+ * (reviewRequests.ts), so it can't be abused. The signed-in route had no
+ * equivalent check, which meant someone could order a piece, review it
+ * five stars the same minute with a "Verified buyer" badge, and then cancel the
+ * order — leaving a badged review of a garment they never received and never
+ * paid for. So the same bar applies here: not cancelled, not unpaid, and
+ * actually delivered.
+ */
+function entitles(order: PurchasedOrder): boolean {
+  if (order.cancelledAt) return false;
+  const paid = (order.financialStatus ?? "").toUpperCase();
+  if (paid === "REFUNDED" || paid === "VOIDED" || paid === "PENDING") return false;
+  return (order.fulfillments?.nodes ?? []).some(
+    (f) => (f.latestShipmentStatus ?? "").toUpperCase() === "DELIVERED",
+  );
 }
 
 export interface ReviewRight {
@@ -152,8 +183,8 @@ export async function reviewRight(
     const json = (await gql.json()) as PurchasedResponse;
     const customer = json.data?.customer;
     if (!customer) return NO;
-    const order = customer.orders?.nodes?.find((o) =>
-      o.lineItems?.nodes?.some((li) => li.productId === productGid),
+    const order = customer.orders?.nodes?.find(
+      (o) => entitles(o) && o.lineItems?.nodes?.some((li) => li.productId === productGid),
     );
     if (!order) return NO;
     return {

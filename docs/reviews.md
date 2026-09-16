@@ -153,3 +153,17 @@ something every handler has to remember. Inserting a second review with
 - The review-request email uses the built-in defaults. Add a `review_request`
   entry to the `email_template` metaobject to let the client edit the copy,
   exactly as with the other three.
+- **Abandoned uploads leak a Shopify File.** A photo is uploaded the moment it's
+  picked, but only attached to a review on submit. If someone uploads a photo and
+  then removes it, or closes the form without submitting, the File stays in
+  Shopify Files with nothing pointing at it. (The *processing-timeout* case is
+  handled — that file is deleted immediately — and deleting a review still
+  deletes its photos.) Files are free and named `review-<timestamp>.jpg`, so this
+  is a tidiness problem rather than a cost one; the fix, when it matters, is a
+  janitor pass in the daily cron deleting `review-*` files older than a day that
+  no review references.
+- **The moderation queue reads the newest 500 reviews** (plus every featured one,
+  unconditionally, so a reorder can never drop an older pick off the wall). Past
+  500, a pending review older than that window wouldn't be reachable from the
+  console — it needs pagination or a pending-only view before the store gets
+  there.

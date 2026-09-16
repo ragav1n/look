@@ -146,6 +146,11 @@ export async function sweepReviewRequests(
         product.handle,
       );
       const ok = await sendLifecycleEmail("review_request", email, {
+        /* Transactional: this follows from a delivered order, not from a
+           subscription, and it is sent to buyers regardless of marketing
+           consent. So it carries no unsubscribe link — offering one that
+           couldn't stop it would be worse than offering none. */
+        transactional: true,
         ctaUrl: url,
         products: [
           {
