@@ -65,6 +65,22 @@ const emptyFields: CampaignFields = {
   discountCode: "",
 };
 
+/** Why a sign-in was refused, in words. "forbidden" is NOT a password problem:
+ *  the request is rejected before the password is even looked at, because the
+ *  browser's Origin didn't match APP_ORIGIN. That happens on any deployment
+ *  served from a hostname other than the configured one — a Vercel preview being
+ *  the usual one — and reading it as a bad password wastes an afternoon. */
+function loginError(code?: string): string {
+  switch (code) {
+    case "forbidden":
+      return "This deployment won't accept a sign-in from this address — its APP_ORIGIN is a different hostname. Your password is fine.";
+    case "network":
+      return "Couldn't reach the server. Is the backend running?";
+    default:
+      return "Password incorrect — try again.";
+  }
+}
+
 /** Map a server error code to a human line; undefined ⇒ use a generic fallback. */
 function errorText(code?: string): string | undefined {
   switch (code) {
@@ -116,11 +132,14 @@ function LoginForm({ onAuthed }: { onAuthed: () => void }) {
     e.preventDefault();
     if (!password || busy) return;
     setBusy(true);
-    const ok = await adminLogin(password);
+    const res = await adminLogin(password);
     setBusy(false);
     setPassword("");
-    if (ok) onAuthed();
-    else push("Incorrect password.", "error");
+    if (res.ok) {
+      onAuthed();
+      return;
+    }
+    push(loginError(res.error), "error");
   }
 
   return (

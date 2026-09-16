@@ -31,7 +31,7 @@ async function requestJson(
   url: string,
   method: string,
   body?: unknown,
-): Promise<{ ok: boolean; data: Record<string, unknown> }> {
+): Promise<{ ok: boolean; status: number; data: Record<string, unknown> }> {
   const init: RequestInit = { method, credentials: "same-origin" };
   if (body !== undefined) {
     init.headers = { "Content-Type": "application/json" };
@@ -39,7 +39,7 @@ async function requestJson(
   }
   const res = await fetch(url, init);
   const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
-  return { ok: res.ok, data };
+  return { ok: res.ok, status: res.status, data };
 }
 
 const postJson = (url: string, body: unknown) => requestJson(url, "POST", body);
@@ -71,12 +71,30 @@ export async function checkAdminSession(): Promise<boolean> {
   }
 }
 
-export async function adminLogin(password: string): Promise<boolean> {
+export interface LoginOutcome {
+  ok: boolean;
+  /** Why it failed: "forbidden" | "network" | a server code. */
+  error?: string;
+}
+
+/**
+ * Sign in as the owner.
+ *
+ * Reports WHY it failed rather than collapsing everything to false. The case
+ * that made this necessary: every same-origin gate compares the browser's Origin
+ * against APP_ORIGIN, so on any deployment whose hostname isn't APP_ORIGIN — a
+ * Vercel preview, for instance — the login is refused with 403 no matter how
+ * right the password is. Reporting that as "incorrect password" sends whoever is
+ * testing off to rotate a password that was never the problem.
+ */
+export async function adminLogin(password: string): Promise<LoginOutcome> {
   try {
-    const { ok } = await requestJson("/api/admin/session", "POST", { password });
-    return ok;
+    const { ok, status, data } = await requestJson("/api/admin/session", "POST", { password });
+    if (ok) return { ok: true };
+    if (status === 403) return { ok: false, error: "forbidden" };
+    return { ok: false, error: str(data.error) ?? "bad_password" };
   } catch {
-    return false;
+    return { ok: false, error: "network" };
   }
 }
 
