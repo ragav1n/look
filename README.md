@@ -113,11 +113,12 @@ Two rules that are easy to break:
 
 Twelve functions, which is exactly Vercel's Hobby-plan ceiling. Adding a
 thirteenth means merging two existing ones behind a rewrite — `vercel.json`
-already does this for `/api/admin/*` and `/api/account/*`.
+already does this for `/api/admin/*`, `/api/account/*` and
+`/api/auth/{session,logout}`.
 
 | Endpoint | Role |
 | --- | --- |
-| `auth/login`, `auth/callback`, `auth/session`, `auth/logout` | Passwordless OAuth 2.0 + PKCE against Shopify's Customer Account API. Tokens stay server-side. |
+| `auth/login`, `auth/callback`, `auth` (`session`, `logout`) | Passwordless OAuth 2.0 + PKCE against Shopify's Customer Account API. Tokens stay server-side. |
 | `customer/graphql` | Proxies authenticated customer queries — orders, addresses, profile. |
 | `cart/link` | Attaches the signed-in customer to their cart so checkout is account-aware. |
 | `newsletter/subscribe`, `newsletter/unsubscribe` | Creates the customer (Admin API), sends the welcome mail, honours one-click unsubscribe. |
@@ -125,6 +126,7 @@ already does this for `/api/admin/*` and `/api/account/*`.
 | `admin/console` | The owner's campaign console at `/admin`: compose, preview, test-send, send. |
 | `cron/new-drop` | Daily at 05:00 UTC (10:30 IST) — emails newly published products, then tags them so a re-fire announces nothing twice. |
 | `webhooks/delhivery` | Maps courier scans onto Shopify fulfillment events so the order tracker advances on its own. |
+| `reviews` | Self-hosted customer reviews: the homepage wall and a product's reviews, out of MongoDB Atlas. Degrades to an empty list when `MONGODB_URI` is unset, which is the feature's kill switch. |
 
 They fail closed: a missing secret makes the endpoint reject the request rather
 than fall back to an unauthenticated path. The one deliberate exception is the
@@ -169,4 +171,5 @@ comment explains why it is a one-time decision rather than a routine job.
 | [`.env.example`](.env.example) | Every environment variable: which are public, which are secrets, the Shopify scopes each needs, and the admin steps that have to happen before a key exists |
 | [`docs/shopify.md`](docs/shopify.md) | Data flow, going live, the DNS records, the theme redirect, policy sync, transform assumptions |
 | [`docs/delhivery.md`](docs/delhivery.md) | Courier webhook bridge and status mapping |
+| [`docs/reviews.md`](docs/reviews.md) | Self-hosted reviews: the three stores, the moderation flow, the CSP and metafield traps |
 | [`docs/design-notes.md`](docs/design-notes.md) | Deliberate deviations from Figma, accessibility work, what is still fixture-backed |

@@ -7,7 +7,7 @@
     "dev": "vite",
     "dev:bff": "npx vercel dev",
     "dev:local": "node scripts/dev-local.mjs",
-    "build": "node scripts/generate-sitemap.mjs && tsc --noEmit && vite build",
+    "build": "node scripts/generate-sitemap.mjs && tsc --noEmit && tsc -p api && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -16,6 +16,7 @@
     "clsx": "^2.1.1",
     "dompurify": "^3.4.12",
     "lucide-react": "^1.25.0",
+    "mongodb": "^7.6.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.6.0",

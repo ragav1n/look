@@ -53,7 +53,17 @@ export interface EmailOptions {
   /** Boxed callout, e.g. a discount code. */
   code?: { label: string; value: string };
   products?: EmailProduct[];
-  unsubscribeUrl: string;
+  /**
+   * Per-recipient unsubscribe link, for MARKETING mail.
+   *
+   * Omit it for transactional mail, and the footer says why the message arrived
+   * instead of offering an opt-out. That distinction matters: a review request
+   * is sent because someone bought and received a garment, not because they
+   * joined a list, so attaching the marketing unsubscribe would offer a control
+   * that cannot stop the thing it is printed on — click it and you lose the
+   * newsletter while the review requests keep coming.
+   */
+  unsubscribeUrl?: string;
 }
 
 export interface RenderedEmail {
@@ -192,8 +202,12 @@ export function renderEmail(opts: EmailOptions): RenderedEmail {
       <a href="mailto:${site.email}" style="color:${palette.muted};text-decoration:none;">${site.email}</a>
     </p>
     <p style="margin:0;font-family:${SANS};font-size:12px;line-height:1.7;color:${palette.faint};">
-      You're receiving this because you signed up at look.ind.in.<br />
-      <a href="${esc(opts.unsubscribeUrl)}" style="color:${palette.faint};text-decoration:underline;">Unsubscribe</a>
+      ${
+        opts.unsubscribeUrl
+          ? `You're receiving this because you signed up at look.ind.in.<br />
+      <a href="${esc(opts.unsubscribeUrl)}" style="color:${palette.faint};text-decoration:underline;">Unsubscribe</a>`
+          : `You're receiving this because of a recent order at look.ind.in.`
+      }
     </p>
   </td></tr>
 
@@ -225,8 +239,10 @@ export function renderEmail(opts: EmailOptions): RenderedEmail {
     `${site.instagramHandle}  ${site.instagram}`,
     site.email,
     "",
-    "You're receiving this because you signed up at look.ind.in.",
-    `Unsubscribe: ${opts.unsubscribeUrl}`,
+    opts.unsubscribeUrl
+      ? "You're receiving this because you signed up at look.ind.in."
+      : "You're receiving this because of a recent order at look.ind.in.",
+    ...(opts.unsubscribeUrl ? [`Unsubscribe: ${opts.unsubscribeUrl}`] : []),
   ].join("\n");
 
   return { html, text };

@@ -1,3 +1,4 @@
+import type { Product } from "@/types";
 import { getAllProducts } from "@/lib/catalog";
 import { useAsyncData } from "@/hooks/useAsyncData";
 import Reveal from "@/components/ui/Reveal";
@@ -5,10 +6,30 @@ import StaggeredCarousel from "@/components/ui/staggered-carousel";
 
 /* "Shop the Hits" — our most-loved pieces, ranked by customer rating, shown as
    a staggered three-column product wall. Sits just above Price Drop. */
+
+/* A piece needs this many reviews before its rating can climb the wall.
+   Without it, the first customer to leave a single five-star review would
+   hijack the homepage ahead of a piece with a dozen happy buyers. Explainable
+   as it stands — "a piece needs three reviews before it can climb" — which a
+   Bayesian prior would not be.
+
+   No visible effect today: nothing writes the rating metafields yet, so the
+   whole catalog is rating 0 and the wall keeps its catalog order. This is here
+   *before* the first review is approved rather than after, so the section
+   doesn't reshuffle on the strength of one note. */
+const MIN_REVIEWS_TO_RANK = 3;
+
+const lovedness = (p: Product) => (p.reviewCount >= MIN_REVIEWS_TO_RANK ? p.rating : 0);
+/* The tiebreaker is gated too. Gating only the rating left the count raw, so a
+   piece with one review still sorted strictly above every piece with none — the
+   homepage reshuffling on a single note, which is exactly what the threshold
+   exists to stop. Below the threshold a piece is simply unranked. */
+const volume = (p: Product) => (p.reviewCount >= MIN_REVIEWS_TO_RANK ? p.reviewCount : 0);
+
 export default function ShopTheHits() {
   const { data } = useAsyncData(() => getAllProducts(), []);
   const hits = [...(data ?? [])]
-    .sort((a, b) => b.rating - a.rating || b.reviewCount - a.reviewCount)
+    .sort((a, b) => lovedness(b) - lovedness(a) || volume(b) - volume(a))
     .slice(0, 9);
 
   // Need at least a couple of pieces to make the wall worthwhile.

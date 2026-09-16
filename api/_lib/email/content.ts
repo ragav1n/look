@@ -14,7 +14,7 @@
 import { adminGraphql, isAdminConfigured } from "../shopify.js";
 import { site } from "./brand.js";
 
-export type EmailKey = "welcome_newsletter" | "welcome_account" | "drop";
+export type EmailKey = "welcome_newsletter" | "welcome_account" | "drop" | "review_request";
 
 export interface EmailContent {
   subject: string;
@@ -62,6 +62,20 @@ const DEFAULTS: Record<EmailKey, EmailContent> = {
     ],
     ctaLabel: "Go to my account",
     ctaUrl: `${SHOP_URL}/account/profile`,
+    discountCode: "",
+  },
+  review_request: {
+    subject: `How was it?`,
+    heading: "How did it turn out?",
+    body: [
+      "Your order arrived a few days ago, so we wanted to ask: how is it? How it fits, how the fabric feels, where you wore it — whatever you'd tell a friend.",
+      "It takes a minute, and it genuinely helps the next person deciding on the same piece.",
+    ],
+    /* Replaced per recipient with a signed link that proves the purchase — see
+       ComposeOptions.ctaUrl. This default is only a safety net; the shop page
+       is somewhere sensible to land if the override ever goes missing. */
+    ctaLabel: "Write a review",
+    ctaUrl: `${SHOP_URL}/shop`,
     discountCode: "",
   },
   drop: {
