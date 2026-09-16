@@ -21,12 +21,22 @@ export const PRODUCT_FRAGMENT = /* GraphQL */ `
     options { name values }
     collections(first: 50) { nodes { handle } }
     heroTagline: metafield(namespace: "custom", key: "hero_tagline") { value }
-    # Shopify's STANDARD review metafields, not any one app's own namespace:
-    # Judge.me, Loox and Okendo all write this same pair, so swapping review
-    # apps later needs no change here. Both read null until an app populates
-    # them AND the definition has Storefront access enabled in the admin.
-    reviewRating: metafield(namespace: "reviews", key: "rating") { value }
-    reviewCount: metafield(namespace: "reviews", key: "rating_count") { value }
+    # Aggregates over LOOK's own reviews, recomputed and written by /api/reviews
+    # whenever a review is approved, hidden or deleted. Reading them off the
+    # product means the PDP summary, the quick view and Shop the Hits all get
+    # the rating from the catalog they already load, with no second fetch.
+    #
+    # NOT Shopify's standard reviews.rating pair, much as we wanted it: that
+    # namespace is reserved for review APPS. Probed against the live store on
+    # 2026-09-16 — metafieldDefinitionCreate answers RESERVED_NAMESPACE_KEY, and
+    # there is no standard template to enable either (all 8,518 of them scanned;
+    # the reviews namespace does not appear at all). A custom app cannot write
+    # it, so a self-hosted reviews system cannot use it. custom.* works instead,
+    # and was verified end to end through THIS Storefront token: a definition
+    # with Storefront access off returns null here while looking fine in the
+    # admin, which is the silent failure worth knowing about.
+    reviewRating: metafield(namespace: "custom", key: "review_rating") { value }
+    reviewCount: metafield(namespace: "custom", key: "review_count") { value }
     # 250 is the Storefront maximum. At 50, the unbounded "options" field still
     # rendered the full size/colour grid while "variants" was truncated, so
     # valid combinations resolved to undefined and the product could not be

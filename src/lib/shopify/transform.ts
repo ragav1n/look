@@ -70,11 +70,11 @@ const findOption = (p: SFProduct, name: string) =>
   p.options.find((o) => o.name.toLowerCase() === name.toLowerCase());
 
 /**
- * `reviews.rating` is a rating-type metafield, so its value arrives as JSON
- * (`{"value":"4.3","scale_min":"1.0","scale_max":"5.0"}`) rather than a bare
- * number. A plain number is accepted too, since not every app writes the full
- * object. Anything unreadable counts as "no rating" — 0 renders as "No reviews
- * yet", never as zero stars.
+ * `custom.review_rating` is a rating-type metafield, so its value arrives as
+ * JSON (`{"value":"4.3","scale_min":"1.0","scale_max":"5.0"}`) rather than a
+ * bare number. A plain number is accepted too, so the field could be retyped
+ * without breaking the storefront. Anything unreadable counts as "no rating" —
+ * 0 renders as "No reviews yet", never as zero stars.
  */
 function parseRating(raw: string | undefined): number {
   if (raw) {
@@ -90,7 +90,7 @@ function parseRating(raw: string | undefined): number {
   return 0;
 }
 
-/** `reviews.rating_count` is an integer as a string. Anything else means none. */
+/** `custom.review_count` is an integer as a string. Anything else means none. */
 function parseCount(raw: string | undefined): number {
   const n = Number(raw);
   return Number.isFinite(n) && n > 0 ? Math.trunc(n) : 0;
@@ -144,9 +144,10 @@ export function toProduct(p: SFProduct): Product {
     colors,
     sizes,
     variants,
-    // Fed by whichever reviews app the store runs, through Shopify's standard
-    // `reviews.*` metafields. Both stay 0 until one is installed, which is the
-    // same "No reviews yet" state the PDP already renders.
+    // Fed by LOOK's own reviews, via the custom.review_* metafields that
+    // /api/reviews recomputes on every moderation action. Both stay 0 until the
+    // first review is approved, which is the "No reviews yet" state the PDP
+    // already renders.
     rating: parseRating(p.reviewRating?.value),
     reviewCount: parseCount(p.reviewCount?.value),
     description: p.description,
