@@ -20,7 +20,9 @@
  * Actions, and who may call them:
  *   GET  ?action=wall                  public, cacheable
  *   GET  ?action=list&product=<gid>    public, cacheable
- *   POST ?action=photo                 OWNER (opens up with public submission)
+ *   GET  ?action=eligibility&product=<gid>[&token=]  per-session, never cached
+ *   POST ?action=photo                 anyone who may review that piece
+ *   POST ?action=submit                anyone who may review that piece
  *   POST ?action=admin                 OWNER — body.op selects the operation
  *
  * ONE action touches admin capability, and its auth preamble runs at the top of
@@ -33,12 +35,14 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { requireAdmin, verifyPassword } from "./_lib/admin.js";
 import { deleteFiles, sniffImage, uploadImage } from "./_lib/files.js";
-import { firstQuery, isSameOrigin, methodNotAllowed } from "./_lib/http.js";
-import { isReviewsConfigured } from "./_lib/mongo.js";
+import { firstQuery, isSameOrigin, isStrictSameOrigin, methodNotAllowed } from "./_lib/http.js";
+import { hashIp, isReviewsConfigured } from "./_lib/mongo.js";
 import { allow, clientIp } from "./_lib/ratelimit.js";
+import { reviewRight } from "./_lib/reviewAccess.js";
 import {
   LIMITS,
   adminList,
+  alreadyReviewed,
   deleteReview,
   featureReview,
   findReview,
@@ -70,8 +74,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     case "list":
       await readJson(res, () => listForProduct(firstQuery(req.query.product)));
       return;
+    case "eligibility":
+      await eligibilityHandler(req, res);
+      return;
     case "photo":
       await photoHandler(req, res);
+      return;
+    case "submit":
+      await submitHandler(req, res);
       return;
     case "admin":
       await adminHandler(req, res);
@@ -143,9 +153,11 @@ const MAX_IMAGE_BYTES = 1_200_000;
 /**
  * POST ?action=photo — put one image into Shopify Files.
  *
- * Owner-only for now. The image pipeline faces exactly one trusted user until
- * public submission lands, which is the whole point of doing owner-authored
- * reviews first: the fiddly part gets exercised before it faces the internet.
+ * Open to anyone who may review the piece they name, which in practice means
+ * they are holding a signed link we emailed them or are signed in with that
+ * order in their history. NOT open to any same-origin caller: five photo slots
+ * per review would otherwise be a free, unauthenticated funnel into our Shopify
+ * Files storage, and a rate limit alone only slows that down.
  *
  * Takes ONE image per request as base64 in JSON, not multipart. That keeps the
  * local dev server's JSON-only body reader untouched, so the whole flow is
@@ -156,17 +168,32 @@ const MAX_IMAGE_BYTES = 1_200_000;
  * can recover from inside that token — see _lib/reviewPhoto.ts.
  */
 async function photoHandler(req: VercelRequest, res: VercelResponse): Promise<void> {
-  if (!gateOwner(req, res)) return;
+  res.setHeader("Cache-Control", "no-store");
+  if (req.method !== "POST") return methodNotAllowed(res, "POST");
+  if (!isStrictSameOrigin(req)) {
+    res.status(403).json({ error: "forbidden" });
+    return;
+  }
 
-  /* Rate-limited even though it's owner-only: five photos per review means a
-     burst is normal, but nothing here should ever become an open funnel into
-     Shopify Files. Stays in place when this opens to the public. */
+  /* Five photos per review means a burst is normal; twelve a minute fits a
+     submission comfortably and still refuses a script. */
   if (!allow(`photo:${clientIp(req)}`, 12, 60_000)) {
     res.status(429).json({ error: "rate_limited" });
     return;
   }
 
   const body = (req.body ?? {}) as Record<string, unknown>;
+
+  /* The owner uploads from the console, where there is no invite token; every
+     other caller has to prove they may review the piece they name. */
+  if (!requireAdmin(req)) {
+    const right = await reviewRight(req, res, str(body.productGid), body.token);
+    if (!right.may) {
+      res.status(403).json({ error: "not_eligible" });
+      return;
+    }
+  }
+
   const raw = typeof body.image === "string" ? body.image : "";
   const base64 = raw.includes(",") ? raw.slice(raw.indexOf(",") + 1) : raw;
   if (!base64) {
@@ -244,11 +271,13 @@ async function adminHandler(req: VercelRequest, res: VercelResponse): Promise<vo
           res.status(400).json({ error: input.error });
           return;
         }
-        const photos = Array.isArray(body.photoTokens)
-          ? body.photoTokens.map(verifyPhoto).filter((p): p is NonNullable<typeof p> => p !== null)
-          : [];
+        const attached = readPhotos(body.photoTokens);
+        if ("error" in attached) {
+          res.status(400).json({ error: attached.error });
+          return;
+        }
         const newId = await insertReview(
-          { ...input, photos: photos.slice(0, LIMITS.photos), verified: body.verified !== false },
+          { ...input, photos: attached.photos, verified: body.verified !== false },
           "approved",
           "owner",
         );
@@ -322,6 +351,137 @@ async function adminHandler(req: VercelRequest, res: VercelResponse): Promise<vo
     }
   } catch (err) {
     console.error(`[reviews] admin op ${op || "(none)"} failed:`, err);
+    res.status(500).json({ error: "server_error" });
+  }
+}
+
+
+/**
+ * Recover the photos a submission claims, or say which one didn't hold up.
+ *
+ * Rejects rather than silently dropping. Both are SAFE — a url that isn't inside
+ * a signature is never stored either way — but silence would mean someone whose
+ * upload token has aged past its hour watches their photo quietly vanish from a
+ * review they just filed, with nothing to tell them why.
+ */
+function readPhotos(raw: unknown): { error: string } | { photos: { gid: string; url: string }[] } {
+  if (!Array.isArray(raw) || raw.length === 0) return { photos: [] };
+  if (raw.length > LIMITS.photos) return { error: "too_many_photos" };
+  const photos = [];
+  for (const token of raw) {
+    const ref = verifyPhoto(token);
+    if (!ref) return { error: "bad_photo" };
+    photos.push(ref);
+  }
+  return { photos };
+}
+
+/** Read a trimmed string field off an untrusted body. */
+const str = (v: unknown): string => (typeof v === "string" ? v.trim() : "");
+
+/**
+ * GET ?action=eligibility&product=<gid>[&token=…]
+ *
+ * Answers the one question the product page needs before it can decide whether
+ * to offer a "write a review" button. NEVER cached — the answer is per person,
+ * and an edge cache would hand one shopper's eligibility to the next visitor.
+ *
+ * This is a UI hint and nothing more. `submit` proves the same thing again from
+ * scratch, so a forged "yes" here buys an attacker a form and no more.
+ */
+async function eligibilityHandler(req: VercelRequest, res: VercelResponse): Promise<void> {
+  res.setHeader("Cache-Control", "no-store");
+  const right = await reviewRight(req, res, firstQuery(req.query.product), firstQuery(req.query.token));
+  res.status(200).json({
+    may: right.may,
+    via: right.via,
+    /* Their OWN address, arriving from their own emailed link or their own
+       session, returned only so the form can prefill it. */
+    email: right.email,
+  });
+}
+
+/**
+ * POST ?action=submit — a shopper files a review.
+ *
+ * The full anti-abuse stack, in the order that costs least: a strict same-origin
+ * check (a real browser always sends Origin on a same-origin POST), the same
+ * `contact_reason` honeypot the newsletter form uses, a rate limit, and only
+ * then the network call that proves purchase.
+ *
+ * Arrives PENDING. Nothing a stranger writes reaches the site without the owner
+ * approving it, which is also why there is no aggregate recompute here.
+ */
+async function submitHandler(req: VercelRequest, res: VercelResponse): Promise<void> {
+  res.setHeader("Cache-Control", "no-store");
+  if (req.method !== "POST") return methodNotAllowed(res, "POST");
+  if (!isStrictSameOrigin(req)) {
+    res.status(403).json({ error: "forbidden" });
+    return;
+  }
+
+  const body = (req.body ?? {}) as Record<string, unknown>;
+
+  /* Honeypot: a hidden field with a name the browser won't autofill. Populated
+     means a bot. Answer 200 and write nothing — telling a bot it was caught only
+     helps it try again differently. */
+  if (str(body.contact_reason)) {
+    res.status(200).json({ ok: true, status: "pending" });
+    return;
+  }
+
+  if (!allow(`review:${clientIp(req)}`, 5, 60_000)) {
+    res.status(429).json({ error: "rate_limited" });
+    return;
+  }
+
+  if (!isReviewsConfigured()) {
+    res.status(503).json({ error: "reviews_not_configured" });
+    return;
+  }
+
+  const input = readInput(body);
+  if ("error" in input) {
+    res.status(400).json({ error: input.error });
+    return;
+  }
+
+  /* Proved here from scratch, never taken from the eligibility response. */
+  const right = await reviewRight(req, res, input.productGid, body.token);
+  if (!right.may) {
+    res.status(403).json({ error: "not_eligible" });
+    return;
+  }
+
+  try {
+    const email = (right.email ?? "").toLowerCase();
+    if (email && (await alreadyReviewed(email, input.productGid))) {
+      res.status(409).json({ error: "already_reviewed" });
+      return;
+    }
+
+    const attached = readPhotos(body.photoTokens);
+    if ("error" in attached) {
+      res.status(400).json({ error: attached.error });
+      return;
+    }
+
+    await insertReview(
+      {
+        ...input,
+        photos: attached.photos,
+        /* Earned by the proof, not claimed in the form. */
+        verified: right.verified,
+        email: email || undefined,
+        ipHash: hashIp(clientIp(req)),
+        userAgent: str(req.headers["user-agent"]).slice(0, 200) || undefined,
+      },
+      "pending",
+      "customer",
+    );
+    res.status(200).json({ ok: true, status: "pending" });
+  } catch (err) {
+    console.error("[reviews] submit failed:", err);
     res.status(500).json({ error: "server_error" });
   }
 }

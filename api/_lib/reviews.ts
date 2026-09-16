@@ -470,3 +470,23 @@ export async function reorderWall(ids: unknown): Promise<void> {
   if (!Array.isArray(ids)) return;
   await writeWallOrder(ids.filter((x): x is string => typeof x === "string"));
 }
+
+/**
+ * Has this person already reviewed this piece?
+ *
+ * Only counts reviews a CUSTOMER filed. The client legitimately types up several
+ * under her own address — that's why the {email, productGid} index is not unique
+ * — so her entries must not lock a real buyer out of reviewing.
+ *
+ * The rate limit stops a burst; this stops the slow version, where one invite
+ * link is used to file a review a day for a month.
+ */
+export async function alreadyReviewed(email: string, productGid: string): Promise<boolean> {
+  if (!email || !productGid) return false;
+  const col = await reviewsCollection();
+  const existing = await col.findOne(
+    { email: email.toLowerCase(), productGid, source: "customer" },
+    { projection: { _id: 1 } },
+  );
+  return existing !== null;
+}

@@ -4,9 +4,9 @@
  * Reviews don't belong in Shopify. Its own product reviews are an app's job, the
  * metafield route has no moderation queue, and the client wanted a store she
  * owns outright after Judge.me turned out to cost $15/mo for the useful tier.
- * What DOES stay in Shopify is the aggregate (`reviews.rating` /
- * `rating_count`), so the catalog the storefront already loads carries the star
- * rating and no page needs a second fetch to show it. Photos live in Shopify
+ * What DOES stay in Shopify is the aggregate (the custom.review_rating /
+ * custom.review_count metafields), so the catalog the storefront already loads
+ * carries the star rating and no page needs a second fetch to show it. Photos live in Shopify
  * Files for the same reason: cdn.shopify.com is already allowed by our CSP.
  *
  * Two behaviours here are load-bearing on a serverless runtime:
@@ -20,6 +20,7 @@
  *    Atlas's connection limit, and closing would throw away the warm reuse the
  *    memo exists to get.
  */
+import crypto from "node:crypto";
 import { MongoClient, type Collection, type Db } from "mongodb";
 import { config } from "./shopify.js";
 
@@ -165,3 +166,10 @@ async function ensureIndexes(db: Db): Promise<void> {
     },
   ]);
 }
+
+/** Salted hash of a submitter's IP. Stored instead of the address itself: it is
+ *  enough to spot one person filing ten reviews, and it is not personal data we
+ *  have any reason to keep in readable form. Salted with COOKIE_SECRET so the
+ *  hashes aren't reversible by anyone who guesses at IP ranges. */
+export const hashIp = (ip: string): string =>
+  crypto.createHash("sha256").update(`${ip}|${config.cookieSecret}`).digest("hex").slice(0, 32);
