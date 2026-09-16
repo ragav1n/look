@@ -171,4 +171,5 @@ comment explains why it is a one-time decision rather than a routine job.
 | [`.env.example`](.env.example) | Every environment variable: which are public, which are secrets, the Shopify scopes each needs, and the admin steps that have to happen before a key exists |
 | [`docs/shopify.md`](docs/shopify.md) | Data flow, going live, the DNS records, the theme redirect, policy sync, transform assumptions |
 | [`docs/delhivery.md`](docs/delhivery.md) | Courier webhook bridge and status mapping |
+| [`docs/reviews.md`](docs/reviews.md) | Self-hosted reviews: the three stores, the moderation flow, the CSP and metafield traps |
 | [`docs/design-notes.md`](docs/design-notes.md) | Deliberate deviations from Figma, accessibility work, what is still fixture-backed |

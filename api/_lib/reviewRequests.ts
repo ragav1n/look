@@ -16,8 +16,10 @@
  */
 import { requestsCollection } from "./mongo.js";
 import { sendLifecycleEmail } from "./email/compose.js";
+import { esc } from "./email/render.js";
+import { sendEmail } from "./email/send.js";
 import { inviteUrl } from "./reviewAccess.js";
-import { adminGraphql, isAdminConfigured } from "./shopify.js";
+import { adminGraphql, config, isAdminConfigured } from "./shopify.js";
 
 /** Wait this long after delivery before asking. Long enough that they've
  *  actually worn it, short enough that they still remember ordering it. */
@@ -170,4 +172,65 @@ export async function sweepReviewRequests(
   }
 
   return out;
+}
+
+/* --- Telling the owner something is waiting -------------------------------- */
+
+/**
+ * Where the "a review is waiting" note goes. Falls back to the support inbox,
+ * which already exists and already forwards to her. Set OWNER_EMAIL to send it
+ * somewhere else.
+ */
+const ownerInbox = (): string =>
+  process.env.OWNER_EMAIL?.trim() || process.env.EMAIL_REPLY_TO?.trim() || "support@look.ind.in";
+
+/**
+ * Tell the owner a review is waiting on her.
+ *
+ * Deliberately plain rather than going through renderEmail: that template is
+ * brand communication and every message it builds carries an unsubscribe link
+ * and List-Unsubscribe headers, which are exactly wrong here. This is an
+ * internal alert to one address, and she must not be able to unsubscribe herself
+ * from being told her shop needs attention.
+ *
+ * Best-effort, like every other lifecycle send: a review that saved but didn't
+ * get announced is a much smaller problem than a submission that failed.
+ */
+export async function notifyOwnerOfReview(review: {
+  author: string;
+  rating: number;
+  title: string;
+  body: string;
+  productName?: string;
+}): Promise<void> {
+  const piece = review.productName ?? "one of your pieces";
+  const console_ = `${config.appOrigin}/admin`;
+  const text = [
+    `${review.author} left a ${review.rating}-star review of ${piece}.`,
+    "",
+    `"${review.title}"`,
+    review.body,
+    "",
+    `It's waiting for you to approve it: ${console_}`,
+    "Nobody can see it until you do.",
+  ].join("\n");
+
+  const html = `<div style="font-family:Helvetica,Arial,sans-serif;font-size:15px;line-height:24px;color:#222">
+  <p>${esc(review.author)} left a ${esc(String(review.rating))}-star review of <strong>${esc(piece)}</strong>.</p>
+  <blockquote style="margin:16px 0;padding:12px 16px;border-left:3px solid #d21f3c;background:#faf8f6">
+    <strong>${esc(review.title)}</strong><br>${esc(review.body)}
+  </blockquote>
+  <p><a href="${esc(console_)}/">Open the console to approve it</a>. Nobody can see it until you do.</p>
+</div>`;
+
+  try {
+    await sendEmail({
+      to: ownerInbox(),
+      subject: `New review waiting — ${piece}`,
+      html,
+      text,
+    });
+  } catch (err) {
+    console.error("[reviews] owner notification failed:", err);
+  }
 }

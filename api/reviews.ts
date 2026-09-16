@@ -39,6 +39,7 @@ import { firstQuery, isSameOrigin, isStrictSameOrigin, methodNotAllowed } from "
 import { hashIp, isReviewsConfigured } from "./_lib/mongo.js";
 import { allow, clientIp } from "./_lib/ratelimit.js";
 import { reviewRight } from "./_lib/reviewAccess.js";
+import { notifyOwnerOfReview } from "./_lib/reviewRequests.js";
 import {
   LIMITS,
   adminList,
@@ -479,7 +480,17 @@ async function submitHandler(req: VercelRequest, res: VercelResponse): Promise<v
       "pending",
       "customer",
     );
+    /* Answer the shopper first, then tell the owner. Awaited rather than
+       floated because the function may be frozen the moment the response is
+       flushed, and it is best-effort inside, so it cannot fail the submission. */
     res.status(200).json({ ok: true, status: "pending" });
+    await notifyOwnerOfReview({
+      author: input.author,
+      rating: input.rating,
+      title: input.title,
+      body: input.body,
+      productName: input.productName,
+    });
   } catch (err) {
     console.error("[reviews] submit failed:", err);
     res.status(500).json({ error: "server_error" });
