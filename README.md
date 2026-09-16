@@ -111,13 +111,15 @@ Two rules that are easy to break:
 
 ## The serverless layer
 
-Twelve functions, which is exactly Vercel's Hobby-plan ceiling. Adding a
-thirteenth means merging two existing ones behind a rewrite — `vercel.json`
-already does this for `/api/admin/*` and `/api/account/*`.
+Eleven functions, against Vercel's Hobby-plan ceiling of twelve. Adding a
+thirteenth is not possible, so a new endpoint means merging two existing ones
+behind a rewrite — `vercel.json` already does this for `/api/admin/*`,
+`/api/account/*` and `/api/auth/{session,logout}`. The free slot is being held
+for the reviews endpoint.
 
 | Endpoint | Role |
 | --- | --- |
-| `auth/login`, `auth/callback`, `auth/session`, `auth/logout` | Passwordless OAuth 2.0 + PKCE against Shopify's Customer Account API. Tokens stay server-side. |
+| `auth/login`, `auth/callback`, `auth` (`session`, `logout`) | Passwordless OAuth 2.0 + PKCE against Shopify's Customer Account API. Tokens stay server-side. |
 | `customer/graphql` | Proxies authenticated customer queries — orders, addresses, profile. |
 | `cart/link` | Attaches the signed-in customer to their cart so checkout is account-aware. |
 | `newsletter/subscribe`, `newsletter/unsubscribe` | Creates the customer (Admin API), sends the welcome mail, honours one-click unsubscribe. |

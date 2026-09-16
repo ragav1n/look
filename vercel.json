@@ -25,6 +25,8 @@
     { "source": "/api/admin/campaign", "destination": "/api/admin/console?action=campaign" },
     { "source": "/api/account/welcome", "destination": "/api/account?action=welcome" },
     { "source": "/api/account/newsletter", "destination": "/api/account?action=newsletter" },
+    { "source": "/api/auth/session", "destination": "/api/auth?action=session" },
+    { "source": "/api/auth/logout", "destination": "/api/auth?action=logout" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "crons": [{ "path": "/api/cron/new-drop", "schedule": "0 5 * * *" }]
