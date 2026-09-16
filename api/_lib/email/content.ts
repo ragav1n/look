@@ -65,11 +65,11 @@ const DEFAULTS: Record<EmailKey, EmailContent> = {
     discountCode: "",
   },
   review_request: {
-    subject: `How was it?`,
+    subject: "How did it go?",
     heading: "How did it turn out?",
     body: [
-      "Your order arrived a few days ago, so we wanted to ask: how is it? How it fits, how the fabric feels, where you wore it — whatever you'd tell a friend.",
-      "It takes a minute, and it genuinely helps the next person deciding on the same piece.",
+      "Your order landed a few days ago, so we wanted to ask how it went. How it fits, how the fabric feels, where you ended up wearing it. Whatever you'd tell a friend who asked.",
+      "It takes a minute, and it's genuinely useful to whoever is deciding on the same piece next. Photos welcome if you took any.",
     ],
     /* Replaced per recipient with a signed link that proves the purchase — see
        ComposeOptions.ctaUrl. This default is only a safety net; the shop page

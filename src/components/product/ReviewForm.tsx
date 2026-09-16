@@ -175,14 +175,14 @@ export default function ReviewForm({
                 value={body}
                 onChange={(e) => setBody(e.target.value.slice(0, BODY_MAX))}
                 rows={5}
-                placeholder="How it fits, how the fabric feels, where you wore it — whatever you'd tell a friend."
+                placeholder="How it fits, how the fabric feels, where you wore it. Whatever you'd tell a friend."
                 className={`${input} h-auto py-3 leading-[22px]`}
               />
             </div>
 
             <div className="mt-5">
               <span className="mb-2 block text-[13px] font-medium text-body">
-                Photos <span className="font-normal text-faint">— optional, up to {MAX_PHOTOS}</span>
+                Photos <span className="font-normal text-faint">(optional, up to {MAX_PHOTOS})</span>
               </span>
               <div className="flex flex-wrap items-center gap-3">
                 {photos.map((p) => (
@@ -270,7 +270,7 @@ export default function ReviewForm({
 function shopperError(code?: string): string {
   switch (code) {
     case "already_reviewed":
-      return "You've already reviewed this piece — thank you!";
+      return "You've already reviewed this piece. Thank you!";
     case "not_eligible":
       return "We couldn't confirm this order. Use the link from your delivery email, or sign in.";
     case "rate_limited":
@@ -280,7 +280,7 @@ function shopperError(code?: string): string {
     case "too_many_photos":
       return `Up to ${MAX_PHOTOS} photos, please.`;
     case "upload_pending":
-      return "That photo is still being processed — please try adding it again.";
+      return "That photo is still being processed. Please try adding it again.";
     case "image_too_large":
       return "That photo is too large, even after resizing.";
     case "not_an_image":
@@ -293,7 +293,7 @@ function shopperError(code?: string): string {
     case "server_error":
       return "Something went wrong at our end. Please try again shortly.";
     case "network":
-      return "Couldn't reach us — check your connection and try again.";
+      return "Couldn't reach us. Check your connection and try again.";
     default:
       return "Something went wrong. Please try again.";
   }

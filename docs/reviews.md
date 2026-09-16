@@ -150,9 +150,11 @@ something every handler has to remember. Inserting a second review with
   moderation. That copy is the client's and is not ours to edit — raise it with
   her. (The IP is stored hashed, never raw, and neither field is ever served to
   the browser; the admin sees the email masked.)
-- The review-request email uses the built-in defaults. Add a `review_request`
-  entry to the `email_template` metaobject to let the client edit the copy,
-  exactly as with the other three.
+- The `review_request` `email_template` metaobject entry exists (handle
+  `review-request`), so the client can edit that copy in Shopify like the other
+  three. **Its `cta_url` field is ignored**: composeEmail replaces the button
+  link per recipient with the signed link proving that person bought that piece,
+  so the field is only a fallback if the override ever goes missing.
 - **Abandoned uploads leak a Shopify File.** A photo is uploaded the moment it's
   picked, but only attached to a review on submit. If someone uploads a photo and
   then removes it, or closes the form without submitting, the File stays in
