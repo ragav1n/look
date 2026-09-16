@@ -53,3 +53,100 @@ export function cdnResize(url: string, width: number): string {
     return url;
   }
 }
+
+/* --- Writing one ---------------------------------------------------------- */
+
+export interface ReviewRight {
+  may: boolean;
+  via?: "invite" | "account";
+  /** Their own address, so the form needn't ask for something we already know. */
+  email?: string;
+}
+
+/**
+ * May this visitor review this piece?
+ *
+ * A UI hint, nothing more: the server proves it again when the review is
+ * actually submitted, so this deciding wrongly costs a wasted form and never a
+ * bad review. `token` is the `?review=` value from a review-request email.
+ */
+export async function canWriteReview(productGid: string, token?: string): Promise<ReviewRight> {
+  if (!productGid) return { may: false };
+  try {
+    const qs = new URLSearchParams({ action: "eligibility", product: productGid });
+    if (token) qs.set("token", token);
+    const res = await fetch(`/api/reviews?${qs}`, { credentials: "same-origin" });
+    if (!res.ok) return { may: false };
+    return (await res.json()) as ReviewRight;
+  } catch {
+    return { may: false };
+  }
+}
+
+export interface ReviewDraft {
+  productGid: string;
+  productName?: string;
+  productHandle?: string;
+  author: string;
+  title: string;
+  body: string;
+  rating: number;
+  token?: string;
+  photoTokens?: string[];
+  /** The hidden trap field. Empty for a person; a bot fills it in. */
+  honeypot?: string;
+}
+
+export interface SubmitResult {
+  ok: boolean;
+  error?: string;
+}
+
+/** File a review. It arrives pending — the owner approves it before anyone
+ *  sees it, which the form says out loud so nobody waits for it to appear. */
+export async function submitReview(draft: ReviewDraft): Promise<SubmitResult> {
+  try {
+    const res = await fetch("/api/reviews?action=submit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify({
+        ...draft,
+        contact_reason: draft.honeypot ?? "",
+      }),
+    });
+    const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+    return { ok: res.ok && data.ok !== false, error: data.error };
+  } catch {
+    return { ok: false, error: "network" };
+  }
+}
+
+/**
+ * Upload one prepared photo and get back a signed handle.
+ *
+ * `dataUrl` must be a `data:` URL from preparePhoto — never a blob:, which our
+ * CSP forbids. The owner console calls this with no token, since her admin
+ * session is proof enough; a shopper passes the product and their invite token.
+ */
+export async function uploadReviewPhoto(
+  dataUrl: string,
+  productGid?: string,
+  token?: string,
+): Promise<{ url: string; gid: string; token: string } | { error: string }> {
+  try {
+    const res = await fetch("/api/reviews?action=photo", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify({ image: dataUrl, productGid, token }),
+    });
+    const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+    if (res.ok && typeof data.token === "string" && typeof data.url === "string") {
+      return { url: data.url, gid: String(data.gid), token: data.token };
+    }
+    return { error: typeof data.error === "string" ? data.error : "upload_failed" };
+  } catch {
+    return { error: "network" };
+  }
+}

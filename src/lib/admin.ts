@@ -208,23 +208,6 @@ export const deleteReview = (id: string, password: string) =>
  *  Shopify write failed quietly during moderation. */
 export const resyncRatings = () => reviewOp({ op: "resync" });
 
-/**
- * Upload one photo and get back a signed handle.
- *
- * Takes a data: URL, which is what the canvas step produces. Never a blob: URL —
- * our CSP has no `blob:` in img-src, so an object URL works locally (the dev
- * server sets no CSP) and fails only in production.
- */
-export async function uploadReviewPhoto(
-  dataUrl: string,
-): Promise<{ url: string; gid: string; token: string } | { error: string }> {
-  try {
-    const { ok, data } = await postJson("/api/reviews?action=photo", { image: dataUrl });
-    if (ok && typeof data.token === "string" && typeof data.url === "string") {
-      return { url: data.url, gid: String(data.gid), token: data.token };
-    }
-    return { error: str(data.error) ?? "upload_failed" };
-  } catch {
-    return { error: "network" };
-  }
-}
+/* uploadReviewPhoto lives in src/lib/reviews.ts, not here: the shopper's form
+   and this console post to the same endpoint, and two copies would drift. */
+export { uploadReviewPhoto } from "./reviews";

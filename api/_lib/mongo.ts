@@ -27,8 +27,9 @@ import { config } from "./shopify.js";
 const uri = process.env.MONGODB_URI?.trim() || "";
 const dbName = process.env.MONGODB_DB?.trim() || "look";
 
-/** The collection name, exported so a maintenance script can't typo it. */
+/** Collection names, exported so a maintenance script can't typo one. */
 export const REVIEWS = "reviews";
+export const REVIEW_REQUESTS = "review_requests";
 
 /**
  * Whether the reviews store is reachable at all.
@@ -137,6 +138,30 @@ export function getDb(): Promise<Db> {
   });
 
   return connecting;
+}
+
+/**
+ * One row per review request we've emailed, so nobody is asked twice about the
+ * same piece.
+ *
+ * In Mongo rather than as an order tag in Shopify on purpose: tagging an order
+ * needs the write_orders scope, which this app does not have and does not
+ * otherwise need. `_id` is `${orderId}|${productGid}`, so the uniqueness is the
+ * primary key and a double-send is impossible rather than merely unlikely —
+ * which matters because Hobby crons can fire more than once in their window.
+ */
+export interface ReviewRequestDoc {
+  _id: string;
+  orderId: string;
+  productGid: string;
+  email: string;
+  sentAt: Date;
+}
+
+/** The review-requests collection, typed. */
+export async function requestsCollection(): Promise<Collection<ReviewRequestDoc>> {
+  const db = await getDb();
+  return db.collection<ReviewRequestDoc>(REVIEW_REQUESTS);
 }
 
 /** The reviews collection, typed. */

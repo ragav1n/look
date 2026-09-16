@@ -2,6 +2,8 @@ import { useId, useMemo, useState } from "react";
 import { ChevronRight } from "lucide-react";
 import type { Product, Review } from "@/types";
 import RatingStars from "@/components/ui/RatingStars";
+import ImageLightbox from "@/components/product/ImageLightbox";
+import { cdnResize } from "@/lib/reviews";
 import { sanitizeHtml } from "@/lib/sanitize";
 
 type SectionKey = "description" | "reviews" | "returns";
@@ -16,12 +18,22 @@ type SectionKey = "description" | "reviews" | "returns";
 export default function ProductAccordion({
   product,
   reviews,
+  onWriteReview,
 }: {
   product: Product;
   reviews: Review[];
+  /** Shown only when this visitor may actually review the piece — the page
+   *  works that out, so the button is simply absent for everyone else. The form
+   *  itself stays in ProductDetail; this only asks for it. */
+  onWriteReview?: () => void;
 }) {
   const [open, setOpen] = useState<SectionKey | null>(null);
   const baseId = useId();
+
+  /* Review photos, flattened across reviews so the lightbox can page through
+     all of them the way the product gallery does. */
+  const photos = useMemo(() => reviews.flatMap((r) => r.photos ?? []), [reviews]);
+  const [lightbox, setLightbox] = useState<number | null>(null);
   // Sanitize the store-authored description HTML once per product (see below).
   const safeDescription = useMemo(
     () => (product.descriptionHtml ? sanitizeHtml(product.descriptionHtml) : ""),
@@ -70,6 +82,28 @@ export default function ProductAccordion({
                   <span className="text-[14px] font-medium text-white">{r.title}</span>
                 </div>
                 <p className="mt-2 text-[15px] leading-[24px] text-body">{r.body}</p>
+                {r.photos && r.photos.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {r.photos.map((src) => (
+                      <button
+                        key={src}
+                        type="button"
+                        onClick={() => setLightbox(photos.indexOf(src))}
+                        aria-label={`Open ${r.author}'s photo full size`}
+                        className="cursor-pointer overflow-hidden rounded-btn transition-opacity hover:opacity-85"
+                      >
+                        {/* One 1200px file is stored per photo; the CDN makes
+                            this one. The lightbox asks for the full size. */}
+                        <img
+                          src={cdnResize(src, 240)}
+                          alt=""
+                          loading="lazy"
+                          className="size-[84px] object-cover"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                )}
                 <p className="mt-2 text-[13px] text-muted">
                   {r.author}
                   {r.verified && <span className="ml-2 text-accent">✓ Verified buyer</span>}
@@ -77,6 +111,16 @@ export default function ProductAccordion({
                 </p>
               </div>
             ))
+          )}
+
+          {onWriteReview && (
+            <button
+              type="button"
+              onClick={onWriteReview}
+              className="inline-flex h-[46px] cursor-pointer items-center justify-center self-start rounded-btn border border-line px-6 text-[14px] font-medium text-body transition-colors hover:border-line-strong hover:text-white"
+            >
+              Write a review
+            </button>
           )}
         </div>
       ),
@@ -155,6 +199,17 @@ export default function ProductAccordion({
           </div>
         );
       })}
+
+      {/* The same viewer the product gallery uses — its props are a direct fit,
+          so review photos get arrow-key paging and a thumbnail rail for free. */}
+      <ImageLightbox
+        images={photos}
+        alt={`Customer photos of ${product.name}`}
+        index={lightbox ?? 0}
+        open={lightbox !== null}
+        onIndex={setLightbox}
+        onClose={() => setLightbox(null)}
+      />
     </section>
   );
 }

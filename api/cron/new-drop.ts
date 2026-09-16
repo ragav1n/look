@@ -1,6 +1,9 @@
 /**
  * GET /api/cron/new-drop
- * Daily digest of newly published products, sent to every marketing subscriber.
+ * The daily job. Two unrelated errands ride in one function because the Hobby
+ * plan allows exactly one cron and twelve functions:
+ *   1. a digest of newly published products, to every marketing subscriber;
+ *   2. a sweep asking recent buyers to review what was delivered to them.
  * Wired as a Vercel cron in vercel.json (05:00 UTC = 10:30 IST).
  *
  * Flow: find products published in the last 30 days that aren't yet tagged
@@ -25,6 +28,8 @@ import { sendBatch } from "../_lib/email/send.js";
 import { type EmailProduct, MAX_PRODUCTS } from "../_lib/email/render.js";
 import { type DropProduct, getUnannouncedDrops, markAnnounced } from "../_lib/drops.js";
 import { firstQuery } from "../_lib/http.js";
+import { isReviewsConfigured } from "../_lib/mongo.js";
+import { sweepReviewRequests } from "../_lib/reviewRequests.js";
 import { isAdminConfigured } from "../_lib/shopify.js";
 
 const SHOP_URL = "https://look.ind.in";
@@ -79,12 +84,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
   const dry = firstQuery(req.query.dry) === "1";
 
+  /* Errand 2, first and independently. Wrapped so that a reviews failure — a
+     paused Atlas cluster, say — cannot stop the drop digest going out, and
+     skipped entirely when reviews aren't configured. */
+  const reviewRequests = await runReviewSweep(dry);
+
   try {
     // Fetch up to the email's ceiling and show every one — a collection launch
     // arrives as one email instead of losing pieces past the old teaser cap.
     const drops = await getUnannouncedDrops(MAX_PRODUCTS);
     if (!drops.length) {
-      res.status(200).json({ ok: true, drops: 0, sent: 0, message: "no new drops" });
+      res.status(200).json({ ok: true, drops: 0, sent: 0, message: "no new drops", reviewRequests });
       return;
     }
 
@@ -100,7 +110,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         .status(200)
         .setHeader("Content-Type", "text/html; charset=utf-8")
         .send(
-          `<!-- dry run: ${drops.length} drop(s), ${subscribers.length} subscriber(s), nothing sent or tagged -->\n${sample.html}`,
+          `<!-- dry run: ${drops.length} drop(s), ${subscribers.length} subscriber(s), nothing sent or tagged\n     review requests: ${JSON.stringify(reviewRequests)} -->\n${sample.html}`,
         );
       return;
     }
@@ -134,9 +144,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       failed: result.failed,
       simulated: result.simulated,
       tagged,
+      reviewRequests,
     });
   } catch (err) {
     console.error("[cron/new-drop] failed:", err);
-    res.status(502).json({ ok: false, error: "drop_failed" });
+    /* The sweep already ran and is reported even when the digest fails — it is a
+       separate errand and its result shouldn't be lost with the other one. */
+    res.status(502).json({ ok: false, error: "drop_failed", reviewRequests });
+  }
+}
+
+/** Ask recent buyers about what was delivered. Never throws: this rides along
+ *  with the drop digest and must not be able to take it down. */
+async function runReviewSweep(dry: boolean): Promise<unknown> {
+  if (!isReviewsConfigured()) return { skipped: "reviews_not_configured" };
+  try {
+    return await sweepReviewRequests({ dry });
+  } catch (err) {
+    console.error("[cron] review request sweep failed:", err);
+    return { error: "sweep_failed" };
   }
 }

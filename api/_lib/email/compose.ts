@@ -12,6 +12,10 @@ import { listUnsubscribeHeaders, unsubscribeUrl } from "./unsubscribe.js";
 export interface ComposeOptions {
   /** Products to feature — the drop email's whole point. */
   products?: EmailProduct[];
+  /** Overrides the template's CTA link for THIS recipient. The review request
+   *  needs it: its link carries a signature proving this person bought this
+   *  piece, so it cannot live in a metaobject shared by every recipient. */
+  ctaUrl?: string;
 }
 
 export async function composeEmail(
@@ -25,7 +29,7 @@ export async function composeEmail(
   const { html, text } = renderEmail({
     heading: content.heading,
     body: content.body,
-    cta: { label: content.ctaLabel, url: content.ctaUrl },
+    cta: { label: content.ctaLabel, url: opts.ctaUrl ?? content.ctaUrl },
     imageUrl: content.imageUrl,
     code: content.discountCode
       ? { label: content.discountLabel ?? "Your code", value: content.discountCode }

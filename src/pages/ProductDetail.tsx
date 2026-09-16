@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
-import { Link, useParams, useNavigate } from "react-router-dom";
+import { Link, useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { Heart, RefreshCw, ShieldCheck, Ruler, X } from "lucide-react";
 import type { Product } from "@/types";
 import { getProductByHandle, getBestSellers } from "@/lib/catalog";
 import { formatPrice, discountPercent } from "@/lib/format";
 import { cartLimitNotice, lowStockLeft, lowStockNotice, roomToAdd } from "@/lib/stock";
 import { useAsyncData } from "@/hooks/useAsyncData";
-import { getProductReviews } from "@/lib/reviews";
+import { canWriteReview, getProductReviews } from "@/lib/reviews";
+import ReviewForm from "@/components/product/ReviewForm";
 import LoadError from "@/components/ui/LoadError";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
@@ -112,8 +113,24 @@ function PdpContent({ product }: { product: Product }) {
      paint: the panel is a collapsed disclosure below the fold, so there is
      nothing to skeleton. getProductReviews never rejects; an empty list is the
      honest answer and reads as "Reviews (0)". */
-  const { data: reviewData } = useAsyncData(() => getProductReviews(product.id), [product.id]);
+  const { data: reviewData, reload: reloadReviews } = useAsyncData(
+    () => getProductReviews(product.id),
+    [product.id],
+  );
   const reviews = reviewData ?? [];
+
+  /* Only someone who ordered this piece may review it. They prove it either by
+     arriving on the link we emailed after delivery (?review=…) or by being
+     signed in with this product in their order history — see
+     api/_lib/reviewAccess.ts. Everyone else reads the reviews and is shown no
+     button at all, rather than a button that refuses them. */
+  const [params] = useSearchParams();
+  const inviteToken = params.get("review") ?? undefined;
+  const { data: right } = useAsyncData(
+    () => canWriteReview(product.id, inviteToken),
+    [product.id, inviteToken],
+  );
+  const [writing, setWriting] = useState(false);
 
   /* Price follows the chosen size once one is picked; until then we show the
      product's lowest variant price (Shopify's minVariantPrice) as a "from"
@@ -327,7 +344,26 @@ function PdpContent({ product }: { product: Product }) {
       </div>
 
       {/* Description / Reviews / Exchange & Returns — collapsed disclosures so the page reads short */}
-      <ProductAccordion product={product} reviews={reviews} />
+      <ProductAccordion
+        product={product}
+        reviews={reviews}
+        onWriteReview={right?.may ? () => setWriting(true) : undefined}
+      />
+
+      {right?.may && (
+        <ReviewForm
+          product={product}
+          open={writing}
+          onClose={() => {
+            setWriting(false);
+            /* Their review lands pending, so there's nothing new to show yet —
+               but re-reading costs one cached request and keeps the panel right
+               if the owner approved something while they were typing. */
+            reloadReviews();
+          }}
+          inviteToken={inviteToken}
+        />
+      )}
 
       <RelatedProducts currentId={product.id} category={product.category} />
 
