@@ -57,17 +57,32 @@ export function StepHeader({ n, title, desc }: { n: string; title: string; desc?
   );
 }
 
-/** A small status pill. "auto" = LOOK/Shopify handles it with no action; "action"
- *  = a one-time thing the owner sets up. Red + grey only (no other accent). */
-export function StatusBadge({ tone, children }: { tone: "auto" | "action"; children: ReactNode }) {
-  const styles =
-    tone === "auto"
-      ? "border-line bg-white/[0.03] text-muted"
-      : "border-accent/40 bg-accent-tint-soft/40 text-white";
-  const dot = tone === "auto" ? "bg-muted" : "bg-accent";
+/**
+ * A small status pill. Red and grey only — the storefront has one accent colour
+ * and the console is not allowed a second one, so the tones separate by weight
+ * rather than by hue.
+ *
+ *   auto    — LOOK or Shopify handles it, nothing to do.
+ *   action  — a one-time thing the owner sets up.
+ *   pending — a review waiting on her: the one state that asks for attention.
+ *   live    — approved and showing on the site.
+ *   hidden  — held back, and deliberately the quietest of the five.
+ */
+export type BadgeTone = "auto" | "action" | "pending" | "live" | "hidden";
+
+const BADGE_TONES: Record<BadgeTone, { box: string; dot: string }> = {
+  auto: { box: "border-line bg-white/[0.03] text-muted", dot: "bg-muted" },
+  action: { box: "border-accent/40 bg-accent-tint-soft/40 text-white", dot: "bg-accent" },
+  pending: { box: "border-accent/40 bg-accent-tint-soft/40 text-white", dot: "bg-accent" },
+  live: { box: "border-line-strong bg-white/[0.07] text-white", dot: "bg-white" },
+  hidden: { box: "border-line bg-transparent text-faint", dot: "bg-faint" },
+};
+
+export function StatusBadge({ tone, children }: { tone: BadgeTone; children: ReactNode }) {
+  const { box, dot } = BADGE_TONES[tone];
   return (
     <span
-      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[10px] tracking-[0.16em] uppercase ${styles}`}
+      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[10px] tracking-[0.16em] uppercase ${box}`}
     >
       <span className={`inline-block size-1.5 rounded-full ${dot}`} aria-hidden />
       {children}

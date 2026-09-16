@@ -49,6 +49,7 @@ import {
   StatusBadge,
   StepHeader,
 } from "./ui";
+import AdminReviews from "./AdminReviews";
 
 /** LOOK's Shopify admin. The explainer tabs deep-link the owner straight to the
  *  right settings page rather than making her hunt through Shopify's menus. */
@@ -309,9 +310,10 @@ function GuideTab({
 
 /* --- The console ---------------------------------------------------------- */
 
-type TabKey = "campaign" | "offers" | "orders" | "abandoned" | "arrivals";
+type TabKey = "campaign" | "reviews" | "offers" | "orders" | "abandoned" | "arrivals";
 const TABS: { key: TabKey; label: string }[] = [
   { key: "campaign", label: "Campaigns" },
+  { key: "reviews", label: "Reviews" },
   { key: "offers", label: "Offers & codes" },
   { key: "orders", label: "Order emails" },
   { key: "abandoned", label: "Abandoned carts" },
@@ -441,8 +443,9 @@ function Console({ onSignedOut }: { onSignedOut: () => void }) {
               Reaching your shoppers
             </h1>
             <p className="mt-2 max-w-[560px] text-[14px] leading-[22px] text-muted">
-              Your emails and your offers. Most of it runs on its own; Campaigns is the one you send
-              by hand, and Offers is the one to read before your next sale.
+              Your emails, your offers, and what your customers say about the clothes. Most of it
+              runs on its own; Campaigns is the one you send by hand, and Reviews is the one to check
+              when something new comes in.
             </p>
           </div>
         </div>
@@ -450,7 +453,7 @@ function Console({ onSignedOut }: { onSignedOut: () => void }) {
         {/* Tabs */}
         <div
           role="tablist"
-          aria-label="Email types"
+          aria-label="Console sections"
           className="mt-8 flex gap-1 overflow-x-auto border-b border-line"
         >
           {TABS.map(({ key, label }, i) => {
@@ -494,6 +497,8 @@ function Console({ onSignedOut }: { onSignedOut: () => void }) {
           tabIndex={0}
           className="animate-tab-panel mt-8 focus-visible:outline-none"
         >
+          {tab === "reviews" && <AdminReviews />}
+
           {tab === "campaign" && (
             <>
               <p className="max-w-[560px] text-[14px] leading-[23px] text-body">

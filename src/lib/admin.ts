@@ -124,3 +124,107 @@ export async function sendCampaign(fields: CampaignFields, password: string): Pr
     return { ok: false, error: "network" };
   }
 }
+
+/* --- Reviews --------------------------------------------------------------
+ * Every review operation goes to /api/reviews?action=admin with an `op`, rather
+ * than to a URL per operation. One endpoint means one auth gate, which is what
+ * makes it impossible to add an operation and forget to protect it — and the
+ * deploy sits on Vercel's twelve-function cap, so a second file was never an
+ * option anyway.                                                             */
+
+/** A review as the moderation screen sees it. Mirrors AdminReview in
+ *  api/_lib/reviews.ts. */
+export interface AdminReview {
+  id: string;
+  productId: string;
+  productName?: string;
+  productHandle?: string;
+  author: string;
+  rating: number;
+  date: string;
+  title: string;
+  body: string;
+  verified: boolean;
+  photos?: string[];
+  avatar?: string;
+  status: "pending" | "approved" | "rejected";
+  source: "customer" | "owner";
+  /** 1–9 when it's on the homepage wall. */
+  wallRank?: number;
+  submitted: string;
+  /** Masked, e.g. `b***@example.com` — enough to tell two reviewers apart. */
+  maskedEmail?: string;
+  photoGids: string[];
+}
+
+export interface OwnerReviewDraft {
+  productGid: string;
+  productName?: string;
+  productHandle?: string;
+  author: string;
+  title: string;
+  body: string;
+  rating: number;
+  verified?: boolean;
+  /** Signed handles from uploadReviewPhoto — never raw URLs; the server only
+   *  trusts what it can recover from inside the signature. */
+  photoTokens?: string[];
+}
+
+const REVIEWS_ADMIN = "/api/reviews?action=admin";
+
+async function reviewOp(body: Record<string, unknown>): Promise<SendOutcome> {
+  try {
+    const { ok, data } = await postJson(REVIEWS_ADMIN, body);
+    return toOutcome(ok, data);
+  } catch {
+    return { ok: false, error: "network" };
+  }
+}
+
+/** The whole queue: pending first, then everything else newest-first. Returns
+ *  an empty list rather than throwing, so a backend blip shows an empty tab
+ *  instead of a blank console. */
+export async function listReviews(): Promise<AdminReview[]> {
+  try {
+    const { ok, data } = await postJson(REVIEWS_ADMIN, { op: "list" });
+    return ok && Array.isArray(data.reviews) ? (data.reviews as AdminReview[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+export const approveReview = (id: string) => reviewOp({ op: "approve", id });
+export const hideReview = (id: string) => reviewOp({ op: "reject", id });
+export const featureReview = (id: string) => reviewOp({ op: "feature", id });
+export const unfeatureReview = (id: string) => reviewOp({ op: "unfeature", id });
+/** The full wall order, as the up/down buttons rearrange it. */
+export const reorderWall = (ids: string[]) => reviewOp({ op: "reorder", ids });
+export const createOwnerReview = (draft: OwnerReviewDraft) => reviewOp({ op: "create", ...draft });
+/** Destroys the review and its photos. Steps up with the password, like a send. */
+export const deleteReview = (id: string, password: string) =>
+  reviewOp({ op: "delete", id, password });
+/** Recompute every product's rating from scratch — the repair tool for when a
+ *  Shopify write failed quietly during moderation. */
+export const resyncRatings = () => reviewOp({ op: "resync" });
+
+/**
+ * Upload one photo and get back a signed handle.
+ *
+ * Takes a data: URL, which is what the canvas step produces. Never a blob: URL —
+ * our CSP has no `blob:` in img-src, so an object URL works locally (the dev
+ * server sets no CSP) and fails only in production.
+ */
+export async function uploadReviewPhoto(
+  dataUrl: string,
+): Promise<{ url: string; gid: string; token: string } | { error: string }> {
+  try {
+    const { ok, data } = await postJson("/api/reviews?action=photo", { image: dataUrl });
+    if (ok && typeof data.token === "string" && typeof data.url === "string") {
+      return { url: data.url, gid: String(data.gid), token: data.token };
+    }
+    return { error: str(data.error) ?? "upload_failed" };
+  } catch {
+    return { error: "network" };
+  }
+}
