@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link, useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, Navigate, useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { renamedTo } from "@/lib/redirects";
 import { Heart, RefreshCw, ShieldCheck, Ruler, X } from "lucide-react";
 import type { Product } from "@/types";
 import { getProductByHandle, getBestSellers } from "@/lib/catalog";
@@ -44,6 +45,8 @@ export default function ProductDetail() {
     [slug],
   );
 
+  const moved = renamedTo(slug);
+  if (moved) return <Navigate to={`/shop/${moved}`} replace />;
   if (loading) return <PdpSkeleton />;
   /* A fetch failure is not the same as "this product doesn't exist" — telling
      someone their bookmarked product is gone when the store is merely
