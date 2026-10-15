@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { getSaleProducts } from "@/lib/catalog";
+import { getSaleProducts, prefetchOn } from "@/lib/catalog";
 import { formatPrice, discountPercent } from "@/lib/format";
 import { useAsyncData } from "@/hooks/useAsyncData";
 import Skeleton from "@/components/ui/Skeleton";
@@ -49,6 +49,7 @@ export default function PriceDrop() {
                 <Reveal key={p.id} variant="up" delay={i * 90}>
                   <Link
                     to={`/shop/${p.slug}`}
+                    {...prefetchOn(p)}
                     aria-label={p.name}
                     className="group flex flex-col"
                   >

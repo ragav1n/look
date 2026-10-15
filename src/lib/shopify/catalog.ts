@@ -42,9 +42,23 @@ export async function getProducts(opts: { sort?: ProductSort } = {}): Promise<Pr
   return data.products.nodes.map(toProduct);
 }
 
-export async function getProductByHandle(handle: string): Promise<Product | null> {
-  const data = await storefront<{ product: SFProduct | null }>(PRODUCT_BY_HANDLE_QUERY, { handle });
-  return data.product ? toProduct(data.product) : null;
+/* Product pages read through a short cache so a card can fetch its product on
+   hover and the click opens on data already in hand, and so Back/Forward
+   between pieces doesn't re-ask Shopify. Kept short because price and stock
+   live on it; the cart re-checks stock against Shopify on every add anyway.
+   A failed request is dropped at once so a retry really retries. */
+const PRODUCT_TTL_MS = 30_000;
+const productCache = new Map<string, { at: number; p: Promise<Product | null> }>();
+
+export function getProductByHandle(handle: string): Promise<Product | null> {
+  const hit = productCache.get(handle);
+  if (hit && Date.now() - hit.at < PRODUCT_TTL_MS) return hit.p;
+  const p = storefront<{ product: SFProduct | null }>(PRODUCT_BY_HANDLE_QUERY, { handle }).then(
+    (data) => (data.product ? toProduct(data.product) : null),
+  );
+  productCache.set(handle, { at: Date.now(), p });
+  p.catch(() => productCache.delete(handle));
+  return p;
 }
 
 /** `sortKey: "MANUAL"` honours the drag order set on the collection in the admin.

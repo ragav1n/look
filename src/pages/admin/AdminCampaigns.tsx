@@ -27,7 +27,7 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from "react";
-import consolePhoto from "@/assets/about-pearl-lace.jpg";
+import consolePhoto from "@/assets/console-pearl-lace.jpg";
 import logoWhite from "@/assets/look-logo-white.png";
 import { useToast } from "@/context/ToastContext";
 import {

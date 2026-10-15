@@ -6,6 +6,7 @@ import { formatPrice, discountPercent } from "@/lib/format";
 import Badge from "@/components/ui/Badge";
 import DiscountPill from "@/components/ui/DiscountPill";
 import { responsiveImg } from "@/lib/image";
+import { prefetchOn } from "@/lib/catalog";
 
 /* Staggered infinite product wall — a take on the 21st.dev "staggered carousel".
 
@@ -278,6 +279,7 @@ function StaggeredCard({ product }: { product: Product }) {
   return (
     <Link
       to={`/shop/${product.slug}`}
+      {...prefetchOn(product)}
       aria-label={product.name}
       data-stagger-card
       className="group relative block overflow-hidden rounded-[10px] border border-line bg-card shadow-[0_6px_24px_rgba(0,0,0,0.4)] transition-all duration-500 select-none hover:-translate-y-1 hover:border-accent/40 hover:shadow-[0_18px_44px_rgba(225,29,42,0.18)]"

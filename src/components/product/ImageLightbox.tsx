@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { cdnResize, responsiveImg } from "@/lib/image";
+import { cdnResize, IMG_SIZES, responsiveImg } from "@/lib/image";
 
 /* Full-screen product image viewer ("pop out"). Opened from ImageGallery.
    Mirrors the a11y patterns in ui/Modal (scroll lock, focus, Esc, backdrop
@@ -107,7 +107,7 @@ export default function ImageLightbox({ images, alt, index, open, onIndex, onClo
         )}
         <img
           key={index}
-          {...responsiveImg(images[index], "100vw")}
+          {...responsiveImg(images[index], IMG_SIZES.lightbox)}
           alt={`${alt} — image ${index + 1}`}
           className="animate-gallery-fade max-h-full max-w-full object-contain"
         />

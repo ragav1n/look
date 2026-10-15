@@ -6,7 +6,8 @@ import { useWishlist } from "@/context/WishlistContext";
 import Badge from "@/components/ui/Badge";
 import DiscountPill from "@/components/ui/DiscountPill";
 import Skeleton from "@/components/ui/Skeleton";
-import { responsiveImg } from "@/lib/image";
+import { IMG_SIZES, responsiveImg } from "@/lib/image";
+import { prefetchOn } from "@/lib/catalog";
 
 interface Props {
   product: Product;
@@ -22,14 +23,17 @@ export default function ProductCard({ product, onQuickView }: Props) {
   const off = discountPercent(product.price, product.mrp);
 
   return (
-    <div className="group relative flex h-full flex-col rounded-card bg-card p-[9px] pb-[10px] sm:p-[13px] sm:pb-[11px]">
+    <div
+      {...prefetchOn(product)}
+      className="group relative flex h-full flex-col rounded-card bg-card p-[9px] pb-[10px] sm:p-[13px] sm:pb-[11px]"
+    >
       <div className="relative overflow-hidden rounded-img">
         <Link to={`/shop/${product.slug}`} aria-label={product.name}>
           {/* A Shopify product can exist before its media finishes processing —
               show a plain surface rather than a broken-image icon. */}
           {product.images[0] ? (
             <img
-              {...responsiveImg(product.images[0], "(min-width: 1024px) 25vw, 50vw")}
+              {...responsiveImg(product.images[0], IMG_SIZES.productCard)}
               decoding="async"
               alt={product.name}
               loading="lazy"

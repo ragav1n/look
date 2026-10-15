@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Share2 } from "lucide-react";
 import { useToast } from "@/context/ToastContext";
 import ImageLightbox from "./ImageLightbox";
-import { cdnResize, responsiveImg } from "@/lib/image";
+import { cdnResize, IMG_SIZES, preloadImg, responsiveImg, saveData } from "@/lib/image";
 
 function Chevron({ dir }: { dir: "left" | "right" }) {
   return (
@@ -53,6 +53,43 @@ export default function ImageGallery({ images, alt }: { images: string[]; alt: s
     }
   }, [active]);
 
+  /* Thumbnail clicks used to start the download, so every switch waited a second
+     or more for a fresh ~150KB photo. As soon as the first photo is in, fetch
+     and decode the rest in the background, next photo first, a few at a time:
+     enough to be done before anyone reaches the end of the strip, few enough
+     not to crowd out the rest of the page. */
+  const [firstShown, setFirstShown] = useState(false);
+  useEffect(() => {
+    if (!firstShown || images.length < 2 || saveData()) return;
+    let cancelled = false;
+    const queue = images.slice(1);
+    const worker = async () => {
+      while (!cancelled && queue.length) await preloadImg(queue.shift(), IMG_SIZES.pdpMain);
+    };
+    void Promise.all([worker(), worker(), worker()]);
+    return () => {
+      cancelled = true;
+    };
+  }, [firstShown, images]);
+
+  /* The lightbox lays photos out by screen height, a different size from the
+     gallery on any landscape screen. Warm those files the moment it opens,
+     starting from the photo it opened on. */
+  useEffect(() => {
+    if (!zoomed) return;
+    let cancelled = false;
+    void (async () => {
+      for (let k = 0; k < images.length && !cancelled; k++) {
+        await preloadImg(images[(active + k) % images.length], IMG_SIZES.lightbox);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // Only on open: paging inside the lightbox is already covered by the loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zoomed, images]);
+
   /* Sharing a piece you like is how this shop travels, so put it on the image
      rather than behind a menu. The native sheet is the good path; where there
      isn't one (most desktop browsers) copying the link is the honest fallback. */
@@ -96,13 +133,23 @@ export default function ImageGallery({ images, alt }: { images: string[]; alt: s
               if (Math.abs(dx) >= SWIPE_PX) go(dx < 0 ? 1 : -1);
             }}
             aria-label="Open image viewer"
-            className="block w-full cursor-zoom-in"
+            onPointerEnter={() => void preloadImg(main, IMG_SIZES.lightbox)}
+            className="relative block w-full cursor-zoom-in overflow-hidden"
           >
+            {/* The strip's own thumbnail, already on screen, so something real
+                paints at once while the full photo lands, then sharpens. */}
+            <img
+              src={cdnResize(main, 160)}
+              alt=""
+              aria-hidden
+              className="absolute inset-0 h-full w-full scale-105 object-cover object-top blur-md"
+            />
             <img
               key={active}
-              {...responsiveImg(main, "(min-width: 1024px) 50vw, 100vw")}
+              {...responsiveImg(main, IMG_SIZES.pdpMain)}
+              onLoad={() => setFirstShown(true)}
               alt={alt}
-              className="animate-gallery-fade aspect-[4/5] w-full object-cover object-top"
+              className="animate-gallery-fade relative aspect-[4/5] w-full object-cover object-top"
             />
           </button>
         )}
@@ -153,6 +200,7 @@ export default function ImageGallery({ images, alt }: { images: string[]; alt: s
               key={src}
               type="button"
               onClick={() => setActive(i)}
+              onPointerEnter={() => void preloadImg(src, IMG_SIZES.pdpMain)}
               aria-label={`View image ${i + 1} of ${images.length}`}
               aria-current={i === active}
               className={`h-[72px] w-[58px] shrink-0 cursor-pointer overflow-hidden rounded-[6px] border-2 transition-colors sm:h-[84px] sm:w-[68px] ${

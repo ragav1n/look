@@ -5,6 +5,7 @@ import type { Product } from "@/types";
 import { formatPrice, discountPercent } from "@/lib/format";
 import DiscountPill from "@/components/ui/DiscountPill";
 import { responsiveImg } from "@/lib/image";
+import { prefetchOn } from "@/lib/catalog";
 
 /* "Shop the Edit" — a truly infinite horizontal product carousel.
 
@@ -379,6 +380,7 @@ function CarouselCard({ product }: { product: Product }) {
   return (
     <Link
       to={`/shop/${product.slug}`}
+      {...prefetchOn(product)}
       data-card
       aria-label={product.name}
       className="group relative w-[240px] shrink-0 snap-start select-none sm:w-[320px]"
