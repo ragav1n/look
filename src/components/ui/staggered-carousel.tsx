@@ -186,8 +186,19 @@ export default function StaggeredCarousel({
   }, [pinned, products.length]);
 
   const cols = pinned ? 3 : 2;
-  const columns: Product[][] = Array.from({ length: cols }, () => []);
-  products.forEach((p, i) => columns[i % cols].push(p));
+  /* A short, hand-picked wall (the store curates five or so) dealt round-robin
+     left a column holding a single piece, looping the same dress over and over.
+     Below three a column, every moving column carries the whole set instead,
+     each starting at a different piece so the columns never mirror each other.
+     The static grid keeps the plain deal: there, each piece shows once. */
+  const short = pinned && products.length < cols * 3;
+  const columns: Product[][] = Array.from({ length: cols }, (_, c) => {
+    if (short) {
+      const k = Math.floor((c * products.length) / cols);
+      return [...products.slice(k), ...products.slice(0, k)];
+    }
+    return products.filter((_, i) => i % cols === c);
+  });
 
   const grid = (
     <div

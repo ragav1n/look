@@ -1,11 +1,17 @@
 import type { Product } from "@/types";
-import { getAllProducts } from "@/lib/catalog";
+import { getAllProducts, getCollectionProducts } from "@/lib/catalog";
 import { useAsyncData } from "@/hooks/useAsyncData";
 import Reveal from "@/components/ui/Reveal";
 import StaggeredCarousel from "@/components/ui/staggered-carousel";
 
-/* "Shop the Hits" — our most-loved pieces, ranked by customer rating, shown as
-   a staggered three-column product wall. Sits just above Price Drop. */
+/* "Shop the Hits" — our most-loved pieces, shown as a staggered three-column
+   product wall. Sits just above Price Drop.
+
+   Hand-picked first: the `shop-the-hits` collection in Shopify, in its manual
+   drag order, is the wall exactly as the store curated it. Only when that
+   collection is missing or empty does the wall fall back to ranking the catalog
+   by customer rating below. */
+const HITS_COLLECTION = "shop-the-hits";
 
 /* A piece needs this many reviews before its rating can climb the wall.
    Without it, the first customer to leave a single five-star review would
@@ -27,10 +33,14 @@ const lovedness = (p: Product) => (p.reviewCount >= MIN_REVIEWS_TO_RANK ? p.rati
 const volume = (p: Product) => (p.reviewCount >= MIN_REVIEWS_TO_RANK ? p.reviewCount : 0);
 
 export default function ShopTheHits() {
-  const { data } = useAsyncData(() => getAllProducts(), []);
-  const hits = [...(data ?? [])]
-    .sort((a, b) => lovedness(b) - lovedness(a) || volume(b) - volume(a))
-    .slice(0, 9);
+  const { data } = useAsyncData(async () => {
+    const picked = await getCollectionProducts(HITS_COLLECTION, 9).catch(() => []);
+    if (picked.length > 0) return picked;
+    return [...(await getAllProducts())]
+      .sort((a, b) => lovedness(b) - lovedness(a) || volume(b) - volume(a))
+      .slice(0, 9);
+  }, []);
+  const hits = data ?? [];
 
   // Need at least a couple of pieces to make the wall worthwhile.
   if (hits.length < 3) return null;

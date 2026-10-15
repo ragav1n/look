@@ -9,7 +9,7 @@
 
 /** Collection handles that aren't shop categories — merchandising devices that
  *  should never surface as a browsable tile. */
-export const NON_CATEGORY_COLLECTIONS = new Set(["hero", "frontpage"]);
+export const NON_CATEGORY_COLLECTIONS = new Set(["hero", "frontpage", "shop-the-hits"]);
 
 /** Handle → canonical filter key. */
 const COL_ALIASES: Record<string, string> = {
