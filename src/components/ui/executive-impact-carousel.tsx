@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { Product } from "@/types";
 import { formatPrice, discountPercent } from "@/lib/format";
 import DiscountPill from "@/components/ui/DiscountPill";
+import { responsiveImg } from "@/lib/image";
 
 /* "Shop the Edit" — a truly infinite horizontal product carousel.
 
@@ -368,6 +369,8 @@ export default function ExecutiveImpactCarousel({ products }: { products: Produc
   );
 }
 
+const EDIT_SIZES = "(min-width: 640px) 320px, 240px";
+
 function CarouselCard({ product }: { product: Product }) {
   const prod = product.images[0] ?? "";
   const model = product.images[1] ?? prod;
@@ -382,14 +385,16 @@ function CarouselCard({ product }: { product: Product }) {
     >
       <div className="relative aspect-[2/3] overflow-hidden rounded-[10px] border border-line bg-card shadow-[0_6px_24px_rgba(0,0,0,0.4)] transition-all duration-500 group-hover:-translate-y-1 group-hover:border-accent/40 group-hover:shadow-[0_18px_44px_rgba(225,29,42,0.18)]">
         <img
-          src={prod}
+          {...responsiveImg(prod, EDIT_SIZES)}
+          decoding="async"
           alt={product.name}
           loading="lazy"
           draggable={false}
           className="absolute inset-0 h-full w-full object-cover object-top transition-all duration-700 ease-out group-hover:scale-[1.05] group-hover:opacity-0"
         />
         <img
-          src={model}
+          {...responsiveImg(model, EDIT_SIZES)}
+          decoding="async"
           alt=""
           loading="lazy"
           draggable={false}

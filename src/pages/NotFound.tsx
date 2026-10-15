@@ -5,6 +5,7 @@ import { getCollectionProducts, getNewArrivals } from "@/lib/catalog";
 import { useAsyncData } from "@/hooks/useAsyncData";
 import ProductCard from "@/components/product/ProductCard";
 import Reveal from "@/components/ui/Reveal";
+import { cdnResize } from "@/lib/image";
 
 /* Same curated collection the homepage hero draws from: those photos are the
    ones framed for full-bleed, which is exactly what this page needs. */
@@ -133,7 +134,7 @@ export default function NotFound() {
         >
           {photo && (
             <img
-              src={photo}
+              src={cdnResize(photo, 1440)}
               alt=""
               /* Scaled past the frame so the parallax shift never exposes an
                  edge, and dimmed and thrown out of focus: depth of field is

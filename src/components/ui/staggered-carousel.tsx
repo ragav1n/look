@@ -5,6 +5,7 @@ import type { Product } from "@/types";
 import { formatPrice, discountPercent } from "@/lib/format";
 import Badge from "@/components/ui/Badge";
 import DiscountPill from "@/components/ui/DiscountPill";
+import { responsiveImg } from "@/lib/image";
 
 /* Staggered infinite product wall — a take on the 21st.dev "staggered carousel".
 
@@ -256,6 +257,8 @@ export default function StaggeredCarousel({
   );
 }
 
+const HITS_SIZES = "(min-width: 1024px) 360px, 50vw";
+
 function StaggeredCard({ product }: { product: Product }) {
   const prod = product.images[0] ?? "";
   const model = product.images[1] ?? prod;
@@ -270,14 +273,16 @@ function StaggeredCard({ product }: { product: Product }) {
     >
       <div className="relative aspect-[3/4] overflow-hidden">
         <img
-          src={prod}
+          {...responsiveImg(prod, HITS_SIZES)}
+          decoding="async"
           alt={product.name}
           loading="lazy"
           draggable={false}
           className="absolute inset-0 h-full w-full object-cover object-top transition-all duration-700 ease-out group-hover:scale-[1.05] group-hover:opacity-0"
         />
         <img
-          src={model}
+          {...responsiveImg(model, HITS_SIZES)}
+          decoding="async"
           alt=""
           loading="lazy"
           draggable={false}

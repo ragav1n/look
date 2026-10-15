@@ -4,6 +4,7 @@ import Reveal from "@/components/ui/Reveal";
 import { getCollections } from "@/lib/catalog";
 import { canonical, NON_CATEGORY_COLLECTIONS } from "@/lib/collections";
 import { useAsyncData } from "@/hooks/useAsyncData";
+import { responsiveImg } from "@/lib/image";
 
 /* "LOOK Collections" — image-led category cards driven by the store's own
    Shopify collections, so adding one in the admin adds a tile here with no code
@@ -50,7 +51,8 @@ export default function LookCollections() {
                     className="group relative block overflow-hidden rounded-card border border-white/5"
                   >
                     <img
-                      src={image}
+                      {...responsiveImg(image, "(min-width: 1024px) 25vw, 50vw")}
+                      decoding="async"
                       alt={title}
                       loading="lazy"
                       className="aspect-[3/4] w-full object-cover object-top transition-transform duration-[900ms] ease-out group-hover:scale-[1.06]"

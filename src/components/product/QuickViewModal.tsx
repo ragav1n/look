@@ -11,6 +11,7 @@ import Button from "@/components/ui/Button";
 import RatingStars from "@/components/ui/RatingStars";
 import { ColorSwatches, SizeChips, QuantityStepper } from "./PurchaseControls";
 import { X } from "lucide-react";
+import { cdnResize, responsiveImg } from "@/lib/image";
 
 interface Props {
   product: Product | null;
@@ -121,7 +122,7 @@ export default function QuickViewModal({ product, onClose }: Props) {
             {/* A Shopify product can exist before its media finishes processing. */}
             {product.images[0] ? (
               <img
-                src={product.images[0]}
+                {...responsiveImg(product.images[0], "(min-width: 768px) 340px, 90vw")}
                 alt={product.name}
                 className="aspect-[294/348] w-full rounded-img object-cover object-top"
               />
@@ -133,7 +134,7 @@ export default function QuickViewModal({ product, onClose }: Props) {
                 {product.images.slice(1, 5).map((src) => (
                   <img
                     key={src}
-                    src={src}
+                    src={cdnResize(src, 120)}
                     alt=""
                     className="h-[64px] w-[52px] rounded-[4px] object-cover object-top"
                   />

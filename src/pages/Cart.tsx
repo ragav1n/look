@@ -7,6 +7,7 @@ import { lowStockLeft, lowStockNotice, maxOrderableQty } from "@/lib/stock";
 import { QuantityStepper } from "@/components/product/PurchaseControls";
 import Skeleton from "@/components/ui/Skeleton";
 import iconCart from "@/assets/icon-cart.svg";
+import { cdnResize } from "@/lib/image";
 
 export default function Cart() {
   const { cart, ready, busyLines, updateQty, remove, clear } = useCart();
@@ -37,7 +38,7 @@ export default function Cart() {
                 >
                   {line.image && (
                     <img
-                      src={line.image}
+                      src={cdnResize(line.image, 200)}
                       alt={line.name}
                       className="h-full w-full object-cover object-top"
                     />

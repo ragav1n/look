@@ -6,6 +6,7 @@ import { useWishlist } from "@/context/WishlistContext";
 import Badge from "@/components/ui/Badge";
 import DiscountPill from "@/components/ui/DiscountPill";
 import Skeleton from "@/components/ui/Skeleton";
+import { responsiveImg } from "@/lib/image";
 
 interface Props {
   product: Product;
@@ -28,7 +29,8 @@ export default function ProductCard({ product, onQuickView }: Props) {
               show a plain surface rather than a broken-image icon. */}
           {product.images[0] ? (
             <img
-              src={product.images[0]}
+              {...responsiveImg(product.images[0], "(min-width: 1024px) 25vw, 50vw")}
+              decoding="async"
               alt={product.name}
               loading="lazy"
               className="aspect-[294/348] w-full rounded-img object-cover object-top transition-transform duration-500 group-hover:scale-[1.04]"

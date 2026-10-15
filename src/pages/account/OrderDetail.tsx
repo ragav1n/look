@@ -8,6 +8,7 @@ import { useAsyncData } from "@/hooks/useAsyncData";
 import StatusBadge from "@/components/order/StatusBadge";
 import LoadError from "@/components/ui/LoadError";
 import Skeleton from "@/components/ui/Skeleton";
+import { cdnResize } from "@/lib/image";
 
 const STEP_LABEL: Record<OrderStatus, string> = {
   ordered: "Order placed",
@@ -167,7 +168,7 @@ export default function OrderDetail() {
         <ul className="mt-4 flex flex-col divide-y divide-line">
           {order.items.map((it, i) => {
             const thumb = (
-              <img src={it.image} alt={it.name} className="h-full w-full object-cover object-top" />
+              <img src={cdnResize(it.image, 200)} alt={it.name} className="h-full w-full object-cover object-top" />
             );
             return (
               <li key={it.variantId ?? `${order.id}-${i}`} className="flex gap-4 py-4 first:pt-0 last:pb-0">

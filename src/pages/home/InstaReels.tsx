@@ -3,6 +3,7 @@ import Reveal from "@/components/ui/Reveal";
 import { site } from "@/config/site";
 import { getReels } from "@/lib/catalog";
 import { useAsyncData } from "@/hooks/useAsyncData";
+import { responsiveImg } from "@/lib/image";
 
 /* User-requested section (not in Figma): Instagram reels row in the design's
    visual language — eyebrow + Playfair heading, 9:16 cards, play affordance.
@@ -50,7 +51,8 @@ export default function InstaReels() {
               aria-label={reel.caption ? `Watch on Instagram: ${reel.caption}` : "Watch on Instagram"}
             >
               <img
-                src={reel.image}
+                {...responsiveImg(reel.image, "(min-width: 768px) 25vw, 50vw")}
+                decoding="async"
                 alt={reel.imageAlt}
                 loading="lazy"
                 className="aspect-[9/16] w-full object-cover object-top transition-transform duration-500 group-hover:scale-[1.05]"

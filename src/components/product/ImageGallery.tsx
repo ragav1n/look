@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Share2 } from "lucide-react";
 import { useToast } from "@/context/ToastContext";
 import ImageLightbox from "./ImageLightbox";
+import { cdnResize, responsiveImg } from "@/lib/image";
 
 function Chevron({ dir }: { dir: "left" | "right" }) {
   return (
@@ -99,7 +100,7 @@ export default function ImageGallery({ images, alt }: { images: string[]; alt: s
           >
             <img
               key={active}
-              src={main}
+              {...responsiveImg(main, "(min-width: 1024px) 50vw, 100vw")}
               alt={alt}
               className="animate-gallery-fade aspect-[4/5] w-full object-cover object-top"
             />
@@ -158,7 +159,7 @@ export default function ImageGallery({ images, alt }: { images: string[]; alt: s
                 i === active ? "border-accent" : "border-line hover:border-line-strong"
               }`}
             >
-              <img src={src} alt="" className="h-full w-full object-cover object-top" />
+              <img src={cdnResize(src, 160)} alt="" className="h-full w-full object-cover object-top" />
             </button>
           ))}
         </div>

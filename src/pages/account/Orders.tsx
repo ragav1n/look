@@ -7,6 +7,7 @@ import { useToast } from "@/context/ToastContext";
 import StatusBadge from "@/components/order/StatusBadge";
 import LoadError from "@/components/ui/LoadError";
 import Skeleton from "@/components/ui/Skeleton";
+import { cdnResize } from "@/lib/image";
 
 const formatDate = (iso: string): string =>
   iso ? new Date(iso).toLocaleDateString("en-IN", { dateStyle: "medium" }) : "";
@@ -92,7 +93,7 @@ export default function Orders() {
                       {order.items.slice(0, 3).map((it, i) => (
                         <img
                           key={it.variantId ?? `${order.id}-${i}`}
-                          src={it.image}
+                          src={cdnResize(it.image, 100)}
                           alt={it.name}
                           className="h-[52px] w-[44px] rounded-[6px] border-2 border-surface object-cover object-top"
                         />

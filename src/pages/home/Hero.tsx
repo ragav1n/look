@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { getCollectionProducts } from "@/lib/catalog";
 import { useAsyncData } from "@/hooks/useAsyncData";
+import { responsiveImg } from "@/lib/image";
 
 /** Shopify collection whose products become the hero slides. Slide order is the
  *  collection's own manual order in the Shopify admin — reorder there, not here. */
@@ -62,7 +63,7 @@ export default function Hero() {
             }`}
           >
             <img
-              src={p.images[0]}
+              {...responsiveImg(p.images[0], "100vw")}
               alt=""
               /* Framed slightly above centre: these are full-length portraits, and
                  a dead-centre crop cuts the model's head at wide viewports. */

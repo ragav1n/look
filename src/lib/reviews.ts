@@ -32,27 +32,9 @@ export const getProductReviews = (productGid: string): Promise<Review[]> =>
     ? readReviews(`/api/reviews?action=list&product=${encodeURIComponent(productGid)}`)
     : Promise.resolve([]);
 
-/**
- * Ask Shopify's CDN for a resized copy of a file it hosts.
- *
- * Review photos are stored ONCE at 1200px and every smaller surface is served
- * from that same upload — the wall avatar at 96, the PDP thumbnail strip at 240,
- * the lightbox at full size. cdn.shopify.com honours `?width=N`, so this costs
- * no extra storage and saves the homepage pulling a full photo per avatar.
- *
- * Only rewrites Shopify URLs. Anything else (a bundled fixture avatar, a data:
- * URL) is returned untouched.
- */
-export function cdnResize(url: string, width: number): string {
-  if (!url.includes("cdn.shopify.com")) return url;
-  try {
-    const u = new URL(url);
-    u.searchParams.set("width", String(width));
-    return u.toString();
-  } catch {
-    return url;
-  }
-}
+/* Review photos are stored ONCE at 1200px and every smaller surface is served
+   from that same upload (wall avatar 96, PDP strip 240, lightbox full size). */
+export { cdnResize } from "./image";
 
 /* --- Writing one ---------------------------------------------------------- */
 

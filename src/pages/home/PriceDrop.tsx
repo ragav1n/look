@@ -5,6 +5,7 @@ import { useAsyncData } from "@/hooks/useAsyncData";
 import Skeleton from "@/components/ui/Skeleton";
 import DiscountPill from "@/components/ui/DiscountPill";
 import Reveal from "@/components/ui/Reveal";
+import { responsiveImg } from "@/lib/image";
 
 /* Price Drop — data-driven from products Shopify reports on sale
    (compareAtPrice > price). Each card shows just the essentials the client
@@ -54,7 +55,8 @@ export default function PriceDrop() {
                     <div className="relative overflow-hidden rounded-card border border-white/5 bg-card">
                       {/* Media may still be processing on a freshly-added product. */}
                       <img
-                        src={p.images[0] ?? ""}
+                        {...responsiveImg(p.images[0] ?? "", "(min-width: 1024px) 25vw, 50vw")}
+                        decoding="async"
                         alt={p.name}
                         loading="lazy"
                         className="aspect-[3/4] w-full bg-surface object-cover object-top transition-transform duration-700 ease-out group-hover:scale-[1.05]"
