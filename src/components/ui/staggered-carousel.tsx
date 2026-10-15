@@ -37,6 +37,22 @@ const TRAVEL = 2400; // px a speed-1.0 column travels across the whole pin
 const AUTO_PX_S = 50; // px/second a speed-1.0 column drifts on its own
 const SPEEDS = [1, -0.8, 1.3]; // per column; sign flips the direction
 const PHASES = [0, 0.5, 0.25]; // starting offset as a fraction of one copy
+const EASE_EDGE = 0.15; // fraction of the pin over which travel eases in and out
+const SCROLL_DAMP = 7; // 1/s; how quickly the columns catch up to the scroll
+const DRIFT_DAMP = 4; // 1/s; how quickly the drift slows on hover and recovers
+
+/* Scroll progress → travel, with the column speed ramping up from zero as the
+   wall locks in and back down to zero before it lets go. A straight `p` made
+   the columns go from still to full speed in a single frame at both edges,
+   which read as a jolt every time the pin engaged or released. Continuous in
+   value and slope, and 0 → 1 across the pin. */
+const easedTravel = (p: number) => {
+  const e = EASE_EDGE;
+  const span = 1 - e;
+  if (p < e) return (p * p) / (2 * e) / span;
+  if (p > 1 - e) return (span - ((1 - p) * (1 - p)) / (2 * e)) / span;
+  return (p - e / 2) / span;
+};
 
 const canPin = () =>
   typeof window !== "undefined" &&
@@ -81,8 +97,10 @@ export default function StaggeredCarousel({
     let last = 0;
     let auto = 0; // px of self-drift accumulated over time
     let paused = false;
+    let drift = 1; // current share of the drift speed, eased toward 0/1
+    let shown = -1; // smoothed progress the columns render at; -1 = not yet set
 
-    const render = () => {
+    const render = (dt: number) => {
       // READ phase — do every layout measurement up front. Reading offsetHeight
       // between the transform writes below forced a synchronous reflow on each
       // column, every frame; batching the reads removes that thrash.
@@ -91,6 +109,11 @@ export default function StaggeredCarousel({
       if (total <= 0) return;
       // 0 when the wall locks into place, 1 when the pin lets go.
       const p = Math.min(1, Math.max(0, (NAV_H - spacer.getBoundingClientRect().top) / total));
+      // Ease toward the scroll instead of snapping to it. A mouse wheel scrolls
+      // in ~100px notches and the columns travel faster than the page, so
+      // following the raw position made them hop a notch at a time.
+      shown = shown < 0 ? p : shown + (p - shown) * (1 - Math.exp(-SCROLL_DAMP * dt));
+      const travel = easedTravel(shown) * TRAVEL;
       const heights = copyRefs.current.map((copy) => copy?.offsetHeight ?? 0);
 
       // WRITE phase — no reads past this point.
@@ -99,7 +122,7 @@ export default function StaggeredCarousel({
         const h = heights[i];
         if (!col || h <= 0) continue;
         // Scroll-driven travel + the auto-scroll drift, both scaled per column.
-        const raw = (p * TRAVEL + auto) * SPEEDS[i] + PHASES[i] * h;
+        const raw = (travel + auto) * SPEEDS[i] + PHASES[i] * h;
         // Wrap into [0, h) then sit in [-h, 0) so a copy always covers the mask.
         col.style.transform = `translate3d(0, ${(((raw % h) + h) % h) - h}px, 0)`;
       }
@@ -108,13 +131,17 @@ export default function StaggeredCarousel({
     const frame = (now: number) => {
       const dt = last ? Math.min(0.05, (now - last) / 1000) : 0;
       last = now;
-      if (!paused) auto += AUTO_PX_S * dt;
-      render();
+      // Slow to a stop on hover and pick back up, rather than freezing mid-glide.
+      drift += ((paused ? 0 : 1) - drift) * (1 - Math.exp(-DRIFT_DAMP * dt));
+      auto += AUTO_PX_S * drift * dt;
+      render(dt);
       raf = requestAnimationFrame(frame);
     };
     const start = () => {
       if (!raf) {
         last = 0;
+        shown = -1; // re-entering from afar: start where the page is, don't sweep
+
         raf = requestAnimationFrame(frame);
       }
     };
@@ -146,7 +173,7 @@ export default function StaggeredCarousel({
     grid?.addEventListener("focusin", pause);
     grid?.addEventListener("focusout", resume);
 
-    render();
+    render(0);
     return () => {
       io.disconnect();
       stop();
