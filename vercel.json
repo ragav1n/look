@@ -6,6 +6,11 @@
       "source": "/shop/untitled-oct13_22-19-56",
       "destination": "/shop/eclaire-co-ord-set",
       "permanent": true
+    },
+    {
+      "source": "/shop/alba-gingham-gownpink-version",
+      "destination": "/shop/alba-gingham-gown-pink",
+      "permanent": true
     }
   ],
   "headers": [
