@@ -112,13 +112,22 @@ export async function getPromo(): Promise<Promo | null> {
   );
 }
 
+/** Fewest pieces "What's New" shows, so a quiet month tops up with the latest
+ *  drops instead of emptying the section. */
+const MIN_NEW_ARRIVALS = 4;
+
+/** Newest first, and only what is still inside the "New" window (or tagged
+ *  `new`), so the section moves on as pieces age out instead of listing the
+ *  whole catalog back to launch. */
 export async function getNewArrivals(): Promise<Product[]> {
   const data = await storefront<{ products: { nodes: SFProduct[] } }>(PRODUCTS_QUERY, {
-    first: 6,
+    first: 24,
     sortKey: "CREATED_AT",
     reverse: true,
   });
-  return data.products.nodes.map(toProduct);
+  const latest = data.products.nodes.map(toProduct);
+  const fresh = latest.filter((p) => p.newArrival);
+  return fresh.length >= MIN_NEW_ARRIVALS ? fresh : latest.slice(0, MIN_NEW_ARRIVALS);
 }
 
 export async function getBestSellers(): Promise<Product[]> {

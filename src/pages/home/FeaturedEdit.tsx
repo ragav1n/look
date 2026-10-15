@@ -1,12 +1,12 @@
-import { getBestSellers } from "@/lib/catalog";
+import { getNewArrivals } from "@/lib/catalog";
 import { useAsyncData } from "@/hooks/useAsyncData";
 import ExecutiveImpactCarousel from "@/components/ui/executive-impact-carousel";
 import Reveal from "@/components/ui/Reveal";
 
-/* "Shop the Edit" — editorial product carousel fed by live/fixture best-sellers.
+/* "What's New" — editorial product carousel of the latest drops, newest first.
    Scrolls horizontally (arrows, drag, auto-advance); hover swaps product → styled shot. */
 export default function FeaturedEdit() {
-  const { data } = useAsyncData(() => getBestSellers(), []);
+  const { data } = useAsyncData(() => getNewArrivals(), []);
   const products = data ?? [];
 
   if (products.length === 0) return null;
@@ -18,7 +18,7 @@ export default function FeaturedEdit() {
       aria-labelledby="edit-heading"
     >
       <Reveal className="mx-auto w-full max-w-[1338px] px-6 text-center min-[1400px]:px-0">
-        <p className="text-[12px] tracking-[0.08em] text-accent uppercase">Trending Now</p>
+        <p className="text-[12px] tracking-[0.08em] text-accent uppercase">Just Dropped</p>
         <h2
           id="edit-heading"
           className="mt-2 font-display text-[35px] leading-[47px] font-medium text-white"
