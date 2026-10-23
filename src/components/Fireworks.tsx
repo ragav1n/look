@@ -55,7 +55,21 @@ const SHOTS: { at: number; x: number; y: number; shell: Shell }[] = [
 const FOUNTAIN_S = 3.4;
 const RISE_S = 0.85;
 const GRAVITY = 0.33; // × the short side, per s²
-const MAX_SPARKS = 2600;
+/* Two budgets. A shell's own sparks are what the show is, so they get the hard
+   cap and are only refused past it; everything decorative (fountain spray,
+   rocket embers, gold tails, crackle pops) stops at the soft cap. With one
+   shared cap the tails and the anaar filled it by ~2.4s and later shells went
+   off with a handful of sparks, or none at all. */
+const DECOR_CAP = 1400;
+const MAX_SPARKS = 5000;
+/** Tail sparks shed per second by each chrysanthemum/willow spark, and embers
+ *  per second behind a climbing rocket. Per second, not per frame, so a 120Hz
+ *  screen doesn't get twice the load. */
+const TAIL_RATE = 14;
+const EMBER_RATE = 110;
+/** Shell speed, × the short side. Sets how far a burst reaches: about
+ *  0.35 × the short side, which is what the break points are clamped by. */
+const SHELL_SPEED = 0.5;
 
 interface Rocket {
   x: number;
@@ -162,8 +176,9 @@ export default function Fireworks({ onDone }: { onDone?: () => void }) {
     const spark = (
       s: Partial<Spark> &
         Pick<Spark, "x" | "y" | "vx" | "vy" | "ttl" | "colour">,
+      decor = false,
     ) => {
-      if (sparks.length >= MAX_SPARKS) return;
+      if (sparks.length >= (decor ? DECOR_CAP : MAX_SPARKS)) return;
       sparks.push({
         life: 0,
         size: 2,
@@ -179,7 +194,7 @@ export default function Fireworks({ onDone }: { onDone?: () => void }) {
     const explode = (x: number, y: number, shell: Shell) => {
       const base = pick(PALETTE.slice(0, 6));
       const second = pick(PALETTE.filter((c) => c !== base));
-      const v = u * 0.62;
+      const v = u * SHELL_SPEED;
       flashes.push({
         x,
         y,
@@ -293,23 +308,26 @@ export default function Fireworks({ onDone }: { onDone?: () => void }) {
       for (let i = 0; i < n; i++) {
         const a = -Math.PI / 2 + rand(-0.32, 0.32);
         const speed = u * rand(0.55, 1.0) * (0.6 + 0.4 * strength);
-        spark({
-          x: x + rand(-3, 3),
-          y,
-          vx: Math.cos(a) * speed,
-          vy: Math.sin(a) * speed,
-          ttl: rand(0.8, 1.3),
-          colour:
-            Math.random() < 0.25
-              ? WHITE
-              : Math.random() < 0.7
-                ? GOLD
-                : "#ffa53d",
-          size: rand(1.1, 1.8),
-          drag: 1.1,
-          fall: 1.3,
-          flicker: true,
-        });
+        spark(
+          {
+            x: x + rand(-3, 3),
+            y,
+            vx: Math.cos(a) * speed,
+            vy: Math.sin(a) * speed,
+            ttl: rand(0.8, 1.3),
+            colour:
+              Math.random() < 0.25
+                ? WHITE
+                : Math.random() < 0.7
+                  ? GOLD
+                  : "#ffa53d",
+            size: rand(1.1, 1.8),
+            drag: 1.1,
+            fall: 1.3,
+            flicker: true,
+          },
+          true,
+        );
       }
     };
 
@@ -337,14 +355,19 @@ export default function Fireworks({ onDone }: { onDone?: () => void }) {
 
       while (next < SHOTS.length && SHOTS[next].at / 1000 <= elapsed) {
         const s = SHOTS[next++];
-        const x0 = s.x * w + rand(-0.06, 0.06) * w;
+        /* Clamped so the whole burst lands on screen: on a phone the side
+           shots otherwise broke 40px from the edge and lost half their ball. */
+        const reach = u * SHELL_SPEED * 0.7;
+        const x1 = Math.min(Math.max(s.x * w, reach), w - reach);
+        const y1 = Math.max(s.y * h, reach * 0.9);
+        const x0 = x1 + rand(-0.06, 0.06) * w;
         rockets.push({
           x: x0,
           y: h + 8,
           x0,
           y0: h + 8,
-          x1: s.x * w,
-          y1: s.y * h,
+          x1,
+          y1,
           t: 0,
           shell: s.shell,
         });
@@ -364,19 +387,22 @@ export default function Fireworks({ onDone }: { onDone?: () => void }) {
         r.x = r.x0 + (r.x1 - r.x0) * e + Math.sin(r.t * 18) * 1.2;
         r.y = r.y0 + (r.y1 - r.y0) * e;
         /* The spitting tail: embers that drop away behind it. */
-        for (let k = 0; k < 3; k++) {
-          spark({
-            x: r.x,
-            y: r.y,
-            vx: rand(-20, 20),
-            vy: rand(10, 60),
-            ttl: rand(0.3, 0.6),
-            colour: GOLD,
-            size: 1.2,
-            drag: 3,
-            fall: 0.6,
-            flicker: true,
-          });
+        for (let k = Math.round(EMBER_RATE * dt); k > 0; k--) {
+          spark(
+            {
+              x: r.x,
+              y: r.y,
+              vx: rand(-20, 20),
+              vy: rand(10, 60),
+              ttl: rand(0.3, 0.6),
+              colour: GOLD,
+              size: 1.2,
+              drag: 3,
+              fall: 0.6,
+              flicker: true,
+            },
+            true,
+          );
         }
         ctx.globalAlpha = 1;
         ctx.drawImage(sprites.get(WHITE)!, r.x - 7, r.y - 7, 14, 14);
@@ -403,17 +429,20 @@ export default function Fireworks({ onDone }: { onDone?: () => void }) {
           if (p.crackle) {
             /* The pop: a few white glitter points scattered round the spot. */
             for (let k = 0; k < 4; k++) {
-              spark({
-                x: p.x,
-                y: p.y,
-                vx: rand(-1, 1) * u * 0.12,
-                vy: rand(-1, 1) * u * 0.12,
-                ttl: rand(0.12, 0.28),
-                colour: WHITE,
-                size: 1.5,
-                drag: 6,
-                fall: 0.2,
-              });
+              spark(
+                {
+                  x: p.x,
+                  y: p.y,
+                  vx: rand(-1, 1) * u * 0.12,
+                  vy: rand(-1, 1) * u * 0.12,
+                  ttl: rand(0.12, 0.28),
+                  colour: WHITE,
+                  size: 1.5,
+                  drag: 6,
+                  fall: 0.2,
+                },
+                true,
+              );
             }
           }
           sparks.splice(i, 1);
@@ -427,18 +456,21 @@ export default function Fireworks({ onDone }: { onDone?: () => void }) {
         p.x += p.vx * dt;
         p.y += p.vy * dt;
 
-        if (p.tail && Math.random() < 0.35) {
-          spark({
-            x: p.x,
-            y: p.y,
-            vx: p.vx * 0.05,
-            vy: p.vy * 0.05,
-            ttl: rand(0.25, 0.5),
-            colour: GOLD,
-            size: 1,
-            drag: 4,
-            fall: 0.8,
-          });
+        if (p.tail && Math.random() < TAIL_RATE * dt) {
+          spark(
+            {
+              x: p.x,
+              y: p.y,
+              vx: p.vx * 0.05,
+              vy: p.vy * 0.05,
+              ttl: rand(0.25, 0.5),
+              colour: GOLD,
+              size: 1,
+              drag: 4,
+              fall: 0.8,
+            },
+            true,
+          );
         }
 
         const k = 1 - p.life / p.ttl;
