@@ -22,10 +22,6 @@ import type { Promo } from "@/types";
  *  along with the fallback branch in `getPromo` and its fixture twin. */
 const LIVE = true;
 
-/** The site's own address, printed as the poster's credit line. Not campaign
- *  data — it doesn't change when the offer does, so it isn't a promo field. */
-export const POSTER_DOMAIN = "look.ind.in";
-
 export const FALLBACK_PROMO: Promo = {
   code: "LOOK@12",
   /* Deliberately NOT the wording the `promo` metaobject carries. This line is
