@@ -4,6 +4,7 @@ import { SlidersHorizontal, ChevronUp } from "lucide-react";
 import type { Product, ProductSort } from "@/types";
 import { getProducts } from "@/lib/catalog";
 import { canonical } from "@/lib/collections";
+import { searchProducts } from "@/lib/search";
 import { useAsyncData } from "@/hooks/useAsyncData";
 import ProductCard, { ProductCardSkeleton } from "@/components/product/ProductCard";
 import QuickViewModal from "@/components/product/QuickViewModal";
@@ -267,19 +268,17 @@ export default function Shop() {
   }, [applied.key]);
 
   // Products after search + category, before availability (used for counts).
-  const preAvailability = useMemo(
-    () =>
-      products.filter((p) => {
-        if (applied.col && !matchesCol(p, applied.col)) return false;
-        if (
-          applied.q &&
-          !`${p.name} ${p.category} ${p.group ?? ""} ${p.sku ?? ""}`.toLowerCase().includes(applied.q)
-        )
-          return false;
-        return true;
-      }),
-    [products, applied.col, applied.q],
-  );
+  /* Search uses the navbar suggestions' matcher (lib/search.ts), so pressing
+     Enter never drops a piece the suggestions just offered. Under the default
+     sort, results come best match first; an explicit sort still wins. */
+  const preAvailability = useMemo(() => {
+    const inCol = applied.col ? products.filter((p) => matchesCol(p, applied.col)) : products;
+    if (!applied.q) return inCol;
+    const hits = searchProducts(inCol, applied.q);
+    if (sort === "featured") return hits;
+    const keep = new Set(hits);
+    return inCol.filter((p) => keep.has(p));
+  }, [products, applied.col, applied.q, sort]);
 
   const inStockCount = preAvailability.filter(isInStock).length;
   const outStockCount = preAvailability.length - inStockCount;

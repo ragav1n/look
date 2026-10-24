@@ -1,7 +1,8 @@
-import { useEffect, useState, type FormEvent } from "react";
-import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, NavLink, useLocation } from "react-router-dom";
 import { Search } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+import SearchBox from "@/components/layout/SearchBox";
 import logoWhite from "@/assets/look-logo-white.png";
 import iconUser from "@/assets/icon-user.svg";
 import iconWishlist from "@/assets/icon-wishlist-nav.svg";
@@ -26,29 +27,13 @@ const menuItems = [
    navbar is always dark. A 3-column grid keeps the logo perfectly centred
    regardless of how wide the left nav / right actions get. */
 export default function Navbar() {
-  const navigate = useNavigate();
-  const { pathname, search } = useLocation();
+  const { pathname } = useLocation();
   const { itemCount } = useCart();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [query, setQuery] = useState("");
 
   // close the mobile menu whenever the route changes
   useEffect(() => setMenuOpen(false), [pathname]);
-
-  /* Mirror the URL into the box. It used to be write-only local state, so
-     Shop's "Clear search" left the stale term sitting in the navbar, and a
-     shared /shop?q=gown link showed an empty box beside filtered results. */
-  useEffect(() => {
-    setQuery(new URLSearchParams(search).get("q") ?? "");
-  }, [search]);
-
-  const submitSearch = (e: FormEvent) => {
-    e.preventDefault();
-    const q = query.trim();
-    navigate(q ? `/shop?q=${encodeURIComponent(q)}` : "/shop");
-    setSearchOpen(false);
-  };
 
   const iconClass =
     "h-6 w-6 invert transition-transform duration-200 hover:scale-110 active:scale-95";
@@ -133,27 +118,7 @@ export default function Navbar() {
 
         {/* RIGHT: search + account actions */}
         <div className="flex items-center gap-6 justify-self-end lg:gap-[34px]">
-          <form
-            onSubmit={submitSearch}
-            role="search"
-            className="hidden h-[42px] w-[300px] items-center gap-2 rounded-full border border-white/25 pr-2 pl-[22px] transition-colors focus-within:border-white/70 lg:flex"
-          >
-            <input
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search for products"
-              aria-label="Search for products"
-              className="min-w-0 flex-1 bg-transparent text-[15px] text-white outline-none placeholder:text-white/50"
-            />
-            <button
-              type="submit"
-              aria-label="Search"
-              className="grid size-8 shrink-0 place-items-center rounded-full text-white/70 transition-colors hover:bg-white/10 hover:text-white"
-            >
-              <Search className="size-5" strokeWidth={1.8} />
-            </button>
-          </form>
+          <SearchBox variant="desktop" />
 
           {/* Every link here is `shrink-0`, and that is load-bearing. The icons are
               `<img>`s of Figma SVGs, which carry no intrinsic width — so WebKit
@@ -202,33 +167,12 @@ export default function Navbar() {
       <div
         id="mobile-search"
         inert={!searchOpen}
-        className={`grid overflow-hidden transition-[grid-template-rows,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] lg:hidden ${
+        className={`grid grid-cols-1 overflow-hidden transition-[grid-template-rows,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] lg:hidden ${
           searchOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
         }`}
       >
         <div className="min-h-0">
-          <form
-            onSubmit={submitSearch}
-            role="search"
-            className="flex items-center gap-2 border-t border-line bg-black px-6 py-3"
-          >
-            <input
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search for products"
-              aria-label="Search for products"
-              autoFocus={searchOpen}
-              className="h-[42px] min-w-0 flex-1 rounded-full border border-white/25 bg-transparent px-[22px] text-[15px] text-white outline-none transition-colors placeholder:text-white/50 focus:border-white/70"
-            />
-            <button
-              type="submit"
-              aria-label="Search"
-              className="grid size-10 shrink-0 place-items-center rounded-full text-white/70 transition-colors hover:bg-white/10 hover:text-white"
-            >
-              <Search className="size-5" strokeWidth={1.8} />
-            </button>
-          </form>
+          <SearchBox variant="mobile" autoFocus={searchOpen} onDone={() => setSearchOpen(false)} />
         </div>
       </div>
 
