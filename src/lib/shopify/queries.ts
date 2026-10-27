@@ -175,7 +175,7 @@ export const CART_CREATE_MUTATION = /* GraphQL */ `
  *  discount evaporate with no explanation. */
 export const CART_DISCOUNT_CODES_UPDATE_MUTATION = /* GraphQL */ `
   ${CART_FRAGMENT}
-  mutation CartDiscountCodesUpdate($cartId: ID!, $discountCodes: [String!]) {
+  mutation CartDiscountCodesUpdate($cartId: ID!, $discountCodes: [String!]!) {
     cartDiscountCodesUpdate(cartId: $cartId, discountCodes: $discountCodes) {
       cart { ...CartFields }
       userErrors { message }
