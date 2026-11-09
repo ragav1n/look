@@ -5,6 +5,7 @@ import Footer from "./Footer";
 import ChatWidget from "@/components/chat/ChatWidget";
 import NewsletterPopup from "@/components/NewsletterPopup";
 import LaunchOfferPopup from "@/components/LaunchOfferPopup";
+import GreetingCrackers from "@/components/GreetingCrackers";
 import PromoBar from "@/components/PromoBar";
 import { usePromo } from "@/hooks/usePromo";
 import { posterSeenThisSession } from "@/lib/posterSession";
@@ -67,6 +68,7 @@ export default function PageShell() {
       <ChatWidget />
       <NewsletterPopup armed={!waitingOnPoster} />
       <LaunchOfferPopup onDismiss={() => setPosterDismissed(true)} />
+      <GreetingCrackers />
       <ScrollRestoration />
     </div>
   );
