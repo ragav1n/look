@@ -21,7 +21,16 @@
          WhatsApp and friends key their preview cache on the image URL and hold
          it for an unpublished stretch, so re-cutting og-default.jpg under the
          same URL changes nothing for anyone who has already shared a link.
-         Bump the date whenever the artwork is regenerated. -->
+         Bump the date whenever the artwork is regenerated.
+
+         The image is served from Shopify Files, NOT from /og-default.jpg on
+         Vercel. Something kept refetching the Vercel copy ~30k times a day
+         (Oct-Nov 2026), which alone used up the Hobby plan's CDN request
+         quota; Shopify's CDN costs nothing per request. Vercel's firewall
+         denies /og-default.jpg so old cached shares stop costing requests.
+         To change the artwork: regenerate it (scripts/og-template.html),
+         upload it under Shopify Content -> Files, and paste the new
+         cdn.shopify.com URL into both tags below. -->
     <!--og:start-->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="LOOK" />
@@ -31,7 +40,7 @@
       content="Discover premium western wear, dresses, coord sets and elevated everyday essentials crafted for confidence, comfort and timeless elegance. Thoughtfully designed for every woman."
     />
     <meta property="og:url" content="https://look.ind.in/" />
-    <meta property="og:image" content="https://look.ind.in/og-default.jpg?v=20260807" />
+    <meta property="og:image" content="https://cdn.shopify.com/s/files/1/0728/2907/5558/files/look-link-preview.jpg?v=1794196597" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="LOOK — modern western essentials" />
@@ -41,7 +50,7 @@
       name="twitter:description"
       content="Discover premium western wear, dresses, coord sets and elevated everyday essentials crafted for confidence, comfort and timeless elegance. Thoughtfully designed for every woman."
     />
-    <meta name="twitter:image" content="https://look.ind.in/og-default.jpg?v=20260807" />
+    <meta name="twitter:image" content="https://cdn.shopify.com/s/files/1/0728/2907/5558/files/look-link-preview.jpg?v=1794196597" />
     <!--og:end-->
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />

@@ -16,7 +16,9 @@
         sips -s format jpeg -s formatOptions 82 /tmp/og.png \
           --out public/og-default.jpg
 
-      Then bump the ?v= date on og:image and twitter:image in index.html.
+      Then upload it to Shopify (Content -> Files) and put its cdn.shopify.com
+      URL in og:image and twitter:image in index.html. Do NOT serve it from
+      Vercel again: see the note in index.html about request quotas.
       Overwriting the JPEG alone changes nothing for anyone who has already
       shared a link: WhatsApp and the rest cache previews against the image URL,
       so the URL is what has to move.
