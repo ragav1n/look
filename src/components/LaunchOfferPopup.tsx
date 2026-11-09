@@ -5,11 +5,12 @@ import Fireworks from "@/components/Fireworks";
 import Modal from "@/components/ui/Modal";
 import { useApplyPromo, type PromoApplyResult } from "@/hooks/useApplyPromo";
 import { usePromo } from "@/hooks/usePromo";
+import { markPosterSeen, posterSeenThisSession } from "@/lib/posterSession";
 /* The client's Diwali Sale artwork, shipped as the picture it is. It's a
    portrait poster, so unlike the old 16:9 launch artwork it fits a phone
    without letterboxing. WebP at 720 and 1080px wide (the dialog draws it at
    most ~480px, so 1080 covers a 2x screen): 92KB and 153KB, against the 3MB PNG
-   it arrived as, which matters because this greets every visit. */
+   it arrived as, which matters because this greets every session. */
 import poster720 from "@/assets/diwali-poster-720.webp";
 import poster1080 from "@/assets/diwali-poster-1080.webp";
 
@@ -49,17 +50,19 @@ interface Props {
    here. The whole picture is the Shop Now link, since that's what the artwork
    tells the shopper to tap. A few crackers go off over it as it opens.
 
-   Shown on every visit by design (the client asked for it), which is why
-   nothing is written to storage: a page load is a visit. It reappears on
-   reload, not on in-app navigation, since PageShell mounts this once. */
+   Shown once per browser session (see lib/posterSession for why). The
+   session check is read once on mount, the same way PageShell reads it, so
+   the two agree on whether a poster is coming for the whole page life. It
+   never shows on in-app navigation, since PageShell mounts this once. */
 export default function LaunchOfferPopup({ onDismiss }: Props) {
   const promo = usePromo();
+  const [alreadySeen] = useState(posterSeenThisSession);
   const [open, setOpen] = useState(false);
   const [sparkling, setSparkling] = useState(false);
   const { apply, busy } = useApplyPromo(promo);
   const [taken, setTaken] = useState<PromoApplyResult | null>(null);
   const takenTimer = useRef(0);
-  const showPoster = Boolean(promo?.surfaces.poster);
+  const showPoster = Boolean(promo?.surfaces.poster) && !alreadySeen;
 
   /* Opens once BOTH the delay has passed and the artwork is decoded, so the
      dialog never pops up as an empty frame that fills in afterwards. A failed
@@ -75,6 +78,9 @@ export default function LaunchOfferPopup({ onDismiss }: Props) {
     const delay = new Promise((r) => window.setTimeout(r, OPEN_DELAY_MS));
     void Promise.all([ready, delay]).then(() => {
       if (!live) return;
+      /* Marked on opening, not on closing: once it has been on screen it
+         counts, even if the shopper reloads instead of dismissing it. */
+      markPosterSeen();
       setOpen(true);
       setSparkling(true);
     });

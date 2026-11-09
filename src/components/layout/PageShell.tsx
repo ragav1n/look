@@ -7,6 +7,7 @@ import NewsletterPopup from "@/components/NewsletterPopup";
 import LaunchOfferPopup from "@/components/LaunchOfferPopup";
 import PromoBar from "@/components/PromoBar";
 import { usePromo } from "@/hooks/usePromo";
+import { posterSeenThisSession } from "@/lib/posterSession";
 
 /* The whole site follows the black theme, so the navbar is always dark. */
 export default function PageShell() {
@@ -45,8 +46,13 @@ export default function PageShell() {
      keyed on `armed` and cleans itself up, and it only marks the prompt seen
      once it has actually opened, so nothing is spent by the brief arming. */
   const promo = usePromo();
+  /* The poster only greets the first load of a session; on later loads there
+     is nothing coming, so the invite must not wait for it. Read once on mount
+     (as LaunchOfferPopup does), before the poster marks itself seen. */
+  const [posterAlreadySeen] = useState(posterSeenThisSession);
   const [posterDismissed, setPosterDismissed] = useState(false);
-  const waitingOnPoster = Boolean(promo?.surfaces.poster) && !posterDismissed;
+  const waitingOnPoster =
+    Boolean(promo?.surfaces.poster) && !posterAlreadySeen && !posterDismissed;
 
   return (
     <div className="flex min-h-screen flex-col">
