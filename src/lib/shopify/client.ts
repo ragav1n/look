@@ -29,8 +29,68 @@ interface GraphQLResponse<T> {
   errors?: Array<{ message: string }>;
 }
 
+/* A shared product link is usually opened in an in-app browser (WhatsApp,
+   Instagram) on a phone, cold: fresh DNS + TLS + CORS preflight to the
+   myshopify origin, often on patchy mobile data. One dropped request used to
+   be the whole page ("CONNECTION PROBLEM"). Reads are idempotent, so they get
+   a timeout and a couple of quick retries; mutations never retry, since a
+   cart add that reached Shopify but lost its response would be applied twice. */
+const TIMEOUT_MS = 12_000;
+const RETRY_DELAYS_MS = [500, 1500];
+
+/** Worth another go: the network itself failed (fetch threw, or our timeout
+ *  fired), or Shopify answered with a throttle / bot-check / server error. */
+class TransientError extends Error {}
+
+const isMutation = (query: string) => /^\s*mutation\b/m.test(query);
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+async function once<T>(query: string, variables?: Record<string, unknown>): Promise<T> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
+  let res: Response;
+  try {
+    res = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "X-Shopify-Storefront-Access-Token": token as string,
+      },
+      body: JSON.stringify({ query, variables }),
+      signal: ctrl.signal,
+    });
+  } catch (err) {
+    // iOS reports this as "TypeError: Load failed"; an abort is our timeout.
+    throw new TransientError(`Storefront request failed: ${err instanceof Error ? err.message : err}`);
+  } finally {
+    clearTimeout(timer);
+  }
+
+  if (!res.ok) {
+    const msg = `Shopify Storefront API HTTP ${res.status}: ${await res.text().catch(() => "")}`;
+    // 429 throttle, 430 Shopify's security rejection, 5xx outages.
+    if (res.status === 429 || res.status === 430 || res.status >= 500) throw new TransientError(msg);
+    throw new Error(msg);
+  }
+
+  let json: GraphQLResponse<T>;
+  try {
+    json = (await res.json()) as GraphQLResponse<T>;
+  } catch {
+    // A body cut off mid-stream on a dropping connection.
+    throw new TransientError("Shopify Storefront API returned an unreadable body.");
+  }
+  if (json.errors?.length) {
+    throw new Error(`Shopify GraphQL error: ${json.errors.map((e) => e.message).join("; ")}`);
+  }
+  if (!json.data) throw new Error("Shopify Storefront API returned no data.");
+  return json.data;
+}
+
 /** Run a Storefront GraphQL operation. Throws if Shopify isn't configured or
- *  the API returns errors — callers surface these as error states. */
+ *  the API returns errors — callers surface these as error states. Queries
+ *  retry transient network failures; mutations run exactly once. */
 export async function storefront<T>(
   query: string,
   variables?: Record<string, unknown>,
@@ -41,24 +101,13 @@ export async function storefront<T>(
     );
   }
 
-  const res = await fetch(endpoint, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-      "X-Shopify-Storefront-Access-Token": token as string,
-    },
-    body: JSON.stringify({ query, variables }),
-  });
-
-  if (!res.ok) {
-    throw new Error(`Shopify Storefront API HTTP ${res.status}: ${await res.text()}`);
+  const delays = isMutation(query) ? [] : RETRY_DELAYS_MS;
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await once<T>(query, variables);
+    } catch (err) {
+      if (!(err instanceof TransientError) || attempt >= delays.length) throw err;
+      await sleep(delays[attempt]);
+    }
   }
-
-  const json = (await res.json()) as GraphQLResponse<T>;
-  if (json.errors?.length) {
-    throw new Error(`Shopify GraphQL error: ${json.errors.map((e) => e.message).join("; ")}`);
-  }
-  if (!json.data) throw new Error("Shopify Storefront API returned no data.");
-  return json.data;
 }
