@@ -11,6 +11,11 @@
       "source": "/shop/alba-gingham-gownpink-version",
       "destination": "/shop/alba-gingham-gown-pink",
       "permanent": true
+    },
+    {
+      "source": "/shop/untitled-sep16_10-49-49",
+      "destination": "/shop/samudra-dress",
+      "permanent": true
     }
   ],
   "headers": [
